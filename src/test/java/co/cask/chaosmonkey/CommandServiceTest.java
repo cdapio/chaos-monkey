@@ -23,21 +23,21 @@ import org.junit.Test;
 /**
  * TODO: procrastinate on documentation
  */
-public class KillCommandTest {
+public class CommandServiceTest {
 
-  private static KillCommand killCommand;
+  private static CommandService commandService;
 
   @BeforeClass
   public static void setup() {
     Shell shell = new Shell();
-    killCommand = new KillCommand(shell);
+    commandService = new CommandService(shell);
   }
 
   // TODO: This test currently works because HBase isn't running, but we would need a different test in the future
   @Test
   public void testKillNonExistentPath() {
     try {
-      killCommand.killProcess(Service.HBaseMaster);
+      commandService.killProcess(Service.HBaseMaster);
       Assert.fail();
     } catch (Exception e) {
       Assert.assertEquals(e.getMessage(), "Process ID not found");

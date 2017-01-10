@@ -29,7 +29,7 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
   private double termFactor;
   private double killFactor;
   private int executionPeriod;
-  private KillCommand killCommand;
+  private CommandService commandService;
 
   public ChaosMonkeyCLIService(Service[] processes,
                                double termFactor,
@@ -40,7 +40,7 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
     this.termFactor = termFactor;
     this.killFactor = killFactor;
     this.executionPeriod = executionPeriod;
-    this.killCommand = new KillCommand(shell);
+    this.commandService = new CommandService(shell);
   }
 
   public ChaosMonkeyCLIService(String[] processes, double termFactor, double killFactor, int executionPeriod) {
@@ -56,9 +56,9 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
     for (Service process : processes) {
       double random = Math.random();// insecure but we don't need to worry about secure random numbers
       if (random < killFactor) {
-        killCommand.killProcess(process);
+        commandService.killProcess(process);
       } else if (random < termFactor) {
-        killCommand.terminateProcess(process);
+        commandService.terminateProcess(process);
       }
     }
   }

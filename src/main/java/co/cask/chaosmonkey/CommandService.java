@@ -21,11 +21,11 @@ import java.io.IOException;
 /**
  * TODO: procrastinate on documentation
  */
-public class KillCommand {
+public class CommandService {
 
   private static Shell shell;
 
-  public KillCommand(Shell shell) {
+  public CommandService(Shell shell) {
     this.shell = shell;
   }
 
