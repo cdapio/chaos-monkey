@@ -89,4 +89,19 @@ public class ShellTest {
     Assert.assertEquals("we all good\n", output.standardOutput);
     Assert.assertEquals("", output.errorOutput);
   }
+
+  @Test
+  public void testMultiLine() throws IOException {
+    ShellOutput output = shell.exec("var=5\n" +
+                                      "if [[ \"$var\" == \"5\" ]]; then \n" +
+                                      "car=rar\n" +
+                                      "else\n" +
+                                      "dar=bar\n" +
+                                      "fi\n" +
+                                      "echo $car\n" +
+                                      "[[ -z \"$dar\" ]] && echo lol");
+    Assert.assertEquals(0, output.returnCode);
+    Assert.assertEquals("rar\nlol\n", output.standardOutput);
+    Assert.assertEquals("", output.errorOutput);
+  }
 }
