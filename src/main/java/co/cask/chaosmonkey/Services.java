@@ -16,33 +16,18 @@
 
 package co.cask.chaosmonkey;
 
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import java.io.IOException;
-
 /**
  * TODO: procrastinate on documentation
  */
-public class KillCommandTest {
+public enum Services {
+  HBaseRegionServer("/hbase/hbase-hbase-regionserver.pid"),
+  HBaseMaster("/hbase/hbase-hbase-master.pid"),
+  ZookeeperServer("/zookeeper/zookeeper-server.pid");
 
-  private static KillCommand killCommand;
+  final String path;
+  final String baseDirectory = "/var/run";
 
-  @BeforeClass
-  public static void setup() {
-    Shell shell = new Shell();
-    killCommand = new KillCommand(shell);
-  }
+  Services(String path) { this.path = path; }
 
-  // TODO: This test currently works because HBase isn't running, but we would need a different test in the future
-  @Test
-  public void testKillNonExistentPath() {
-    try {
-      killCommand.killProcess(Services.HBaseMaster);
-      Assert.fail();
-    } catch (Exception e) {
-      Assert.assertEquals(e.getMessage(), "Process ID not found");
-    }
-  }
+  public String getPath() { return baseDirectory + path; }
 }

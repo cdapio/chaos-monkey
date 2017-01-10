@@ -30,34 +30,40 @@ public class KillCommand {
   }
 
   /**
-   * TODO: procrastinate on documentation
-   * @param processName
-   * @return
+   * Finds the process ID of a service and then kill it
+   * @param service The service to kill
+   * @return Exit code
    * @throws IOException
    */
-  public int killProcess(String processName) throws IOException {
-    int pid = getPID(processName);
+  public int killProcess(Services service) throws IOException {
+    int pid = getPID(service.getPath());
+    if (pid == -1) {
+      throw new IOException("Process ID not found");
+    }
     return signalProcess(9, pid);
   }
 
   /**
-   * TODO: procrastinate on documentation
-   * @param processName
-   * @return
+   * Finds the process ID of a service and then terminate it
+   * @param service The service to terminate
+   * @return Exit code
    * @throws IOException
    */
-  public int terminateProcess(String processName) throws IOException {
-    int pid = getPID(processName);
+  public int terminateProcess(Services service) throws IOException {
+    int pid = getPID(service.getPath());
+    if (pid == -1) {
+      throw new IOException("Process ID not found");
+    }
     return signalProcess(15, pid);
   }
 
-  public int getPID(String processName) throws IOException {
-    String command = String.format("ps aux | grep %s | grep -v grep | awk '{print $2}'", processName);
+  private int getPID(String pathToPID) throws IOException {
+    String command = String.format("cat %s", pathToPID);
     ShellOutput output = shell.exec(command);
-
-    // TODO: better interpret output and deal with getting multiple PID
-    String[] splitOutput = output.standardOutput.split("\n");
-    return Integer.parseInt(splitOutput[0]);
+    if (output.returnCode == 0) {
+      return Integer.parseInt(output.standardOutput);
+    }
+    return -1;
   }
 
   private int signalProcess(int signal, int pid) throws IOException {
