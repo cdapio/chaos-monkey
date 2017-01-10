@@ -20,8 +20,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-
 /**
  * TODO: procrastinate on documentation
  */
@@ -39,7 +37,7 @@ public class KillCommandTest {
   @Test
   public void testKillNonExistentPath() {
     try {
-      killCommand.killProcess(Services.HBaseMaster);
+      killCommand.killProcess(Service.HBaseMaster);
       Assert.fail();
     } catch (Exception e) {
       Assert.assertEquals(e.getMessage(), "Process ID not found");

@@ -35,7 +35,7 @@ public class KillCommand {
    * @return Exit code
    * @throws IOException
    */
-  public int killProcess(Services service) throws IOException {
+  public int killProcess(Service service) throws IOException {
     int pid = getPID(service.getPath());
     if (pid == -1) {
       throw new IOException("Process ID not found");
@@ -49,7 +49,7 @@ public class KillCommand {
    * @return Exit code
    * @throws IOException
    */
-  public int terminateProcess(Services service) throws IOException {
+  public int terminateProcess(Service service) throws IOException {
     int pid = getPID(service.getPath());
     if (pid == -1) {
       throw new IOException("Process ID not found");

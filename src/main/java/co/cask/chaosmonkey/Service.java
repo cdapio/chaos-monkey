@@ -19,7 +19,7 @@ package co.cask.chaosmonkey;
 /**
  * TODO: procrastinate on documentation
  */
-public enum Services {
+public enum Service {
   HBaseRegionServer("/hbase/hbase-hbase-regionserver.pid"),
   HBaseMaster("/hbase/hbase-hbase-master.pid"),
   ZookeeperServer("/zookeeper/zookeeper-server.pid");
@@ -27,7 +27,7 @@ public enum Services {
   final String path;
   final String baseDirectory = "/var/run";
 
-  Services(String path) { this.path = path; }
+  Service(String path) { this.path = path; }
 
   public String getPath() { return baseDirectory + path; }
 }

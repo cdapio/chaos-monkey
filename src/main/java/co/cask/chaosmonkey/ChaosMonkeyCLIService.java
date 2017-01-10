@@ -25,13 +25,13 @@ import java.util.concurrent.TimeUnit;
  */
 public class ChaosMonkeyCLIService extends AbstractScheduledService {
 
-  private String[] processes;
+  private Service[] processes;
   private double termFactor;
   private double killFactor;
   private int executionPeriod;
   private KillCommand killCommand;
 
-  public ChaosMonkeyCLIService(String[] processes,
+  public ChaosMonkeyCLIService(Service[] processes,
                                double termFactor,
                                double killFactor,
                                int executionPeriod,
@@ -53,7 +53,7 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
 
   @Override
   protected void runOneIteration() throws Exception {
-    for (String process : processes) {
+    for (Service process : processes) {
       double random = Math.random();// insecure but we don't need to worry about secure random numbers
       if (random < killFactor) {
         killCommand.killProcess(process);
