@@ -52,7 +52,7 @@
   <properties>
     <jee.version>7</jee.version>
     <commons.cli.version>1.2</commons.cli.version>
-    <guava.version>13.0.1</guava.version>
+    <guava.version>20.0</guava.version>
     <junit.version>4.11</junit.version>
   </properties>
 
