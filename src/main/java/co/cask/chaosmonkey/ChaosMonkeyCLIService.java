@@ -16,8 +16,56 @@
 
 package co.cask.chaosmonkey;
 
+import com.google.common.util.concurrent.AbstractScheduledService;
+
+import java.util.concurrent.TimeUnit;
+
 /**
  * TODO: Fill out this description
  */
-public class ChaosMonkeyCLIService {
+public class ChaosMonkeyCLIService extends AbstractScheduledService {
+
+  private String[] services;
+  private double termFactor;
+  private double killFactor;
+  private int executionPeriod;
+  private Shell shell;
+
+  public ChaosMonkeyCLIService(String[] services,
+                               double termFactor,
+                               double killFactor,
+                               int executionPeriod,
+                               Shell shell) {
+    this.services = services;
+    this.termFactor = termFactor;
+    this.killFactor = killFactor;
+    this.executionPeriod = executionPeriod;
+    this.shell = shell;
+  }
+
+  public ChaosMonkeyCLIService(String[] services, double termFactor, double killFactor, int executionPeriod) {
+    this(services, termFactor, killFactor, executionPeriod, new Shell());
+  }
+
+  public ChaosMonkeyCLIService(String[] services, double termFactor, double killFactor) {
+    this(services, termFactor, killFactor, 1);
+  }
+
+  @Override
+  protected void runOneIteration() throws Exception {
+    double random = Math.random();// insecure but we don't need to worry about secure random numbers
+
+    for (String service : services) {
+      if (random < killFactor) {
+        // run the kill
+      } else if (random < termFactor) {
+        // run the term
+      }
+    }
+  }
+
+  @Override
+  protected Scheduler scheduler() {
+    return AbstractScheduledService.Scheduler.newFixedRateSchedule(0, this.executionPeriod, TimeUnit.SECONDS);
+  }
 }
