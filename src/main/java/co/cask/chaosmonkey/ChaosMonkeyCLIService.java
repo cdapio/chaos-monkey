@@ -53,9 +53,8 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
 
   @Override
   protected void runOneIteration() throws Exception {
-    double random = Math.random();// insecure but we don't need to worry about secure random numbers
-
     for (String service : services) {
+      double random = Math.random();// insecure but we don't need to worry about secure random numbers
       if (random < killFactor) {
         // run the kill
       } else if (random < termFactor) {
