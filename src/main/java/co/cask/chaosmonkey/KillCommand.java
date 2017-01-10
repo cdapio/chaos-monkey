@@ -25,7 +25,9 @@ public class KillCommand {
 
   private static Shell shell;
 
-  public KillCommand(Shell shell) { this.shell = shell; }
+  public KillCommand(Shell shell) {
+    this.shell = shell;
+  }
 
   /**
    * TODO: procrastinate on documentation
@@ -35,7 +37,18 @@ public class KillCommand {
    */
   public int killProcess(String processName) throws IOException {
     int pid = getPID(processName);
-    return killProcessWithPID(pid);
+    return signalProcess(9, pid);
+  }
+
+  /**
+   * TODO: procrastinate on documentation
+   * @param processName
+   * @return
+   * @throws IOException
+   */
+  public int terminateProcess(String processName) throws IOException {
+    int pid = getPID(processName);
+    return signalProcess(15, pid);
   }
 
   public int getPID(String processName) throws IOException {
@@ -47,17 +60,9 @@ public class KillCommand {
     return Integer.parseInt(splitOutput[0]);
   }
 
-  private int killProcessWithPID(int pid) throws IOException {
-    String command = String.format("kill -9 %d", pid);
+  private int signalProcess(int signal, int pid) throws IOException {
+    String command = String.format("kill -%d %d", signal, pid);
     ShellOutput output = shell.exec(command);
     return output.returnCode;
   }
-
-  // TODO: Add a way to call this
-  private int terminateProcessWithPID(int pid) throws IOException {
-    String command = String.format("kill -15 %d", pid);
-    ShellOutput output = shell.exec(command);
-    return output.returnCode;
-  }
-
 }
