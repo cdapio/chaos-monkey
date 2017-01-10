@@ -25,40 +25,40 @@ import java.util.concurrent.TimeUnit;
  */
 public class ChaosMonkeyCLIService extends AbstractScheduledService {
 
-  private String[] services;
+  private String[] processes;
   private double termFactor;
   private double killFactor;
   private int executionPeriod;
   private KillCommand killCommand;
 
-  public ChaosMonkeyCLIService(String[] services,
+  public ChaosMonkeyCLIService(String[] processes,
                                double termFactor,
                                double killFactor,
                                int executionPeriod,
                                Shell shell) {
-    this.services = services;
+    this.processes = processes;
     this.termFactor = termFactor;
     this.killFactor = killFactor;
     this.executionPeriod = executionPeriod;
     this.killCommand = new KillCommand(shell);
   }
 
-  public ChaosMonkeyCLIService(String[] services, double termFactor, double killFactor, int executionPeriod) {
-    this(services, termFactor, killFactor, executionPeriod, new Shell());
+  public ChaosMonkeyCLIService(String[] processes, double termFactor, double killFactor, int executionPeriod) {
+    this(processes, termFactor, killFactor, executionPeriod, new Shell());
   }
 
-  public ChaosMonkeyCLIService(String[] services, double termFactor, double killFactor) {
-    this(services, termFactor, killFactor, 1);
+  public ChaosMonkeyCLIService(String[] processes, double termFactor, double killFactor) {
+    this(processes, termFactor, killFactor, 1);
   }
 
   @Override
   protected void runOneIteration() throws Exception {
-    for (String service : services) {
+    for (String process : processes) {
       double random = Math.random();// insecure but we don't need to worry about secure random numbers
       if (random < killFactor) {
-        killCommand.killProcess(service);
+        killCommand.killProcess(process);
       } else if (random < termFactor) {
-        killCommand.terminateProcess(service);
+        killCommand.terminateProcess(process);
       }
     }
   }
