@@ -25,17 +25,40 @@ import java.io.File;
  */
 public class Service {
 
-  public static final ImmutableMap<String, Service> commonServices = new ImmutableMap.Builder<String, Service>()
-    .put("HBaseRegionServer", new Service("hbase/hbase-hbase-regionserver.pid"))
-    .put("HBaseMaster", new Service("hbase/hbase-hbase-master.pid"))
-    .put("ZookeeperServer", new Service("zookeeper/zookeeper-server.pid"))
-    .put("MySQLServer", new Service("mysqld/mysqld.pid"))
-    .put("HiveMetastore", new Service("hive/hive-metastore.pid"))
-    .put("HadoopYarnResourceManager", new Service("hadoop/yarn/yarn-yarn-resourcemanager.pid"))
-    .put("HadoopYarnNodeManager", new Service("hadoop/yarn/yarn-yarn-nodemanager.pid"))
-    .put("HadoopHdfsDataNode", new Service("hadoop/hdfs/hadoop-hdfs-datanode.pid"))
-    .put("HadoopHdfsNameNode", new Service("hadoop/hdfs/hadoop-hdfs-namenode.pid"))
-    .build();
+  static {
+    String[] paths = {
+      "hbase/hbase-hbase-regionserver.pid",
+      "hbase/hbase-hbase-master.pid",
+      "zookeeper/zookeeper-server.pid",
+      "mysqld/mysqld.pid",
+      "hive/hive-metastore.pid",
+      "hadoop/yarn/yarn-yarn-resourcemanager.pid",
+      "hadoop/yarn/yarn-yarn-nodemanager.pid",
+      "hadoop/hdfs/hadoop-hdfs-datanode.pid",
+      "hadoop/hdfs/hadoop-hdfs-namenode.pid"
+    };
+
+    Service[] services = new Service[paths.length];
+
+    for (int i = 0; i < paths.length; i++) {
+      services[i] = new Service(paths[i]);
+    }
+
+    commonServices = services;
+  }
+
+  public static final Service[] commonServices;
+
+  public static final Service HBaseRegionServer = commonServices[0];
+  public static final Service HBaseMaster = commonServices[1];
+  public static final Service ZookeeperServer = commonServices[2];
+  public static final Service MySQLServer = commonServices[3];
+  public static final Service HiveMetastore = commonServices[4];
+  public static final Service HadoopYarnResourceManager = commonServices[5];
+  public static final Service HadoopYarnNodeManager = commonServices[6];
+  public static final Service HadoopHdfsDataNode = commonServices[7];
+  public static final Service HadoopHdfsNameNode = commonServices[8];
+
   public static final String baseDirectory = "/var/run/";
 
   private final File file;
