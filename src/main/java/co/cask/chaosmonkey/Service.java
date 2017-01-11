@@ -20,18 +20,18 @@ package co.cask.chaosmonkey;
  * TODO: procrastinate on documentation
  */
 public enum Service {
-  HBaseRegionServer("/hbase/hbase-hbase-regionserver.pid"),
-  HBaseMaster("/hbase/hbase-hbase-master.pid"),
-  ZookeeperServer("/zookeeper/zookeeper-server.pid"),
-  MySQLServer("/mysqld/mysqld.pid"),
-  HiveMetastore("/hive/hive-metastore.pid"),
-  HadoopYarnResourceManager("/hadoop/yarn/yarn-yarn-resourcemanager.pid"),
-  HadoopYarnNodeManager("/hadoop/yarn/yarn-yarn-nodemanager.pid"),
-  HadoopHdfsDataNode("/hadoop/hdfs/hadoop-hdfs-datanode.pid"),
-  HadoopHdfsNameNode("/hadoop/hdfs/hadoop-hdfs-namenode.pid");
+  HBaseRegionServer("hbase/hbase-hbase-regionserver.pid"),
+  HBaseMaster("hbase/hbase-hbase-master.pid"),
+  ZookeeperServer("zookeeper/zookeeper-server.pid"),
+  MySQLServer("mysqld/mysqld.pid"),
+  HiveMetastore("hive/hive-metastore.pid"),
+  HadoopYarnResourceManager("hadoop/yarn/yarn-yarn-resourcemanager.pid"),
+  HadoopYarnNodeManager("hadoop/yarn/yarn-yarn-nodemanager.pid"),
+  HadoopHdfsDataNode("hadoop/hdfs/hadoop-hdfs-datanode.pid"),
+  HadoopHdfsNameNode("hadoop/hdfs/hadoop-hdfs-namenode.pid");
 
   final String path;
-  final String baseDirectory = "/var/run";
+  final String baseDirectory = "/var/run/";
 
   Service(String path) {
     this.path = path;
