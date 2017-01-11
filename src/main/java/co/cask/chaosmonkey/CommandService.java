@@ -36,7 +36,7 @@ public class CommandService {
    * @throws IOException
    */
   public int killProcess(Service service) throws IOException {
-    signalProcess(9, service);
+    return signalProcess(9, service);
   }
 
   /**
@@ -46,7 +46,7 @@ public class CommandService {
    * @throws IOException
    */
   public int terminateProcess(Service service) throws IOException {
-    signalProcess(15, service);
+    return signalProcess(15, service);
   }
 
   private int signalProcess(int signal, Service service) throws IOException {
