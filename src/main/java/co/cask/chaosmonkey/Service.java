@@ -16,6 +16,8 @@
 
 package co.cask.chaosmonkey;
 
+import java.io.File;
+
 /**
  * TODO: procrastinate on documentation
  */
@@ -30,14 +32,15 @@ public enum Service {
   HadoopHdfsDataNode("hadoop/hdfs/hadoop-hdfs-datanode.pid"),
   HadoopHdfsNameNode("hadoop/hdfs/hadoop-hdfs-namenode.pid");
 
-  final String path;
-  final String baseDirectory = "/var/run/";
+  public static final String baseDirectory = "/var/run/";
+
+  private final File file;
 
   Service(String path) {
-    this.path = path;
+    this.file = new File(baseDirectory, path);
   }
 
-  public String getPath() {
-    return baseDirectory + path;
+  public File getFile() {
+    return this.file;
   }
 }

@@ -16,8 +16,11 @@
 
 package co.cask.chaosmonkey;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 /**
  * TODO: procrastinate on documentation
@@ -38,7 +41,7 @@ public class ProcessHandler {
   public ArrayList<Service> getRunningProcesses() throws IOException {
     ArrayList<Service> running = new ArrayList<>();
     for (Service service: Service.values()) {
-      if (getPID(service.getPath()) >= 0) {
+      if (getPIDFromFile(service.getFile()) >= 0) {
         running.add(service);
       }
     }
@@ -66,15 +69,16 @@ public class ProcessHandler {
   }
 
   private int signalProcess(int signal, Service service) throws IOException {
-    int pid = getPID(service.getPath());
+    int pid = getPIDFromFile(service.getFile());
     return (pid >= 0) ? signalProcessWithPID(signal, pid) : pid;
   }
 
-  private int getPID(String pathToPID) throws IOException {
-    // TODO: Refactor this to use File instead, maybe?
-    String command = String.format("cat %s", pathToPID);
-    ShellOutput output = shell.exec(command);
-    return (output.returnCode >= 0) ? Integer.parseInt(output.standardOutput) : -1;
+  private int getPIDFromFile(File file) throws IOException {
+    try (Scanner scanner = new Scanner(file)) {
+      return scanner.nextInt();
+    } catch (FileNotFoundException e) {
+      return -1;
+    }
   }
 
   private int signalProcessWithPID(int signal, int pid) throws IOException {
