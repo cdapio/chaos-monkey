@@ -37,7 +37,7 @@ public class ProcessHandlerTest {
 
   @Test
   public void testKillNonExistentPath() throws Exception {
-    Service service = new Service("dne/dne.pid");
+    Service service = new Service("dne", "dne/dne.pid");
     Assert.assertTrue(processHandler.killProcess(service) < 0);
   }
 }

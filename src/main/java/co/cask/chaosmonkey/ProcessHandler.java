@@ -40,7 +40,8 @@ public class ProcessHandler {
    */
   public ArrayList<Service> getRunningProcesses() throws IOException {
     ArrayList<Service> running = new ArrayList<>();
-    for (Service service: Service.commonServices) {
+    for (Service.ServiceName serviceName: Service.serviceMap.keySet()) {
+      Service service = Service.serviceMap.get(serviceName);
       if (getPIDFromFile(service.getFile()) >= 0) {
         running.add(service);
       }
