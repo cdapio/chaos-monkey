@@ -19,55 +19,70 @@ package co.cask.chaosmonkey;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * TODO: procrastinate on documentation
  */
 public class Service {
 
-  static {
-    String[] paths = {
-      "hbase/hbase-hbase-regionserver.pid",
-      "hbase/hbase-hbase-master.pid",
-      "zookeeper/zookeeper-server.pid",
-      "mysqld/mysqld.pid",
-      "hive/hive-metastore.pid",
-      "hadoop/yarn/yarn-yarn-resourcemanager.pid",
-      "hadoop/yarn/yarn-yarn-nodemanager.pid",
-      "hadoop/hdfs/hadoop-hdfs-datanode.pid",
-      "hadoop/hdfs/hadoop-hdfs-namenode.pid"
-    };
+  public enum ServiceName {
+    HBaseRegionServer("HBaseRegionServer"),
+    HBaseMaster("HBaseMaster"),
+    ZookeeperServer("ZookeeperServer"),
+    MySQLServer("MySQLServer"),
+    HiveMetastore("HiveMetastore"),
+    HadoopYarnResourceManager("HadoopYarnResourceManager"),
+    HadoopYarnNodeManager("HadoopYarnNodeManager"),
+    HadoopHdfsDataNode("HadoopHdfsDataNode"),
+    HadoopHdfsNameNode("HadoopHdfsNameNode");
 
-    Service[] services = new Service[paths.length];
+    public final String name;
 
-    for (int i = 0; i < paths.length; i++) {
-      services[i] = new Service(paths[i]);
+    ServiceName(String name) {
+      this.name = name;
     }
 
-    commonServices = services;
+    String getName() {
+      return this.name;
+    }
   }
 
-  public static final Service[] commonServices;
+  static {
+    ImmutableMap<String, String> pathMap = new ImmutableMap.Builder<String, String>()
+      .put(ServiceName.HBaseRegionServer.getName(), "hbase/hbase-hbase-regionserver.pid")
+      .put(ServiceName.HBaseMaster.getName(), "hbase/hbase-hbase-master.pid")
+      .put(ServiceName.ZookeeperServer.getName(), "zookeeper/zookeeper-server.pid")
+      .put(ServiceName.MySQLServer.getName(), "mysqld/mysqld.pid")
+      .put(ServiceName.HiveMetastore.getName(), "hive/hive-metastore.pid")
+      .put(ServiceName.HadoopYarnResourceManager.getName(), "hadoop/yarn/yarn-yarn-resourcemanager.pid")
+      .put(ServiceName.HadoopYarnNodeManager.getName(), "hadoop/yarn/yarn-yarn-nodemanager.pid")
+      .put(ServiceName.HadoopHdfsDataNode.getName(), "hadoop/hdfs/hadoop-hdfs-datanode.pid")
+      .put(ServiceName.HadoopHdfsNameNode.getName(), "hadoop/hdfs/hadoop-hdfs-namenode.pid")
+      .build();
 
-  public static final Service HBaseRegionServer = commonServices[0];
-  public static final Service HBaseMaster = commonServices[1];
-  public static final Service ZookeeperServer = commonServices[2];
-  public static final Service MySQLServer = commonServices[3];
-  public static final Service HiveMetastore = commonServices[4];
-  public static final Service HadoopYarnResourceManager = commonServices[5];
-  public static final Service HadoopYarnNodeManager = commonServices[6];
-  public static final Service HadoopHdfsDataNode = commonServices[7];
-  public static final Service HadoopHdfsNameNode = commonServices[8];
+    Map<ServiceName, Service> services = new HashMap<>();
+    for (ServiceName service: ServiceName.values()) {
+      services.put(service, new Service(service.getName(), pathMap.get(service.getName())));
+    }
+    serviceMap = ImmutableMap.copyOf(services);
+  }
 
-  public static final String baseDirectory = "/var/run/";
+  public static final ImmutableMap<ServiceName, Service> serviceMap;
+  private static final String baseDirectory = "/var/run/";
 
+  private final String name;
   private final File file;
 
-  public Service(String path) {
+  public Service(String name, String path) {
+    this.name = name;
     this.file = new File(baseDirectory, path);
   }
 
   public File getFile() {
     return this.file;
   }
+
+  public String getName() { return this.name; }
 }
