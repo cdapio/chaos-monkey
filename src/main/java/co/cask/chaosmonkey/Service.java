@@ -22,6 +22,7 @@ import java.io.File;
  * TODO: procrastinate on documentation
  */
 public enum Service {
+  // TODO: Refactor this such that it's not an enum? This allows extensibility if we want to handle other processes
   HBaseRegionServer("hbase/hbase-hbase-regionserver.pid"),
   HBaseMaster("hbase/hbase-hbase-master.pid"),
   ZookeeperServer("zookeeper/zookeeper-server.pid"),
