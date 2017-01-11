@@ -51,10 +51,7 @@ public class CommandService {
 
   private int signalProcess(int signal, Service service) throws IOException {
     int pid = getPID(service.getPath());
-    if (pid == -1) {
-      throw new IOException("Process ID not found");
-    }
-    return signalProcessWithPID(signal, pid);
+    return (pid >= 0) ? signalProcessWithPID(signal, pid) : pid;
   }
 
   private int getPID(String pathToPID) throws IOException {
