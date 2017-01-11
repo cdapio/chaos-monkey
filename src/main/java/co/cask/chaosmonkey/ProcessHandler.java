@@ -38,7 +38,7 @@ public class ProcessHandler {
   public ArrayList<Service> getRunningProcesses() throws IOException {
     ArrayList<Service> running = new ArrayList<>();
     for (Service service: Service.values()) {
-      if (getPID(service.getPath()) != -1) {
+      if (getPID(service.getPath()) >= 0) {
         running.add(service);
       }
     }
@@ -74,7 +74,7 @@ public class ProcessHandler {
     // TODO: Refactor this to use File instead, maybe?
     String command = String.format("cat %s", pathToPID);
     ShellOutput output = shell.exec(command);
-    return (output.returnCode == 0) ? Integer.parseInt(output.standardOutput) : -1;
+    return (output.returnCode >= 0) ? Integer.parseInt(output.standardOutput) : -1;
   }
 
   private int signalProcessWithPID(int signal, int pid) throws IOException {
