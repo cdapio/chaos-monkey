@@ -21,11 +21,11 @@ import java.io.IOException;
 /**
  * TODO: procrastinate on documentation
  */
-public class CommandService {
+public class ProcessHandler {
 
   private static Shell shell;
 
-  public CommandService(Shell shell) {
+  public ProcessHandler(Shell shell) {
     this.shell = shell;
   }
 
