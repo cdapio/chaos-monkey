@@ -22,11 +22,11 @@ import java.util.ArrayList;
 /**
  * TODO: procrastinate on documentation
  */
-public class CommandService {
+public class ProcessHandler {
 
   private static Shell shell;
 
-  public CommandService(Shell shell) {
+  public ProcessHandler(Shell shell) {
     this.shell = shell;
   }
 
@@ -52,11 +52,7 @@ public class CommandService {
    * @throws IOException
    */
   public int killProcess(Service service) throws IOException {
-    int pid = getPID(service.getPath());
-    if (pid == -1) {
-      throw new IOException("Process ID not found");
-    }
-    return signalProcess(9, pid);
+    return signalProcess(9, service);
   }
 
   /**
@@ -66,23 +62,22 @@ public class CommandService {
    * @throws IOException
    */
   public int terminateProcess(Service service) throws IOException {
+    return signalProcess(15, service);
+  }
+
+  private int signalProcess(int signal, Service service) throws IOException {
     int pid = getPID(service.getPath());
-    if (pid == -1) {
-      throw new IOException("Process ID not found");
-    }
-    return signalProcess(15, pid);
+    return (pid >= 0) ? signalProcessWithPID(signal, pid) : pid;
   }
 
   private int getPID(String pathToPID) throws IOException {
+    // TODO: Refactor this to use File instead, maybe?
     String command = String.format("cat %s", pathToPID);
     ShellOutput output = shell.exec(command);
-    if (output.returnCode == 0) {
-      return Integer.parseInt(output.standardOutput);
-    }
-    return -1;
+    return (output.returnCode == 0) ? Integer.parseInt(output.standardOutput) : -1;
   }
 
-  private int signalProcess(int signal, int pid) throws IOException {
+  private int signalProcessWithPID(int signal, int pid) throws IOException {
     String command = String.format("kill -%d %d", signal, pid);
     ShellOutput output = shell.exec(command);
     return output.returnCode;
