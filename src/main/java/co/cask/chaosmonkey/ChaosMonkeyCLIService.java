@@ -43,11 +43,11 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
     this.commandService = new CommandService(shell);
   }
 
-  public ChaosMonkeyCLIService(String[] processes, double termFactor, double killFactor, int executionPeriod) {
+  public ChaosMonkeyCLIService(Service[] processes, double termFactor, double killFactor, int executionPeriod) {
     this(processes, termFactor, killFactor, executionPeriod, new Shell());
   }
 
-  public ChaosMonkeyCLIService(String[] processes, double termFactor, double killFactor) {
+  public ChaosMonkeyCLIService(Service[] processes, double termFactor, double killFactor) {
     this(processes, termFactor, killFactor, 1);
   }
 
