@@ -37,7 +37,7 @@ public class ProcessHandlerTest {
   @Test
   public void testKillNonExistentPath() {
     try {
-      processHandler.killProcess(Service.HBaseMaster);
+      processHandler.killProcess(Service.commonServices.get("HBaseMaster"));
       Assert.fail();
     } catch (Exception e) {
       Assert.assertEquals(e.getMessage(), "Process ID not found");
