@@ -17,6 +17,7 @@
 package co.cask.chaosmonkey;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * TODO: procrastinate on documentation
@@ -27,6 +28,21 @@ public class CommandService {
 
   public CommandService(Shell shell) {
     this.shell = shell;
+  }
+
+  /**
+   * Finds currently running processes
+   * @return ArrayList of running processes
+   * @throws IOException
+   */
+  public ArrayList<Service> getRunningProcesses() throws IOException {
+    ArrayList<Service> running = new ArrayList<>();
+    for (Service service: Service.values()) {
+      if (getPID(service.getPath()) != -1) {
+        running.add(service);
+      }
+    }
+    return running;
   }
 
   /**
