@@ -21,23 +21,35 @@ import java.io.File;
 /**
  * TODO: procrastinate on documentation
  */
-public enum Service {
-  // TODO: Refactor this such that it's not an enum? This allows extensibility if we want to handle other processes
-  HBaseRegionServer("hbase/hbase-hbase-regionserver.pid"),
-  HBaseMaster("hbase/hbase-hbase-master.pid"),
-  ZookeeperServer("zookeeper/zookeeper-server.pid"),
-  MySQLServer("mysqld/mysqld.pid"),
-  HiveMetastore("hive/hive-metastore.pid"),
-  HadoopYarnResourceManager("hadoop/yarn/yarn-yarn-resourcemanager.pid"),
-  HadoopYarnNodeManager("hadoop/yarn/yarn-yarn-nodemanager.pid"),
-  HadoopHdfsDataNode("hadoop/hdfs/hadoop-hdfs-datanode.pid"),
-  HadoopHdfsNameNode("hadoop/hdfs/hadoop-hdfs-namenode.pid");
+public class Service {
 
+  static {
+    String[] paths = {
+      "hbase/hbase-hbase-regionserver.pid",
+      "hbase/hbase-hbase-master.pid",
+      "zookeeper/zookeeper-server.pid",
+      "mysqld/mysqld.pid",
+      "hive/hive-metastore.pid",
+      "hadoop/yarn/yarn-yarn-resourcemanager.pid",
+      "hadoop/yarn/yarn-yarn-nodemanager.pid",
+      "hadoop/hdfs/hadoop-hdfs-datanode.pid",
+      "hadoop/hdfs/hadoop-hdfs-namenode.pid"
+    };
+
+    Service[] services = new Service[paths.length];
+    for (int i = 0; i < paths.length; i++) {
+      services[i] = new Service(paths[i]);
+    }
+
+    commonServices = services;
+  }
+
+  public static final Service[] commonServices;
   public static final String baseDirectory = "/var/run/";
 
   private final File file;
 
-  Service(String path) {
+  public Service(String path) {
     this.file = new File(baseDirectory, path);
   }
 
