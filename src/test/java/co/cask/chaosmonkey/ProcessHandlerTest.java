@@ -18,7 +18,9 @@ package co.cask.chaosmonkey;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 /**
  * TODO: procrastinate on documentation
@@ -33,14 +35,9 @@ public class ProcessHandlerTest {
     processHandler = new ProcessHandler(shell);
   }
 
-  // TODO: This test currently works because HBase isn't running, but we would need a different test in the future
   @Test
-  public void testKillNonExistentPath() {
-    try {
-      processHandler.killProcess(Service.commonServices.get("HBaseMaster"));
-      Assert.fail();
-    } catch (Exception e) {
-      Assert.assertEquals(e.getMessage(), "Process ID not found");
-    }
+  public void testKillNonExistentPath() throws Exception {
+    Service service = new Service("dne/dne.pid");
+    Assert.assertTrue(processHandler.killProcess(service) < 0);
   }
 }
