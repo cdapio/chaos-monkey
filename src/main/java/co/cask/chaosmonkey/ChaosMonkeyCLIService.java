@@ -17,6 +17,7 @@
 package co.cask.chaosmonkey;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
+import org.apache.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
 
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
  * TODO: Fill out this description
  */
 public class ChaosMonkeyCLIService extends AbstractScheduledService {
+  private static final Logger LOGGER =Logger.getLogger(ChaosMonkeyCLIService.class);
 
   private Service[] processes;
   private double termFactor;
@@ -54,10 +56,15 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
   @Override
   protected void runOneIteration() throws Exception {
     for (Service process : processes) {
-      double random = Math.random();// insecure but we don't need to worry about secure random numbers
-      if (random < killFactor) {
+      double randomActionNumber = Math.random();// insecure but we don't need to worry about secure random numbers
+      LOGGER.debug("randomActionNumber generated: " + randomActionNumber);
+      if (randomActionNumber < killFactor) {
+        // TODO: don't know if info is the right level for this
+        LOGGER.info("Killing service: " + process.getName());
         processHandler.killProcess(process);
-      } else if (random < termFactor) {
+      } else if (randomActionNumber < termFactor) {
+        // TODO: don't know if info is the right level for this
+        LOGGER.info("Killing service: " + process.getName());
         processHandler.terminateProcess(process);
       }
     }

@@ -22,10 +22,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import org.apache.log4j.Logger;
+
 /**
  * TODO: procrastinate on documentation
  */
 public class ProcessHandler {
+  private static final Logger LOGGER = Logger.getLogger(ProcessHandler.class);
 
   private static Shell shell;
 
@@ -78,6 +81,7 @@ public class ProcessHandler {
     try (Scanner scanner = new Scanner(file)) {
       return scanner.nextInt();
     } catch (FileNotFoundException e) {
+      LOGGER.warn("Unable to get process ID: " + file.getAbsolutePath() + " does not exist");
       return -1;
     }
   }
