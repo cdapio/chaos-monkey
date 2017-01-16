@@ -23,6 +23,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
@@ -30,6 +32,7 @@ import java.util.Set;
  * Main CLI frontend for ChaosMonkey.
  */
 public class ChaosMonkeyCLI {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyCLI.class);
 
   static {
     Options options = new Options();
