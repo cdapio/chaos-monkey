@@ -16,13 +16,8 @@
 
 package co.cask.chaosmonkey;
 
+import co.cask.chaosmonkey.conf.Configuration;
 import com.google.common.util.concurrent.Service;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,36 +28,6 @@ import java.util.Set;
  */
 public class ChaosMonkeyCLI {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyCLI.class);
-
-  static {
-    Options options = new Options();
-
-    Option[] optionArray = new Option[] {
-      Option.builder("p")
-        .argName("period")
-        .desc("attempts to kill every given number of seconds")
-        .longOpt("period")
-        .numberOfArgs(1)
-        .valueSeparator(' ')
-        .build(),
-      Option.builder("s")
-        .argName("shell")
-        .desc("execute with the given shell values where %s is overwritten (one argument per shell value)")
-        .longOpt("shell")
-        .numberOfArgs(1)
-        .valueSeparator(' ')
-        .build(),
-    };
-
-    for (Option option : optionArray) {
-      options.addOption(option);
-    }
-
-    cliOptions = options;
-  }
-
-  private static final Options cliOptions;
-  private static final int REQUIRED_ARGUMENTS = 2;
 
   /**
    * This class should not be able to be instantiated.
@@ -99,13 +64,11 @@ public class ChaosMonkeyCLI {
   private static void printHelp(String runName) {
     runName = "  " + runName;
     String usage = "\n" +
-      runName + " start [options] <termFrequency> <killFrequency> [<PID paths>...]\n" +
+      runName + " start\n" +
       runName + " stop\n" +
       runName + " status\n" +
-      runName + " help\n" +
-      "\n" +
-      "Options:\n";
-    new HelpFormatter().printHelp(usage, cliOptions);
+      runName + " help\n";
+    System.out.println(usage);
   }
 
   /**
@@ -117,61 +80,32 @@ public class ChaosMonkeyCLI {
 
   public static void main(String[] args) throws Exception {
     try {
-      if (args.length == 0) {
-        throw new ParseException("You must specify a command");
-      } else if (args[0].equals("help")) {
+      Configuration conf = new Configuration();
+      conf.addResource("chaos-monkey-defaults.xml");
+      conf.addResource("chaos-monkey-config.xml");
+
+      double termFreq = Double.parseDouble(conf.get("termFreq"));
+      double killFreq = Double.parseDouble(conf.get("killFreq"));
+      int period = Integer.parseInt(conf.get("period"));
+
+      // TODO: fix this eventually
+      if (args.length != 0 && args[0].equals("help")) {
         if (args.length >= 2) {
           printHelp(args[1]);
         } else {
           printHelp();
         }
         return;
+      } else if (args.length != 0) {
+        LOGGER.warn("No longer need extra arguments. Configure Chaos Monkey using chaos-monkey-config.xml");
       }
 
-      CommandLine cl = new DefaultParser().parse(cliOptions, args);
-      String[] leftovers = cl.getArgs();
+      Set<Process> processList = ProcessHandler.getRunningProcesses();
+      Process[] processes = processList.toArray(new Process[processList.size()]);
 
-      if (leftovers.length < REQUIRED_ARGUMENTS) {
-        throw new ParseException("Not enough arguments");
-      }
-
-      Process[] processes;
-      if (leftovers.length == REQUIRED_ARGUMENTS) {
-        Set<Process> processList = ProcessHandler.getRunningProcesses();
-        processes = processList.toArray(new Process[processList.size()]);
-      } else {
-        processes = new Process[leftovers.length - REQUIRED_ARGUMENTS];
-        for (int i = 0; i < leftovers.length - REQUIRED_ARGUMENTS; i++) {
-          processes[i] = new Process(leftovers[i + REQUIRED_ARGUMENTS]);
-        }
-      }
-
-      double termFreq = Double.parseDouble(leftovers[0]);
-      double killFreq = Double.parseDouble(leftovers[1]);
-      int period = Integer.parseInt(cl.getOptionValue("period", "1"));
-
-      Shell shell;
-      if (cl.hasOption("shell")) {
-        int overwriteIndex = -1;
-        String[] shellArgs = cl.getOptionValues("shell");
-        for (int i = 0; i < shellArgs.length; i++) {
-          if (shellArgs[i].equals("%s")) {
-            shellArgs[i] = null;
-            overwriteIndex = i;
-            break;
-          }
-        }
-        shell = new Shell(shellArgs, overwriteIndex);
-      } else {
-        shell = new Shell();
-      }
-
-      startChaosMonkey(processes, termFreq, killFreq, period, shell);
+      startChaosMonkey(processes, termFreq, killFreq, period, new Shell());
     } catch (ArrayIndexOutOfBoundsException e) {
       System.out.println("You must specify a command");
-      printHelp();
-    } catch (ParseException e) {
-      System.out.println(e.getMessage());
       printHelp();
     }
   }

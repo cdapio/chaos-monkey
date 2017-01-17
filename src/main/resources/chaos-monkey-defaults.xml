@@ -26,4 +26,16 @@
     <name>test.name</name>
     <value>testValue</value>
   </property>
+  <property>
+    <name>termFreq</name>
+    <value>0.2</value>
+  </property>
+  <property>
+    <name>killFreq</name>
+    <value>0.1</value>
+  </property>
+  <property>
+    <name>period</name>
+    <value>1</value>
+  </property>
 </configuration>
