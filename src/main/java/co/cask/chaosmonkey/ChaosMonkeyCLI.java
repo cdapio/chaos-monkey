@@ -21,6 +21,8 @@ import com.google.common.util.concurrent.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -28,6 +30,7 @@ import java.util.Set;
  */
 public class ChaosMonkeyCLI {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyCLI.class);
+  private static Set<Service> services = new HashSet<>();
 
   /**
    * This class should not be able to be instantiated.
@@ -38,20 +41,24 @@ public class ChaosMonkeyCLI {
    * Starts the ChaosMonkeyCLI service with the following parameters.
    *
    * @param processes The processes which will be managed
-   * @param termFactor The probability that a process will be terminated for each execution cycle
-   * @param killFactor The probability that a process will be killed for each execution cycle
-   * @param executionPeriod The period (in seconds) between sucessive execution cycles.
    * @param shell The shell to use to run the commands
    * @throws IllegalStateException Thrown if service does not enter a running state after starting
    */
   private static void startChaosMonkey(Process[] processes,
-                                       double termFactor,
-                                       double killFactor,
-                                       int executionPeriod,
                                        Shell shell) throws IllegalStateException {
-    Service service = new ChaosMonkeyCLIService(processes, termFactor, killFactor, executionPeriod, shell).startAsync();
-    service.awaitRunning();
-    if (!service.isRunning()) {
+    for (Process process : processes) {
+      Service service = new ChaosMonkeyCLIService(process,
+                                                  process.getStopProbability(),
+                                                  process.getKillProbability(),
+                                                  process.getInterval(),
+                                                  shell).startAsync();
+      service.awaitRunning();
+      if (service.isRunning()) {
+        services.add(service);
+      }
+    }
+
+    if (services.size() == 0) {
       throw new IllegalStateException("Unable to start!");
     }
   }
@@ -80,15 +87,6 @@ public class ChaosMonkeyCLI {
 
   public static void main(String[] args) throws Exception {
     try {
-      Configuration conf = new Configuration();
-      conf.addResource("chaos-monkey-defaults.xml");
-      conf.addResource("chaos-monkey-config.xml");
-
-      double termFreq = Double.parseDouble(conf.get("termFreq"));
-      double killFreq = Double.parseDouble(conf.get("killFreq"));
-      int period = Integer.parseInt(conf.get("period"));
-
-      // TODO: fix this eventually
       if (args.length != 0 && args[0].equals("help")) {
         if (args.length >= 2) {
           printHelp(args[1]);
@@ -100,10 +98,51 @@ public class ChaosMonkeyCLI {
         LOGGER.warn("No longer need extra arguments. Configure Chaos Monkey using chaos-monkey-config.xml");
       }
 
-      Set<Process> processList = ProcessHandler.getRunningProcesses();
-      Process[] processes = processList.toArray(new Process[processList.size()]);
+      Configuration conf = new Configuration();
+      conf.addResource("chaos-monkey-defaults.xml");
+      conf.addResource("chaos-monkey-config.xml");
 
-      startChaosMonkey(processes, termFreq, killFreq, period, new Shell());
+      Set<Process> processList = new HashSet<>();
+      Field[] fields = Constants.Process.class.getFields();
+      System.out.println(fields.length);
+      for (Field field : fields) {
+        field.setAccessible(true);
+        String processName = (String) field.get(null);
+
+        int interval;
+        double killProbability = 0;
+        double stopProbability = 0;
+
+        if (conf.get(processName + ".interval") == null) {
+          LOGGER.info(processName + " interval not specified. Chaos monkey will spare this process.");
+          continue;
+        }
+        interval = Integer.parseInt(conf.get(processName + ".interval"));
+
+        if (conf.get(processName + ".killProbability") != null) {
+          killProbability = Double.parseDouble(conf.get(processName + ".killProbability"));
+        }
+        if (conf.get(processName + ".stopProbability") != null) {
+          stopProbability = Double.parseDouble(conf.get(processName + ".stopProbability"));
+        }
+
+        if (killProbability == 0 && stopProbability == 0) {
+          LOGGER.info(processName + " stop/kill probability not specified. Chaos monkey will spare this process.");
+          continue;
+        }
+        Process process = Process.PROCESS_MAP.get(processName);
+        process.setInterval(interval);
+        process.setStopProbability(stopProbability);
+        process.setKillProbability(killProbability);
+
+        processList.add(process);
+      }
+      if (processList.isEmpty()) {
+        throw new IllegalStateException("No process specified in configs");
+      }
+
+      Process[] processes = processList.toArray(new Process[processList.size()]);
+      startChaosMonkey(processes, new Shell());
     } catch (ArrayIndexOutOfBoundsException e) {
       System.out.println("You must specify a command");
       printHelp();

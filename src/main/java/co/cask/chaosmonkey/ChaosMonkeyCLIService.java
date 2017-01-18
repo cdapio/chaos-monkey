@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 public class ChaosMonkeyCLIService extends AbstractScheduledService {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyCLIService.class);
 
-  private Process[] processes;
+  private Process process;
   private double termFactor;
   private double killFactor;
   private int executionPeriod;
@@ -36,18 +36,18 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
 
   /**
    *
-   * @param processes The list of processes that will be managed
+   * @param process The processes that will be managed
    * @param termFactor The probability that a process will be terminated on each execution cycle
    * @param killFactor The probability that a process will be killed on each execution cycle
    * @param executionPeriod The rate of execution cycles (in seconds)
    * @param shell The shell which will be used to issue commands
    */
-  public ChaosMonkeyCLIService(Process[] processes,
+  public ChaosMonkeyCLIService(Process process,
                                double termFactor,
                                double killFactor,
                                int executionPeriod,
                                Shell shell) {
-    this.processes = processes;
+    this.process = process;
     this.termFactor = termFactor;
     this.killFactor = killFactor;
     this.executionPeriod = executionPeriod;
@@ -56,12 +56,10 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
 
   @Override
   protected void runOneIteration() throws Exception {
-    for (Process process : processes) {
-      if (Math.random() < killFactor) {
-        processHandler.killProcess(process);
-      } else if (Math.random() < termFactor) {
-        processHandler.terminateProcess(process);
-      }
+    if (Math.random() < killFactor) {
+      processHandler.killProcess(process);
+    } else if (Math.random() < termFactor) {
+      processHandler.stopProcess(process);
     }
   }
 

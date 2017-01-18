@@ -19,23 +19,11 @@
 
 <configuration>
   <property>
-    <name>test.ip</name>
-    <value>hdfsS://10.128.0.15</value>
+    <name>hbase-regionserver.interval</name>
+    <value>3</value>
   </property>
   <property>
-    <name>test.name</name>
-    <value>testValue</value>
-  </property>
-  <property>
-    <name>termFreq</name>
-    <value>0.2</value>
-  </property>
-  <property>
-    <name>killFreq</name>
-    <value>0.1</value>
-  </property>
-  <property>
-    <name>period</name>
-    <value>1</value>
+    <name>hbase-regionserver.killProbability</name>
+    <value>0.3</value>
   </property>
 </configuration>

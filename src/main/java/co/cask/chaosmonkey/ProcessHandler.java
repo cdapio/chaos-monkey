@@ -66,20 +66,20 @@ public class ProcessHandler {
   }
 
   /**
-   * Finds the process ID of a process and then terminate it
-   * @param process The process to terminate
+   * Finds the process ID of a process and then stop it
+   * @param process The process to stop
    * @return Exit code
    * @throws IOException
    */
-  public int terminateProcess(Process process) throws IOException {
-    LOGGER.info("Terminating process: " + process.getName());
+  public int stopProcess(Process process) throws IOException {
+    LOGGER.info("Stopping process: " + process.getName());
     return signalProcess(15, process);
   }
 
   /**
    * Finds the process ID of a process and then signal it with given value
    * @param signal  The UNIX signal to send to process
-   * @param process The process to terminate
+   * @param process The process to signal
    * @return Exit code
    * @throws IOException
    */
