@@ -24,6 +24,10 @@
   </property>
   <property>
     <name>hbase-regionserver.killProbability</name>
-    <value>0.3</value>
+    <value>0</value>
+  </property>
+  <property>
+    <name>hbase-regionserver.stopProbability</name>
+    <value>0</value>
   </property>
 </configuration>

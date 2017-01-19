@@ -40,17 +40,17 @@ public class ChaosMonkeyCLI {
   /**
    * Starts the ChaosMonkeyCLI service with the following parameters.
    *
-   * @param processes The processes which will be managed
+   * @param processRules The processes which will be managed
    * @param shell The shell to use to run the commands
    * @throws IllegalStateException Thrown if service does not enter a running state after starting
    */
-  private static void startChaosMonkey(Process[] processes,
+  private static void startChaosMonkey(ProcessRule[] processRules,
                                        Shell shell) throws IllegalStateException {
-    for (Process process : processes) {
-      Service service = new ChaosMonkeyCLIService(process,
-                                                  process.getStopProbability(),
-                                                  process.getKillProbability(),
-                                                  process.getInterval(),
+    for (ProcessRule processRule : processRules) {
+      Service service = new ChaosMonkeyCLIService(processRule.getProcess(),
+                                                  processRule.getStopProbability(),
+                                                  processRule.getKillProbability(),
+                                                  processRule.getInterval(),
                                                   shell).startAsync();
       service.awaitRunning();
       if (service.isRunning()) {
@@ -99,12 +99,11 @@ public class ChaosMonkeyCLI {
       }
 
       Configuration conf = new Configuration();
-      conf.addResource("chaos-monkey-defaults.xml");
+      conf.addResource("chaos-monkey-default.xml");
       conf.addResource("chaos-monkey-config.xml");
 
-      Set<Process> processList = new HashSet<>();
+      Set<ProcessRule> processList = new HashSet<>();
       Field[] fields = Constants.Process.class.getFields();
-      System.out.println(fields.length);
       for (Field field : fields) {
         field.setAccessible(true);
         String processName = (String) field.get(null);
@@ -131,17 +130,15 @@ public class ChaosMonkeyCLI {
           continue;
         }
         Process process = Process.PROCESS_MAP.get(processName);
-        process.setInterval(interval);
-        process.setStopProbability(stopProbability);
-        process.setKillProbability(killProbability);
+        ProcessRule processRule = new ProcessRule(process, killProbability, stopProbability, 0, interval);
 
-        processList.add(process);
+        processList.add(processRule);
       }
       if (processList.isEmpty()) {
         throw new IllegalStateException("No process specified in configs");
       }
 
-      Process[] processes = processList.toArray(new Process[processList.size()]);
+      ProcessRule[] processes = processList.toArray(new ProcessRule[processList.size()]);
       startChaosMonkey(processes, new Shell());
     } catch (ArrayIndexOutOfBoundsException e) {
       System.out.println("You must specify a command");

@@ -54,10 +54,6 @@ public class Process {
 
   private final String name;
   private final File file;
-  private int interval;
-  private double killProbability;
-  private double stopProbability;
-  private double restartProbability;
 
   /**
    * Creates a new process object with given name and path to PID file
@@ -122,69 +118,5 @@ public class Process {
   public int signal(int signal) throws IOException {
     ProcessHandler handler = new ProcessHandler(new Shell());
     return handler.signalProcess(signal, this);
-  }
-
-  /**
-   * Get the interval value between each execution cycle
-   * @return Interval value between each execution cycle
-   */
-  public int getInterval() {
-    return this.interval;
-  }
-
-  /**
-   * Set the interval value between each execution cycle
-   * @param interval  Value between each execution cycle
-   */
-  public void setInterval(int interval) {
-    this.interval = interval;
-  }
-
-  /**
-   * Get the probability of killing this process each execution cycle. Value ranges from 0 to 1
-   * @return probability of killing this process
-   */
-  public double getKillProbability() {
-    return this.killProbability;
-  }
-
-  /**
-   * Set the probability of killing this process each execution cycle. Value ranges from 0 to 1
-   * @param killProbability probability of killing this process
-   */
-  public void setKillProbability(double killProbability) {
-    this.killProbability = killProbability;
-  }
-
-  /**
-   * Get the probability of stopping this process each execution cycle. Value ranges from 0 to 1
-   * @return probability of stopping this process
-   */
-  public double getStopProbability() {
-    return stopProbability;
-  }
-
-  /**
-   * Set the probability of stopping this process each execution cycle. Value ranges from 0 to 1
-   * @param stopProbability probability of stopping this process
-   */
-  public void setStopProbability(double stopProbability) {
-    this.stopProbability = stopProbability;
-  }
-
-  /**
-   * Get the probability of restarting this process each execution cycle. Value ranges from 0 to 1.
-   * @return probability of restarting this process
-   */
-  public double getRestartProbability() {
-    return restartProbability;
-  }
-
-  /**
-   * Set the probability of restarting this process each execution cycle. Value ranges from 0 to 1
-   * @param restartProbability probability of restarting this process
-   */
-  public void setRestartProbability(double restartProbability) {
-    this.restartProbability = restartProbability;
   }
 }
