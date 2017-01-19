@@ -100,13 +100,13 @@ public class Process {
   }
 
   /**
-   * Terminates this process
+   * Stops this process
    * @return Exit code
    * @throws IOException
    */
-  public int terminate() throws IOException {
+  public int stop() throws IOException {
     ProcessHandler handler = new ProcessHandler(new Shell());
-    return handler.terminateProcess(this);
+    return handler.stopProcess(this);
   }
 
   /**

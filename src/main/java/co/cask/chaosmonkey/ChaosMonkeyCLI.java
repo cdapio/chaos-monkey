@@ -16,50 +16,21 @@
 
 package co.cask.chaosmonkey;
 
+import co.cask.chaosmonkey.conf.Configuration;
 import com.google.common.util.concurrent.Service;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Main CLI frontend for ChaosMonkey.
  */
 public class ChaosMonkeyCLI {
-
-  static {
-    Options options = new Options();
-
-    Option[] optionArray = new Option[] {
-      Option.builder("p")
-        .argName("period")
-        .desc("attempts to kill every given number of seconds")
-        .longOpt("period")
-        .numberOfArgs(1)
-        .valueSeparator(' ')
-        .build(),
-      Option.builder("s")
-        .argName("shell")
-        .desc("execute with the given shell values where %s is overwritten (one argument per shell value)")
-        .longOpt("shell")
-        .numberOfArgs(1)
-        .valueSeparator(' ')
-        .build(),
-    };
-
-    for (Option option : optionArray) {
-      options.addOption(option);
-    }
-
-    cliOptions = options;
-  }
-
-  private static final Options cliOptions;
-  private static final int REQUIRED_ARGUMENTS = 2;
+  private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyCLI.class);
+  private static Set<Service> services = new HashSet<>();
 
   /**
    * This class should not be able to be instantiated.
@@ -69,21 +40,25 @@ public class ChaosMonkeyCLI {
   /**
    * Starts the ChaosMonkeyCLI service with the following parameters.
    *
-   * @param processes The processes which will be managed
-   * @param termFactor The probability that a process will be terminated for each execution cycle
-   * @param killFactor The probability that a process will be killed for each execution cycle
-   * @param executionPeriod The period (in seconds) between sucessive execution cycles.
+   * @param processRules The processes which will be managed
    * @param shell The shell to use to run the commands
    * @throws IllegalStateException Thrown if service does not enter a running state after starting
    */
-  private static void startChaosMonkey(Process[] processes,
-                                       double termFactor,
-                                       double killFactor,
-                                       int executionPeriod,
+  private static void startChaosMonkey(ProcessRule[] processRules,
                                        Shell shell) throws IllegalStateException {
-    Service service = new ChaosMonkeyCLIService(processes, termFactor, killFactor, executionPeriod, shell).startAsync();
-    service.awaitRunning();
-    if (!service.isRunning()) {
+    for (ProcessRule processRule : processRules) {
+      Service service = new ChaosMonkeyCLIService(processRule.getProcess(),
+                                                  processRule.getStopProbability(),
+                                                  processRule.getKillProbability(),
+                                                  processRule.getInterval(),
+                                                  shell).startAsync();
+      service.awaitRunning();
+      if (service.isRunning()) {
+        services.add(service);
+      }
+    }
+
+    if (services.size() == 0) {
       throw new IllegalStateException("Unable to start!");
     }
   }
@@ -96,13 +71,11 @@ public class ChaosMonkeyCLI {
   private static void printHelp(String runName) {
     runName = "  " + runName;
     String usage = "\n" +
-      runName + " start [options] <termFrequency> <killFrequency> [<PID paths>...]\n" +
+      runName + " start\n" +
       runName + " stop\n" +
       runName + " status\n" +
-      runName + " help\n" +
-      "\n" +
-      "Options:\n";
-    new HelpFormatter().printHelp(usage, cliOptions);
+      runName + " help\n";
+    System.out.println(usage);
   }
 
   /**
@@ -114,61 +87,61 @@ public class ChaosMonkeyCLI {
 
   public static void main(String[] args) throws Exception {
     try {
-      if (args.length == 0) {
-        throw new ParseException("You must specify a command");
-      } else if (args[0].equals("help")) {
+      if (args.length != 0 && args[0].equals("help")) {
         if (args.length >= 2) {
           printHelp(args[1]);
         } else {
           printHelp();
         }
         return;
+      } else if (args.length != 0) {
+        LOGGER.warn("No longer need extra arguments. Configure Chaos Monkey using chaos-monkey-config.xml");
       }
 
-      CommandLine cl = new DefaultParser().parse(cliOptions, args);
-      String[] leftovers = cl.getArgs();
+      Configuration conf = new Configuration();
+      conf.addResource("chaos-monkey-default.xml");
+      conf.addResource("chaos-monkey-site.xml");
 
-      if (leftovers.length < REQUIRED_ARGUMENTS) {
-        throw new ParseException("Not enough arguments");
-      }
+      Set<ProcessRule> processList = new HashSet<>();
+      Field[] fields = Constants.Process.class.getFields();
+      for (Field field : fields) {
+        field.setAccessible(true);
+        String processName = (String) field.get(null);
 
-      Process[] processes;
-      if (leftovers.length == REQUIRED_ARGUMENTS) {
-        Set<Process> processList = ProcessHandler.getRunningProcesses();
-        processes = processList.toArray(new Process[processList.size()]);
-      } else {
-        processes = new Process[leftovers.length - REQUIRED_ARGUMENTS];
-        for (int i = 0; i < leftovers.length - REQUIRED_ARGUMENTS; i++) {
-          processes[i] = new Process(leftovers[i + REQUIRED_ARGUMENTS]);
+        int interval;
+        double killProbability = 0;
+        double stopProbability = 0;
+
+        if (conf.get(processName + ".interval") == null) {
+          LOGGER.info(processName + " interval not specified. Chaos monkey will spare this process.");
+          continue;
         }
-      }
+        interval = Integer.parseInt(conf.get(processName + ".interval"));
 
-      double termFreq = Double.parseDouble(leftovers[0]);
-      double killFreq = Double.parseDouble(leftovers[1]);
-      int period = Integer.parseInt(cl.getOptionValue("period", "1"));
-
-      Shell shell;
-      if (cl.hasOption("shell")) {
-        int overwriteIndex = -1;
-        String[] shellArgs = cl.getOptionValues("shell");
-        for (int i = 0; i < shellArgs.length; i++) {
-          if (shellArgs[i].equals("%s")) {
-            shellArgs[i] = null;
-            overwriteIndex = i;
-            break;
-          }
+        if (conf.get(processName + ".killProbability") != null) {
+          killProbability = Double.parseDouble(conf.get(processName + ".killProbability"));
         }
-        shell = new Shell(shellArgs, overwriteIndex);
-      } else {
-        shell = new Shell();
+        if (conf.get(processName + ".stopProbability") != null) {
+          stopProbability = Double.parseDouble(conf.get(processName + ".stopProbability"));
+        }
+
+        if (killProbability == 0 && stopProbability == 0) {
+          LOGGER.info(processName + " stop/kill probability not specified. Chaos monkey will spare this process.");
+          continue;
+        }
+        Process process = Process.PROCESS_MAP.get(processName);
+        ProcessRule processRule = new ProcessRule(process, killProbability, stopProbability, 0, interval);
+
+        processList.add(processRule);
+      }
+      if (processList.isEmpty()) {
+        throw new IllegalStateException("No process specified in configs");
       }
 
-      startChaosMonkey(processes, termFreq, killFreq, period, shell);
+      ProcessRule[] processes = processList.toArray(new ProcessRule[processList.size()]);
+      startChaosMonkey(processes, new Shell());
     } catch (ArrayIndexOutOfBoundsException e) {
       System.out.println("You must specify a command");
-      printHelp();
-    } catch (ParseException e) {
-      System.out.println(e.getMessage());
       printHelp();
     }
   }
