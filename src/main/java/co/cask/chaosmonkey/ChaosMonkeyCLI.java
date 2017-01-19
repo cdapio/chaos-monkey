@@ -100,7 +100,7 @@ public class ChaosMonkeyCLI {
 
       Configuration conf = new Configuration();
       conf.addResource("chaos-monkey-default.xml");
-      conf.addResource("chaos-monkey-config.xml");
+      conf.addResource("chaos-monkey-site.xml");
 
       Set<ProcessRule> processList = new HashSet<>();
       Field[] fields = Constants.Process.class.getFields();
