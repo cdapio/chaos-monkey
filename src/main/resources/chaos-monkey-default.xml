@@ -30,4 +30,8 @@
     <name>hbase-regionserver.stopProbability</name>
     <value>0</value>
   </property>
+  <property>
+    <name>hbase-regionserver.restartProbability</name>
+    <value>0</value>
+  </property>
 </configuration>

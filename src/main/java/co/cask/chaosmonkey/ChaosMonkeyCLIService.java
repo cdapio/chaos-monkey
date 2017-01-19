@@ -31,6 +31,7 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
   private Process process;
   private double termFactor;
   private double killFactor;
+  private double restartFactor;
   private int executionPeriod;
   private ProcessHandler processHandler;
 
@@ -39,17 +40,20 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
    * @param process The processes that will be managed
    * @param termFactor The probability that a process will be terminated on each execution cycle
    * @param killFactor The probability that a process will be killed on each execution cycle
+   * @param restartFactor The probability that a process will restart each execution cycle if it isn't running
    * @param executionPeriod The rate of execution cycles (in seconds)
    * @param shell The shell which will be used to issue commands
    */
   public ChaosMonkeyCLIService(Process process,
                                double termFactor,
                                double killFactor,
+                               double restartFactor,
                                int executionPeriod,
                                Shell shell) {
     this.process = process;
     this.termFactor = termFactor;
     this.killFactor = killFactor;
+    this.restartFactor = restartFactor;
     this.executionPeriod = executionPeriod;
     this.processHandler = new ProcessHandler(shell);
   }
@@ -60,6 +64,14 @@ public class ChaosMonkeyCLIService extends AbstractScheduledService {
       processHandler.killProcess(process);
     } else if (Math.random() < termFactor) {
       processHandler.stopProcess(process);
+    }
+
+    if (Math.random() < restartFactor) {
+      if (!process.isRunning()) {
+        processHandler.startProcess(process);
+      } else {
+        LOGGER.info(process.getName() + " is already running, skipping restart.");
+      }
     }
   }
 

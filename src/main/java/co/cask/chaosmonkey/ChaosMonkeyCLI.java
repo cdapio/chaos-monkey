@@ -50,6 +50,7 @@ public class ChaosMonkeyCLI {
       Service service = new ChaosMonkeyCLIService(processRule.getProcess(),
                                                   processRule.getStopProbability(),
                                                   processRule.getKillProbability(),
+                                                  processRule.getRestartProbability(),
                                                   processRule.getInterval(),
                                                   shell).startAsync();
       service.awaitRunning();
@@ -111,6 +112,7 @@ public class ChaosMonkeyCLI {
         int interval;
         double killProbability = 0;
         double stopProbability = 0;
+        double restartProbability = 0;
 
         if (conf.get(processName + ".interval") == null) {
           LOGGER.info(processName + " interval not specified. Chaos monkey will spare this process.");
@@ -124,13 +126,18 @@ public class ChaosMonkeyCLI {
         if (conf.get(processName + ".stopProbability") != null) {
           stopProbability = Double.parseDouble(conf.get(processName + ".stopProbability"));
         }
+        if (conf.get(processName + ".restartProbability") != null) {
+          restartProbability = Double.parseDouble(conf.get(processName + ".restartProbability"));
+        }
 
-        if (killProbability == 0 && stopProbability == 0) {
-          LOGGER.info(processName + " stop/kill probability not specified. Chaos monkey will spare this process.");
+        if (killProbability == 0 && stopProbability == 0 && restartProbability == 0) {
+          LOGGER.info(processName +
+                        " stop/kill/restart probability not specified. Chaos monkey will spare this process.");
           continue;
         }
         Process process = Process.PROCESS_MAP.get(processName);
-        ProcessRule processRule = new ProcessRule(process, killProbability, stopProbability, 0, interval);
+        ProcessRule processRule = new ProcessRule(process, killProbability, stopProbability,
+                                                  restartProbability, interval);
 
         processList.add(processRule);
       }
