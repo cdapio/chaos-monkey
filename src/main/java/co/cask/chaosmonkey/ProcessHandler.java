@@ -47,7 +47,7 @@ public class ProcessHandler {
     Set<Process> running = new HashSet<>();
     for (String processName : Process.PROCESS_MAP.keySet()) {
       Process process = Process.PROCESS_MAP.get(processName);
-      if (process.getFile().exists() && process.getFile().canRead()) {
+      if (process.getPidFile().exists() && process.getPidFile().canRead()) {
         running.add(process);
       }
     }
@@ -84,8 +84,21 @@ public class ProcessHandler {
    * @throws IOException
    */
   public int signalProcess(int signal, Process process) throws IOException {
-    int pid = getPIDFromFile(process.getFile());
+    int pid = getPIDFromFile(process.getPidFile());
     return (pid >= 0) ? signalProcessWithPID(signal, pid) : pid;
+  }
+
+  /**
+   * Starts the given process by invoking the init script
+   * @param process The process to start
+   * @return Exit code
+   * @throws IOException
+   */
+  public int startProcess(Process process) throws IOException {
+    LOGGER.info("Starting: " + process.getName());
+    String command = String.format("%s start", process.getInitScript().getAbsolutePath());
+    ShellOutput output = shell.exec(command);
+    return output.returnCode;
   }
 
   private static int getPIDFromFile(File file) {
