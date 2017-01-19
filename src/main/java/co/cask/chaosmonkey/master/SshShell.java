@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * TODO: Document this
+ * This class SSH access to remote hosts.
  */
 public class SshShell {
 
