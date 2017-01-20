@@ -25,8 +25,8 @@ public class Constants {
    * Constants related to {@code RemoteProcess}.
    */
   public static final class Process {
-    public static int SIGKILL = 9;
-    public static int SIGTERM = 15;
+    public static final int SIGKILL = 9;
+    public static final int SIGTERM = 15;
   }
 
 }
