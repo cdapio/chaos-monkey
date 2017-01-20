@@ -21,6 +21,12 @@ import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+import com.jcraft.jsch.agentproxy.AgentProxyException;
+import com.jcraft.jsch.agentproxy.Connector;
+import com.jcraft.jsch.agentproxy.ConnectorFactory;
+import com.jcraft.jsch.agentproxy.RemoteIdentityRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -31,7 +37,7 @@ import java.io.InputStream;
  * This class allows SSH access to remote hosts.
  */
 public class SshShell {
-
+  private static final Logger LOG = LoggerFactory.getLogger(SshShell.class);
   private static final ImmutableList<String> RELATIVE_KEY_PATHS = ImmutableList.of(".ssh/id_dsa",
                                                                                    ".ssh/id_ecdsa",
                                                                                    ".ssh/id_rsa");
@@ -45,7 +51,16 @@ public class SshShell {
     this.hostname = hostname;
 
     this.jsch = new JSch();
-    jsch.setConfig("StrictHostKeyChecking", "no");
+    this.jsch.setConfig("StrictHostKeyChecking", "no");
+
+    try {
+      Connector connector = ConnectorFactory.getDefault().createConnector();
+      if (connector != null) {
+        jsch.setIdentityRepository(new RemoteIdentityRepository(connector));
+      }
+    } catch (AgentProxyException e) {
+      LOG.error("Unable to connect to ssh-agent", e);
+    }
 
     if (privateKey != null) {
       if (passphrase != null) {
