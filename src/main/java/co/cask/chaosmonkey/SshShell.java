@@ -32,9 +32,9 @@ import java.io.InputStream;
  */
 public class SshShell {
 
-  private static final ImmutableList<String> RELATIVE_KEY_PATHS = ImmutableList.of(".ssh/identity",
-                                                                                   ".ssh/id_rsa",
-                                                                                   ".ssh/id_dsa");
+  private static final ImmutableList<String> RELATIVE_KEY_PATHS = ImmutableList.of(".ssh/id_dsa",
+                                                                                   ".ssh/id_ecdsa",
+                                                                                   ".ssh/id_rsa");
 
   private final JSch jsch;
   private final String username;
