@@ -17,12 +17,14 @@
 package co.cask.chaosmonkey.master;
 
 import co.cask.chaosmonkey.ShellOutput;
+import com.google.common.collect.ImmutableList;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -31,21 +33,44 @@ import java.io.InputStream;
  */
 public class SshShell {
 
+  private static final ImmutableList<String> RELATIVE_KEY_PATHS = ImmutableList.of(".ssh/identity",
+                                                                                   ".ssh/id_rsa",
+                                                                                   ".ssh/id_dsa");
+
   private final JSch jsch;
   private final String username;
   private final String hostname;
 
-  public SshShell(String username, String hostname, String prvfile) throws JSchException {
+  public SshShell(String username, String hostname, String privateKey, String passphrase) throws JSchException {
     this.username = username;
     this.hostname = hostname;
 
     this.jsch = new JSch();
-    jsch.addIdentity(prvfile);
     jsch.setConfig("StrictHostKeyChecking", "no");
+
+    if (privateKey != null) {
+      if (passphrase != null) {
+        jsch.addIdentity(privateKey, passphrase);
+      } else {
+        jsch.addIdentity(privateKey);
+      }
+    }
+  }
+
+  public SshShell(String username, String hostname, String privateKey) throws JSchException {
+    this(username, hostname, privateKey, null);
   }
 
   public SshShell(String username, String hostname) throws JSchException {
-    this(username, hostname, "~/.ssh/id_rsa");
+    this(username, hostname, null);
+
+    for (String relativeKeyPath : RELATIVE_KEY_PATHS) {
+      String absoluteKeyPath = System.getProperty("user.home") + "/" + relativeKeyPath;
+      if (new File(absoluteKeyPath).exists()) {
+        jsch.addIdentity(absoluteKeyPath);
+        break;
+      }
+    }
   }
 
   public ShellOutput exec(String command, InputStream input) throws JSchException, IOException {
