@@ -46,6 +46,15 @@ public class SshShell {
   private final String username;
   private final String hostname;
 
+  /**
+   * Constructs a new {@code SshShell}.
+   *
+   * @param username The username to connect with
+   * @param hostname The remote hostname to connect to
+   * @param privateKey The location of the private key file
+   * @param passphrase The passphrase encrypting the private key
+   * @throws JSchException
+   */
   public SshShell(String username, String hostname, String privateKey, String passphrase) throws JSchException {
     this.username = username;
     this.hostname = hostname;
@@ -71,10 +80,25 @@ public class SshShell {
     }
   }
 
+  /**
+   * Constructs a new {@code SshShell} where the private key is unencrypted.
+   *
+   * @param username The username to connect with
+   * @param hostname The remote hostname to connect to
+   * @param privateKey The location of the private key file
+   * @throws JSchException
+   */
   public SshShell(String username, String hostname, String privateKey) throws JSchException {
     this(username, hostname, privateKey, null);
   }
 
+  /**
+   * Constructs a new {@code SshShell} by looking in the default key locations; keys should be unencrypted.
+   *
+   * @param username The username to connect with
+   * @param hostname The remote hostname to connect to
+   * @throws JSchException
+   */
   public SshShell(String username, String hostname) throws JSchException {
     this(username, hostname, null);
 
@@ -87,6 +111,14 @@ public class SshShell {
     }
   }
 
+  /**
+   * Execute a command on a remote host.
+   *
+   * @param command The command to be executed
+   * @param input The input to accompany the command
+   * @return The output of the command
+   * @throws JSchException
+   */
   public ShellOutput exec(String command, InputStream input) throws JSchException {
     Session session = jsch.getSession(this.username, hostname);
     try {
@@ -117,6 +149,13 @@ public class SshShell {
     }
   }
 
+  /**
+   * Execute a command on a remote host.
+   *
+   * @param command The command to be executed
+   * @return The output of the command
+   * @throws JSchException
+   */
   public ShellOutput exec(String command) throws JSchException {
     return exec(command, null);
   }
