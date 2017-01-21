@@ -102,12 +102,18 @@ public class SshShell {
   public SshShell(String username, String hostname) throws JSchException {
     this(username, hostname, null);
 
+    boolean noIdentity = true;
     for (String relativeKeyPath : RELATIVE_KEY_PATHS) {
       String absoluteKeyPath = System.getProperty("user.home") + "/" + relativeKeyPath;
       if (new File(absoluteKeyPath).exists()) {
         jsch.addIdentity(absoluteKeyPath);
+        noIdentity = false;
         break;
       }
+    }
+
+    if (noIdentity) {
+      throw new IllegalStateException("No keys found, please manually add your key");
     }
   }
 
@@ -134,7 +140,11 @@ public class SshShell {
         channel.connect();
 
         while (channel.getExitStatus() < 0) {
-          // wait for status to become >= 0
+          try {
+            Thread.sleep(250);
+          } catch (InterruptedException e) {
+            // Do nothing
+          }
         }
         return new ShellOutput(channel.getExitStatus(), output.toString(), error.toString());
       } catch (IOException e) {
