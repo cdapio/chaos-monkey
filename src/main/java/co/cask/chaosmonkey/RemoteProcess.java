@@ -88,7 +88,7 @@ public class RemoteProcess {
    * @throws JSchException
    */
   public int terminate() throws JSchException {
-    return signal(Constants.Process.SIGTERM);
+    return signal(Constants.RemoteProcess.SIGTERM);
   }
 
   /**
@@ -98,7 +98,7 @@ public class RemoteProcess {
    * @throws JSchException
    */
   public int kill() throws JSchException {
-    return signal(Constants.Process.SIGKILL);
+    return signal(Constants.RemoteProcess.SIGKILL);
   }
 
   /**
