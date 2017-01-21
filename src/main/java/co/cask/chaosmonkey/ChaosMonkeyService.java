@@ -73,6 +73,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     conf.addResource("chaos-monkey-site.xml");
 
     SshShell[] sshShells = {null, null, null}; // TODO: This will be replaced with a way to actually get remote hosts
+    // TODO: SshShell should be able to be created by specifying a key-path and/or a key passphrase
     Set<ChaosMonkeyService> services = new HashSet<>();
     for (SshShell sshShell : sshShells) {
       for (String service : conf.get("services").split(",")) {
