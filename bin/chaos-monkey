@@ -22,13 +22,23 @@ readonly RUN_CHAOS_MONKEY="java -jar $(dirname $0)/../target/chaos-monkey-0.1.0-
 readonly PID_FILE=$(dirname $(mktemp -u))/chaosmonkey.pid
 readonly SCRIPT_NAME=$(basename $0)
 
+usage() {
+	echo "Usage: $SCRIPT_NAME <command>"
+	echo
+	echo "  Commands:"
+	echo "    start  - Starts ChaosMonkey"
+	echo "    stop   - Stops ChaosMonkey"
+	echo "    status - Shows if ChaosMonkey is running"
+	echo "    help   - Displays this help message"
+}
+
 case "$1" in
 	"start")
 		if [[ -a $PID_FILE ]]; then
 			echo ChaosMonkey is already running!
 		else
 			shift
-			nohup $RUN_CHAOS_MONKEY $@ &> /dev/null &
+			nohup $RUN_CHAOS_MONKEY &> /dev/null &
 			PID=$!
 			sleep 1
 			if $(ps -p $PID &> /dev/null); then
@@ -36,7 +46,6 @@ case "$1" in
 				echo $PID > $PID_FILE
 			else
 				echo ChaosMonkey was unable to start!
-				$RUN_CHAOS_MONKEY help $SCRIPT_NAME
 			fi
 		fi
 		;;
@@ -56,6 +65,6 @@ case "$1" in
 		fi
 		;;
 	"help"|*)
-		$RUN_CHAOS_MONKEY help $SCRIPT_NAME
+		usage
 		;;
 esac
