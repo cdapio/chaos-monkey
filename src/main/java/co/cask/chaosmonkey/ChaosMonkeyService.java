@@ -120,29 +120,29 @@ public class ChaosMonkeyService extends AbstractScheduledService {
 
     Collection<ChaosMonkeyService> services = new LinkedList<>();
     for (String service : conf.get("services").split(",")) {
+      String pidPath = conf.get(service + ".pidPath");
+      if (pidPath == null) {
+        throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
+      }
+
+      int interval;
+      try {
+        interval = Integer.parseInt(conf.get(service + ".interval"));
+      } catch (NumberFormatException | NullPointerException e) {
+        throw new IllegalArgumentException("The following process does not have a valid interval: " + service, e);
+      }
+
+      double killProbability = Double.parseDouble(conf.get(service + ".killProbability", "0.0"));
+      double stopProbability = Double.parseDouble(conf.get(service + ".stopProbability", "0.0"));
+
+      if (killProbability == 0.0 && stopProbability == 0.0) {
+        throw new IllegalArgumentException("The following process may not have both killProbability and " +
+                                             "stopProbability equal to 0.0 or undefined: " + service);
+      }
+
+      String statusCommand = conf.get(service + ".statusCommand");
+
       for (SshShell sshShell : sshShells) {
-        String pidPath = conf.get(service + ".pidPath");
-        if (pidPath == null) {
-          throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
-        }
-
-        int interval;
-        try {
-          interval = Integer.parseInt(conf.get(service + ".interval"));
-        } catch (NumberFormatException | NullPointerException e) {
-          throw new IllegalArgumentException("The following process does not have a valid interval: " + service, e);
-        }
-
-        double killProbability = Double.parseDouble(conf.get(service + ".killProbability", "0.0"));
-        double stopProbability = Double.parseDouble(conf.get(service + ".stopProbability", "0.0"));
-
-        if (killProbability == 0.0 && stopProbability == 0.0) {
-          throw new IllegalArgumentException("The following process may not have both killProbability and " +
-                                               "stopProbability equal to 0.0 or undefined: " + service);
-        }
-
-        String statusCommand = conf.get(service + ".statusCommand");
-
         RemoteProcess process;
         if (statusCommand != null) {
           process = new RemoteProcess(service, pidPath, sshShell, statusCommand);
