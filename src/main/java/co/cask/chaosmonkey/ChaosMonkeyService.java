@@ -33,35 +33,35 @@ public class ChaosMonkeyService extends AbstractScheduledService {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyService.class);
 
   private RemoteProcess process;
-  private double termFactor;
-  private double killFactor;
+  private double stopProbability;
+  private double killProbability;
   private int executionPeriod;
 
   /**
    *
    * @param process The processes that will be managed
-   * @param termFactor The probability that a process will be terminated on each execution cycle
-   * @param killFactor The probability that a process will be killed on each execution cycle
+   * @param stopProbability The probability that a process will be terminated on each execution cycle
+   * @param killProbability The probability that a process will be killed on each execution cycle
    * @param executionPeriod The rate of execution cycles (in seconds)
    */
   public ChaosMonkeyService(RemoteProcess process,
-                            double termFactor,
-                            double killFactor,
+                            double stopProbability,
+                            double killProbability,
                             int executionPeriod) {
     this.process = process;
-    this.termFactor = termFactor;
-    this.killFactor = killFactor;
+    this.stopProbability = stopProbability;
+    this.killProbability = killProbability;
     this.executionPeriod = executionPeriod;
   }
 
   @Override
   protected void runOneIteration() throws Exception {
-    if (Math.random() < killFactor) {
+    if (Math.random() < killProbability) {
       process.kill();
       LOGGER.info("{} has been killed", process.getName());
-    } else if (Math.random() < termFactor) {
+    } else if (Math.random() < stopProbability) {
       process.terminate();
-      LOGGER.info("{} has been terminated", process.getName());
+      LOGGER.info("{} has been stopped", process.getName());
     }
   }
 
