@@ -66,6 +66,7 @@ public class SshShell {
       Connector connector = ConnectorFactory.getDefault().createConnector();
       if (connector != null) {
         jsch.setIdentityRepository(new RemoteIdentityRepository(connector));
+        LOG.debug("Attaching to ssh-agent");
       }
     } catch (AgentProxyException e) {
       LOG.error("Unable to connect to ssh-agent", e);
@@ -138,6 +139,7 @@ public class SshShell {
         channel.setOutputStream(output);
         channel.setErrStream(error);
         channel.connect();
+        LOG.debug("Executing '{}' to {}@{}", command, getUsername(), getHostname());
 
         while (channel.getExitStatus() < 0) {
           try {
@@ -157,6 +159,14 @@ public class SshShell {
     } finally {
       session.disconnect();
     }
+  }
+
+  public String getUsername() {
+    return this.username;
+  }
+
+  public String getHostname() {
+    return this.hostname;
   }
 
   /**

@@ -58,8 +58,10 @@ public class ChaosMonkeyService extends AbstractScheduledService {
   protected void runOneIteration() throws Exception {
     if (Math.random() < killFactor) {
       process.kill();
+      LOGGER.info("{} has been killed", process.getName());
     } else if (Math.random() < termFactor) {
       process.terminate();
+      LOGGER.info("{} has been terminated", process.getName());
     }
   }
 
@@ -133,14 +135,15 @@ public class ChaosMonkeyService extends AbstractScheduledService {
         }
 
         RemoteProcess process = new RemoteProcess(service, pidPath, sshShell);
+        LOGGER.debug("Created {} with pidPath: {}, stopProbability: {}, killProbability: {}, interval: {}",
+                    service, pidPath, stopProbability, killProbability, interval);
         ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(process, stopProbability,
                                                                        killProbability, interval);
+
+        LOGGER.debug("The {} service has been added for {}@{}",
+                     service, sshShell.getUsername(), sshShell.getHostname());
         services.add(chaosMonkeyService);
       }
-    }
-
-    if (services.isEmpty()) {
-      throw new IllegalArgumentException("No processes specified in configs");
     }
 
     for (ChaosMonkeyService service : services) {
