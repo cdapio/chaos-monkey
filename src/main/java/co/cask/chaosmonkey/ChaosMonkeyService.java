@@ -22,8 +22,8 @@ import com.jcraft.jsch.JSchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -98,7 +98,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
       }
     }
 
-    Set<ChaosMonkeyService> services = new HashSet<>();
+    Collection<ChaosMonkeyService> services = new LinkedList<>();
     for (String service : conf.get("services").split(",")) {
       for (SshShell sshShell : sshShells) {
         String pidPath;
