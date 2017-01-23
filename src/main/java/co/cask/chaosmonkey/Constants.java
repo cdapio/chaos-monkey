@@ -22,17 +22,11 @@ package co.cask.chaosmonkey;
 public class Constants {
 
   /**
-   * Constants related to {@code Process}.
+   * Constants related to {@code RemoteProcess}.
    */
-  public static final class Process {
-    public static final String HBASE_REGIONSERVER = "hbase-regionserver";
-    public static final String HBASE_MASTER = "hbase-master";
-    public static final String ZOOKEEPER_SERVER = "zookeeper-server";
-    public static final String MYSQL_SERVER = "mysql-server";
-    public static final String HIVE_METASTORE = "hive-metastore";
-    public static final String HADOOP_YARN_RESOURCEMANAGER = "hadoop-yarn-resourcemanager";
-    public static final String HADOOP_YARN_NODEMANAGER = "hadoop-yarn-nodemanager";
-    public static final String HADOOP_HDFS_DATANODE = "hadoop-hdfs-datanode";
-    public static final String HADOOP_HDFS_NAMENODE = "hadoop-hdfs-namenode";
+  public static final class RemoteProcess {
+    public static final int SIGKILL = 9;
+    public static final int SIGTERM = 15;
   }
+
 }
