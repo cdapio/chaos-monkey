@@ -150,7 +150,7 @@ public class SshShell {
         }
         return new ShellOutput(channel.getExitStatus(), output.toString(), error.toString());
       } catch (IOException e) {
-        // Execution should never reach here because ByteArayOutputStream should never throw this exception
+        // Execution should never reach here because ByteArrayOutputStream should never throw this exception
         throw new IllegalStateException("This should not happen", e);
       } finally {
         channel.disconnect();
