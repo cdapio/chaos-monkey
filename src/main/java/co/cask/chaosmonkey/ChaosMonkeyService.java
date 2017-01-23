@@ -18,6 +18,7 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.conf.Configuration;
 import com.google.common.util.concurrent.AbstractScheduledService;
+import com.jcraft.jsch.JSchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,13 +68,29 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     return AbstractScheduledService.Scheduler.newFixedRateSchedule(0, this.executionPeriod, TimeUnit.SECONDS);
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws JSchException {
     Configuration conf = new Configuration();
     conf.addResource("chaos-monkey-default.xml");
     conf.addResource("chaos-monkey-site.xml");
 
-    SshShell[] sshShells = {null, null, null}; // TODO: This will be replaced with a way to actually get remote hosts
-    // TODO: SshShell should be able to be created by specifying a key-path and/or a key passphrase
+    String username = conf.get("username", System.getProperty("user.name"));
+    String privateKey = conf.get("privateKey");
+    String keyPassphrase = conf.get("keyPassphrase");
+    String[] hostnames = conf.get("hostnames").split(",");
+
+    SshShell[] sshShells = new SshShell[hostnames.length];
+    for (int i = 0; i < hostnames.length; i++) {
+      if (privateKey != null) {
+        if (keyPassphrase != null) {
+          sshShells[i] = new SshShell(username, hostnames[i], privateKey);
+        } else {
+          sshShells[i] = new SshShell(username, hostnames[i], privateKey, keyPassphrase);
+        }
+      } else {
+        sshShells[i] = new SshShell(username, hostnames[i]);
+      }
+    }
+
     Set<ChaosMonkeyService> services = new HashSet<>();
     for (SshShell sshShell : sshShells) {
       for (String service : conf.get("services").split(",")) {
