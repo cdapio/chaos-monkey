@@ -68,7 +68,14 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     return AbstractScheduledService.Scheduler.newFixedRateSchedule(0, this.executionPeriod, TimeUnit.SECONDS);
   }
 
-  public static void main(String[] args) throws JSchException {
+  /**
+   * The main method for this class.
+   *
+   * @param args
+   * @throws JSchException if a SSH-related error occurs
+   * @throws IllegalArgumentException if an invalid configuration file is given
+   */
+  public static void main(String[] args) throws JSchException, IllegalArgumentException {
     Configuration conf = new Configuration();
     conf.addResource("chaos-monkey-default.xml");
     conf.addResource("chaos-monkey-site.xml");
