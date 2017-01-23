@@ -76,7 +76,14 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     String username = conf.get("username", System.getProperty("user.name"));
     String privateKey = conf.get("privateKey");
     String keyPassphrase = conf.get("keyPassphrase");
-    String[] hostnames = conf.get("hostnames").split(",");
+
+    // TODO: can be replaced with a better way to get hostnames
+    String[] hostnames;
+    try {
+      hostnames = conf.get("hostnames").split(",");
+    } catch (NullPointerException e) {
+      throw new IllegalArgumentException("You must provide a list of comma-separated hostnames", e);
+    }
 
     SshShell[] sshShells = new SshShell[hostnames.length];
     for (int i = 0; i < hostnames.length; i++) {
@@ -92,36 +99,32 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     }
 
     Set<ChaosMonkeyService> services = new HashSet<>();
-    for (SshShell sshShell : sshShells) {
-      for (String service : conf.get("services").split(",")) {
+    for (String service : conf.get("services").split(",")) {
+      for (SshShell sshShell : sshShells) {
         String pidPath;
         int interval;
-        double killProbability = 0;
-        double stopProbability = 0;
+        double killProbability;
+        double stopProbability;
 
-        if (conf.get(service + ".pidPath") == null) {
-          LOGGER.info(service + " path of PID file not specified. Chaos monkey will spare this process.");
-          continue;
-        }
         pidPath = conf.get(service + ".pidPath");
-
-        if (conf.get(service + ".interval") == null) {
-          LOGGER.info(service + " interval not specified. Chaos monkey will spare this process.");
-          continue;
-        }
-        interval = Integer.parseInt(conf.get(service + ".interval"));
-
-        if (conf.get(service + ".killProbability") != null) {
-          killProbability = Double.parseDouble(conf.get(service + ".killProbability"));
-        }
-        if (conf.get(service + ".stopProbability") != null) {
-          stopProbability = Double.parseDouble(conf.get(service + ".stopProbability"));
+        if (pidPath == null) {
+          throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
         }
 
-        if (killProbability == 0 && stopProbability == 0) {
-          LOGGER.info(service + " stop/kill probability not specified. Chaos monkey will spare this process.");
-          continue;
+        try {
+          interval = Integer.parseInt(conf.get(service + ".interval"));
+        } catch (NumberFormatException | NullPointerException e) {
+          throw new IllegalArgumentException("The following process does not have a valid interval: " + service, e);
         }
+
+        killProbability = Double.parseDouble(conf.get(service + ".killProbability", "0.0"));
+        stopProbability = Double.parseDouble(conf.get(service + ".stopProbability", "0.0"));
+
+        if (killProbability == 0.0 && stopProbability == 0.0) {
+          throw new IllegalArgumentException("The following process may not have both killProbability and " +
+                                               "stopProbability equal to 0.0 or undefined: " + service);
+        }
+
         RemoteProcess process = new RemoteProcess(service, pidPath, sshShell);
         ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(process, stopProbability,
                                                                        killProbability, interval);
@@ -130,7 +133,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     }
 
     if (services.isEmpty()) {
-      throw new IllegalStateException("No process specified in configs");
+      throw new IllegalArgumentException("No processes specified in configs");
     }
 
     for (ChaosMonkeyService service : services) {
