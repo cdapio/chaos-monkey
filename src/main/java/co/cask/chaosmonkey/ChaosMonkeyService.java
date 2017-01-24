@@ -107,9 +107,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
    * @throws IOException if there was an error getting cluster information from Coopr
    */
   public static void main(String[] args) throws JSchException, IllegalArgumentException, IOException {
-    Configuration conf = new Configuration();
-    conf.addResource("chaos-monkey-default.xml");
-    conf.addResource("chaos-monkey-site.xml");
+    Configuration conf = Configuration.create();
 
     String username = conf.get("username", System.getProperty("user.name"));
     String privateKey = conf.get("privateKey");

@@ -27,8 +27,7 @@ public class ConfigurationTest {
   @Test
   public void testConfiguration() throws Exception {
     // first test empty config object
-    Configuration conf = new Configuration();
-    conf.addResource("chaos-monkey-default.xml");
+    Configuration conf = Configuration.create();
     String a = conf.get("conf.test.A");
     String b = conf.get("conf.test.B");
     Assert.assertNull(a);

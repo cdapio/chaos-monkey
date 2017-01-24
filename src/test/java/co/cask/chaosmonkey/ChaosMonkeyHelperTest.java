@@ -28,9 +28,7 @@ public class ChaosMonkeyHelperTest {
   @Test
   public void testGetHostnamesInvalidInput() {
     try {
-      Configuration conf = new Configuration();
-      conf.addResource("chaos-monkey-default.xml");
-      conf.addResource("chaos-monkey-site.xml");
+      Configuration conf = Configuration.create();
 
       ChaosMonkeyHelper.getNodeProperties("invalid hostname", conf);
       Assert.fail("Expected getHostnames() to throw IOException");
