@@ -63,21 +63,16 @@ public class ChaosMonkeyService extends AbstractScheduledService {
 
   @Override
   protected void runOneIteration() throws Exception {
-    double random = Math.random();
-
-    boolean serviceRunningBeforeIteration = process.isRunning();
-    if (random < stopProbability && serviceRunningBeforeIteration) {
-      LOGGER.info("Attempting to stop {}", process.getName());
-      process.stop();
-    } else if (random < stopProbability + killProbability && serviceRunningBeforeIteration) {
-      LOGGER.info("Attempting to kill {}", process.getName());
-      process.kill();
-    } else if (random < stopProbability + killProbability + restartProbability && !serviceRunningBeforeIteration) {
-      LOGGER.info("Attempting to restart {}", process.getName());
-      process.restart();
-    } else {
-      return;
-    }
+    if (process.isRunning()) {
+      if (Math.random() < killProbability) {
+        LOGGER.info("Attempting to kill {}", process.getName());
+        process.kill();
+      } else if (Math.random() < stopProbability) {
+        LOGGER.info("Attempting to stop {}", process.getName());
+        process.stop();
+      } else {
+        return; // Process will not be stopped so return
+      }
 
     // Only do a check after an action has been attempted
     boolean serviceRunningAfterIteration = process.isRunning();
@@ -190,7 +185,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     }
 
     for (ChaosMonkeyService service : services) {
-      service.awaitRunning();
+      service.startAsync();
     }
   }
 }
