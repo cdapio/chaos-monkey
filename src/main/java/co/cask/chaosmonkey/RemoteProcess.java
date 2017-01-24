@@ -140,6 +140,6 @@ public class RemoteProcess {
    */
   public boolean exists() throws JSchException {
     LOG.debug("Checking if {} exists", getName());
-    return sshShell.exec(String.format("sudo service %s | grep -q '%s: unrecognized service'")).returnCode == 1;
+    return sshShell.exec(String.format("sudo service %s 2>&1 | grep -q '%s: unrecognized service'")).returnCode == 1;
   }
 }
