@@ -44,8 +44,8 @@ public class ChaosMonkeyService extends AbstractScheduledService {
   /**
    *
    * @param process The processes that will be managed
-   * @param killProbability Probability that this process will be killed in the current interval
    * @param stopProbability Probability that this process will be stopped in the current interval
+   * @param killProbability Probability that this process will be killed in the current interval
    * @param restartProbability Probability that this process will be restarted in the current interval
    * @param executionPeriod The rate of execution cycles (in seconds)
    */
@@ -87,7 +87,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
       LOGGER.info("{} is no longer running", process.getName());
     } else if (!serviceRunningBeforeIteration && serviceRunningAfterIteration) {
       LOGGER.info("{} is now running", process.getName());
-    } else if (!serviceRunningBeforeIteration && !serviceRunningAfterIteration){
+    } else if (!serviceRunningBeforeIteration && !serviceRunningAfterIteration) {
       LOGGER.error("{} did not restart", process.getName());
     }
 
@@ -115,7 +115,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     String clusterId = conf.get("clusterId");
 
     if (clusterId == null || clusterId.isEmpty()) {
-      throw new IllegalArgumentException ("Cluster ID not specified");
+      throw new IllegalArgumentException("Cluster ID not specified");
     }
 
     Map<String, NodeProperties> propertiesMap = ChaosMonkeyHelper.getNodeProperties(clusterId, conf);
@@ -152,8 +152,9 @@ public class ChaosMonkeyService extends AbstractScheduledService {
       double restartProbability = Double.parseDouble(conf.get(service + ".restartProbability", "0.0"));
 
       if (killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
-        throw new IllegalArgumentException("The following process may not have both killProbability, stopProbability" +
-                                             " and restartProbability equal to 0.0 or undefined: " + service);
+        throw new IllegalArgumentException("The following process may not have all of killProbability, " +
+                                             "stopProbability and restartProbability equal to 0.0 or undefined: "
+                                             + service);
       }
       if (stopProbability + killProbability + restartProbability > 1) {
         throw new IllegalArgumentException("The following process has a combined killProbability, stopProbability" +
