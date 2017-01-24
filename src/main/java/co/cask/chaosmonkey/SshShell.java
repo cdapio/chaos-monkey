@@ -128,6 +128,7 @@ public class SshShell {
    */
   public ShellOutput exec(String command, InputStream input) throws JSchException {
     Session session = jsch.getSession(this.username, hostname);
+    command = String.format("bash -lc '%s'", command);
     try {
       session.connect();
       ChannelExec channel = (ChannelExec) session.openChannel("exec");
