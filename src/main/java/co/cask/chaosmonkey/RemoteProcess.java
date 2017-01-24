@@ -140,8 +140,6 @@ public class RemoteProcess {
    */
   public boolean exists() throws JSchException {
     LOG.debug("Checking if {} exists", getName());
-    //TODO: There should be a less sketchy method of figuring out if a service exists
-    return sshShell.exec(String.format("sudo service %s 2>&1 | grep -q '%s: unrecognized service'",
-                                       getName(), getName())).returnCode == 1;
+    return sshShell.exec(String.format("test -e /etc/init.d/%s", getName())).returnCode == 0;
   }
 }
