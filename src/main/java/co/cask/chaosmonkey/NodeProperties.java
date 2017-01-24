@@ -16,26 +16,30 @@
 
 package co.cask.chaosmonkey;
 
-/**
- * List of constants used by chaos monkey
- */
-public class Constants {
+import java.util.List;
+import java.util.Map;
 
-  /**
-   * Constants related to {@code RemoteProcess}.
-   */
-  public static final class RemoteProcess {
-    public static final int SIGKILL = 9;
-    public static final int SIGTERM = 15;
+/**
+ * NodeProperties represents the JSON object returned by coopr
+ */
+public class NodeProperties {
+  private List<String> services;
+  private String hostname;
+  private Map<String, String> ipaddresses;
+
+  public List<String> getServices() {
+    return services;
   }
 
-  /**
-   * Constants related to Coopr, used for retrieving cluster information
-   */
-  public static final class Coopr {
-    public static final String USERID = "coopr.userId";
-    public static final String TENANTID = "coopr.tenantId";
-    public static final String SERVERURI = "coopr.server.uri";
-    public static final String APIVERSION = "coopr.api.version";
+  public String getHostname() {
+    return hostname;
+  }
+
+  public Map<String, String> getIpaddresses() {
+    return ipaddresses;
+  }
+
+  public String getAccessIpAddress() {
+    return ipaddresses.get("access_v4");
   }
 }

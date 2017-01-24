@@ -16,26 +16,26 @@
 
 package co.cask.chaosmonkey;
 
+import co.cask.chaosmonkey.conf.Configuration;
+import org.junit.Assert;
+import org.junit.Test;
+
 /**
- * List of constants used by chaos monkey
+ * Tests for Chaos Monkey Helper class
  */
-public class Constants {
+public class ChaosMonkeyHelperTest {
 
-  /**
-   * Constants related to {@code RemoteProcess}.
-   */
-  public static final class RemoteProcess {
-    public static final int SIGKILL = 9;
-    public static final int SIGTERM = 15;
-  }
+  @Test
+  public void testGetHostnamesInvalidInput() {
+    try {
+      Configuration conf = new Configuration();
+      conf.addResource("chaos-monkey-default.xml");
+      conf.addResource("chaos-monkey-site.xml");
 
-  /**
-   * Constants related to Coopr, used for retrieving cluster information
-   */
-  public static final class Coopr {
-    public static final String USERID = "coopr.userId";
-    public static final String TENANTID = "coopr.tenantId";
-    public static final String SERVERURI = "coopr.server.uri";
-    public static final String APIVERSION = "coopr.api.version";
+      ChaosMonkeyHelper.getNodeProperties("invalid hostname", conf);
+      Assert.fail("Expected getHostnames() to throw IOException");
+    } catch (Exception e) {
+      // expected
+    }
   }
 }

@@ -19,9 +19,15 @@
 
 <configuration>
   <property>
+    <name>clusterId</name>
+    <value>00000001</value>
+  </property>
+
+  <property>
     <name>services</name>
     <value>hbase-regionserver,hbase-master</value>
   </property>
+
   <property>
     <name>hbase-regionserver.pidPath</name>
     <value>/var/run/hbase/hbase-hbase-regionserver.pid</value>
@@ -39,6 +45,11 @@
     <value>0</value>
   </property>
   <property>
+    <name>hbase-regionserver.restartProbability</name>
+    <value>0</value>
+  </property>
+
+  <property>
     <name>hbase-master.pidPath</name>
     <value>/var/run/hbase/hbase-hbase-master.pid</value>
   </property>
@@ -53,5 +64,27 @@
   <property>
     <name>hbase-master.stopProbability</name>
     <value>0</value>
+  </property>
+  <property>
+    <name>hbase-master.restartProbability</name>
+    <value>0</value>
+  </property>
+
+  <property>
+    <name>coopr.userId</name>
+    <value>admin</value>
+  </property>
+  <property>
+    <name>coopr.tenantId</name>
+    <value>superadmin</value>
+  </property>
+
+  <property>
+    <name>coopr.server.uri</name>
+    <value>http://localhost:55054</value>
+  </property>
+  <property>
+    <name>coopr.api.version</name>
+    <value>v2</value>
   </property>
 </configuration>
