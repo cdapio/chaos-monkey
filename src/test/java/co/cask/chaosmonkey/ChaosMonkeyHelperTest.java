@@ -17,23 +17,18 @@
 package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.conf.Configuration;
-import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Tests for Chaos Monkey Helper class
  */
 public class ChaosMonkeyHelperTest {
 
-  @Test
-  public void testGetHostnamesInvalidInput() {
-    try {
-      Configuration conf = Configuration.create();
-
-      ChaosMonkeyHelper.getNodeProperties("invalid hostname", conf);
-      Assert.fail("Expected getHostnames() to throw IOException");
-    } catch (Exception e) {
-      // expected
-    }
+  @Test(expected = IOException.class)
+  public void testGetHostnamesInvalidInput() throws IOException {
+    Configuration conf = Configuration.create();
+    ChaosMonkeyHelper.getNodeProperties("invalid hostname", conf);
   }
 }

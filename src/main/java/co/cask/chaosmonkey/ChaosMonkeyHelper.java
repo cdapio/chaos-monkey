@@ -46,7 +46,7 @@ public class ChaosMonkeyHelper {
    * Gets the Map of NodeProperties for each node in a given cluster
    * @param clusterId The cluster ID to query for
    * @return Map of NodeProperties
-   * @throws IOException
+   * @throws IOException If an invalid hostname is given
    */
   public static Map<String, NodeProperties> getNodeProperties(String clusterId, Configuration conf) throws IOException {
     HttpClient client = new DefaultHttpClient();
@@ -56,7 +56,8 @@ public class ChaosMonkeyHelper {
                                        "getNodeProperties");
     httpPost.setHeader("coopr-userid", conf.get(Constants.Coopr.USERID));
     httpPost.setHeader("coopr-tenantid", conf.get(Constants.Coopr.TENANTID));
-    httpPost.setEntity(new ByteArrayEntity(String.format("{\"clusterId\":\"%s\"}", clusterId).getBytes("UTF-8")));
+    httpPost.setEntity(new ByteArrayEntity(String.format("{\"clusterId\":\"%s\"}", clusterId)
+                                             .getBytes("UTF-8")));
 
     HttpResponse response = client.execute(httpPost);
 
