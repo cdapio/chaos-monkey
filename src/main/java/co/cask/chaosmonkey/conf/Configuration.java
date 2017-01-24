@@ -342,6 +342,18 @@ public class Configuration implements Iterable<Map.Entry<String, String>> {
     }
   }
 
+  /**
+   * Creates an instance of Configuration
+   *
+   * @return an instance of Configuration
+   */
+  public static Configuration create() {
+    Configuration conf = new Configuration();
+    conf.addResource("chaos-monkey-default.xml");
+    conf.addResource("chaos-monkey-site.xml");
+    return conf;
+  }
+
   /** A new configuration. */
   public Configuration() {
     updatingResource = new HashMap<>();
