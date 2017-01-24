@@ -18,11 +18,12 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.conf.Configuration;
 import com.google.common.util.concurrent.AbstractScheduledService;
+import com.jcraft.jsch.JSchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,33 +33,46 @@ public class ChaosMonkeyService extends AbstractScheduledService {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyService.class);
 
   private RemoteProcess process;
-  private double termFactor;
-  private double killFactor;
+  private double stopProbability;
+  private double killProbability;
   private int executionPeriod;
 
   /**
    *
    * @param process The processes that will be managed
-   * @param termFactor The probability that a process will be terminated on each execution cycle
-   * @param killFactor The probability that a process will be killed on each execution cycle
+   * @param stopProbability The probability that a process will be terminated on each execution cycle
+   * @param killProbability The probability that a process will be killed on each execution cycle
    * @param executionPeriod The rate of execution cycles (in seconds)
    */
   public ChaosMonkeyService(RemoteProcess process,
-                            double termFactor,
-                            double killFactor,
+                            double stopProbability,
+                            double killProbability,
                             int executionPeriod) {
     this.process = process;
-    this.termFactor = termFactor;
-    this.killFactor = killFactor;
+    this.stopProbability = stopProbability;
+    this.killProbability = killProbability;
     this.executionPeriod = executionPeriod;
   }
 
   @Override
   protected void runOneIteration() throws Exception {
-    if (Math.random() < killFactor) {
-      process.kill();
-    } else if (Math.random() < termFactor) {
-      process.terminate();
+    if (process.isRunning()) {
+      if (Math.random() < killProbability) {
+        LOGGER.info("Attempting to kill {}", process.getName());
+        process.kill();
+      } else if (Math.random() < stopProbability) {
+        LOGGER.info("Attempting to stop {}", process.getName());
+        process.terminate();
+      } else {
+        return; // Process will not be stopped so return
+      }
+
+      // Only do a check if the process had a stopping attempt
+      if (process.isRunning()) {
+        LOGGER.error("{} is still running!", process.getName());
+      } else {
+        LOGGER.info("{} is no longer running", process.getName());
+      }
     }
   }
 
@@ -67,53 +81,89 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     return AbstractScheduledService.Scheduler.newFixedRateSchedule(0, this.executionPeriod, TimeUnit.SECONDS);
   }
 
-  public static void main(String[] args) {
+  /**
+   * The main method for this class.
+   *
+   * @param args
+   * @throws JSchException if a SSH-related error occurs
+   * @throws IllegalArgumentException if an invalid configuration file is given
+   */
+  public static void main(String[] args) throws JSchException, IllegalArgumentException {
     Configuration conf = new Configuration();
     conf.addResource("chaos-monkey-default.xml");
     conf.addResource("chaos-monkey-site.xml");
 
-    SshShell[] sshShells = {null, null, null}; // TODO: This will be replaced with a way to actually get remote hosts
-    // TODO: SshShell should be able to be created by specifying a key-path and/or a key passphrase
-    Set<ChaosMonkeyService> services = new HashSet<>();
-    for (SshShell sshShell : sshShells) {
-      for (String service : conf.get("services").split(",")) {
-        String pidPath;
-        int interval;
-        double killProbability = 0;
-        double stopProbability = 0;
+    String username = conf.get("username", System.getProperty("user.name"));
+    String privateKey = conf.get("privateKey");
+    String keyPassphrase = conf.get("keyPassphrase");
 
-        if (conf.get(service + ".pidPath") == null) {
-          LOGGER.info(service + " path of PID file not specified. Chaos monkey will spare this process.");
-          continue;
-        }
-        pidPath = conf.get(service + ".pidPath");
+    // TODO: can be replaced with a better way to get hostnames
+    String[] hostnames;
+    try {
+      hostnames = conf.get("hostnames").split(",");
+    } catch (NullPointerException e) {
+      throw new IllegalArgumentException("You must provide a list of comma-separated hostnames", e);
+    }
 
-        if (conf.get(service + ".interval") == null) {
-          LOGGER.info(service + " interval not specified. Chaos monkey will spare this process.");
-          continue;
+    SshShell[] sshShells = new SshShell[hostnames.length];
+    for (int i = 0; i < hostnames.length; i++) {
+      if (privateKey != null) {
+        if (keyPassphrase != null) {
+          sshShells[i] = new SshShell(username, hostnames[i], privateKey);
+        } else {
+          sshShells[i] = new SshShell(username, hostnames[i], privateKey, keyPassphrase);
         }
-        interval = Integer.parseInt(conf.get(service + ".interval"));
-
-        if (conf.get(service + ".killProbability") != null) {
-          killProbability = Double.parseDouble(conf.get(service + ".killProbability"));
-        }
-        if (conf.get(service + ".stopProbability") != null) {
-          stopProbability = Double.parseDouble(conf.get(service + ".stopProbability"));
-        }
-
-        if (killProbability == 0 && stopProbability == 0) {
-          LOGGER.info(service + " stop/kill probability not specified. Chaos monkey will spare this process.");
-          continue;
-        }
-        RemoteProcess process = new RemoteProcess(service, pidPath, sshShell);
-        ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(process, stopProbability,
-                                                                       killProbability, interval);
-        services.add(chaosMonkeyService);
+      } else {
+        sshShells[i] = new SshShell(username, hostnames[i]);
       }
     }
 
-    if (services.isEmpty()) {
-      throw new IllegalStateException("No process specified in configs");
+    Collection<ChaosMonkeyService> services = new LinkedList<>();
+    for (String service : conf.get("services").split(",")) {
+      String pidPath = conf.get(service + ".pidPath");
+      if (pidPath == null) {
+        throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
+      }
+
+      int interval;
+      try {
+        interval = Integer.parseInt(conf.get(service + ".interval"));
+      } catch (NumberFormatException | NullPointerException e) {
+        throw new IllegalArgumentException("The following process does not have a valid interval: " + service, e);
+      }
+
+      double killProbability = Double.parseDouble(conf.get(service + ".killProbability", "0.0"));
+      double stopProbability = Double.parseDouble(conf.get(service + ".stopProbability", "0.0"));
+
+      if (killProbability == 0.0 && stopProbability == 0.0) {
+        throw new IllegalArgumentException("The following process may not have both killProbability and " +
+                                             "stopProbability equal to 0.0 or undefined: " + service);
+      }
+
+      String statusCommand = conf.get(service + ".statusCommand");
+
+      for (SshShell sshShell : sshShells) {
+        RemoteProcess process;
+        if (statusCommand != null) {
+          process = new RemoteProcess(service, pidPath, sshShell, statusCommand);
+        } else {
+          process = new RemoteProcess(service, pidPath, sshShell);
+        }
+
+        if (process.exists()) {
+          LOGGER.debug("Created {} with pidPath: {}, stopProbability: {}, killProbability: {}, interval: {}",
+                       service, pidPath, stopProbability, killProbability, interval);
+          ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(process, stopProbability,
+                                                                         killProbability, interval);
+
+          LOGGER.debug("The {} service has been added for {}@{}",
+                       service, sshShell.getUsername(), sshShell.getHostname());
+          services.add(chaosMonkeyService);
+        } else {
+          LOGGER.info("The {} service does not exist on {}@{}... Skipping",
+                      service, sshShell.getUsername(), sshShell.getHostname());
+        }
+      }
     }
 
     for (ChaosMonkeyService service : services) {

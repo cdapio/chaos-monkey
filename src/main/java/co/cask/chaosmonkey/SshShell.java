@@ -66,6 +66,7 @@ public class SshShell {
       Connector connector = ConnectorFactory.getDefault().createConnector();
       if (connector != null) {
         jsch.setIdentityRepository(new RemoteIdentityRepository(connector));
+        LOG.debug("Attaching to ssh-agent");
       }
     } catch (AgentProxyException e) {
       LOG.error("Unable to connect to ssh-agent", e);
@@ -138,6 +139,7 @@ public class SshShell {
         channel.setOutputStream(output);
         channel.setErrStream(error);
         channel.connect();
+        LOG.debug("Executing '{}' to {}@{}", command, getUsername(), getHostname());
 
         while (channel.getExitStatus() < 0) {
           try {
@@ -148,7 +150,7 @@ public class SshShell {
         }
         return new ShellOutput(channel.getExitStatus(), output.toString(), error.toString());
       } catch (IOException e) {
-        // Execution should never reach here because ByteArayOutputStream should never throw this exception
+        // Execution should never reach here because ByteArrayOutputStream should never throw this exception
         throw new IllegalStateException("This should not happen", e);
       } finally {
         channel.disconnect();
@@ -157,6 +159,14 @@ public class SshShell {
     } finally {
       session.disconnect();
     }
+  }
+
+  public String getUsername() {
+    return this.username;
+  }
+
+  public String getHostname() {
+    return this.hostname;
   }
 
   /**

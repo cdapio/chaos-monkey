@@ -29,6 +29,7 @@ public class RemoteProcess {
   private final String name;
   private final String pidFilePath;
   private final SshShell sshShell;
+  private final String statusCommand;
 
   /**
    * Create a new {@code RemoteProcess}.
@@ -36,19 +37,39 @@ public class RemoteProcess {
    * @param name The name of the process on the remote host
    * @param pidFilePath The path to its pidfile on the remote host
    * @param sshShell The {@code SshShell} that should be used to execute remote commands on the remote
+   * @param statusCommand A bash command that, when run, will return 0 if and only if the service is running;
+   *                      may include one %s which will be replaced with the service name
    */
-  public RemoteProcess(String name, String pidFilePath, SshShell sshShell) {
+  public RemoteProcess(String name, String pidFilePath, SshShell sshShell, String statusCommand) {
     this.name = name;
     this.pidFilePath = pidFilePath;
     this.sshShell = sshShell;
+    this.statusCommand = statusCommand;
+  }
+
+  /**
+   * Create a new {@code RemoteProcess} using the standard status command, {@code sudo service <name> status}.
+   *
+   * @param name The name of the process on the remote host
+   * @param pidFilePath The path to its pidfile on the remote host
+   * @param sshShell The {@code SshShell} that should be used to execute remote commands on the remote
+   */
+  public RemoteProcess(String name, String pidFilePath, SshShell sshShell) {
+    this(name, pidFilePath, sshShell, "sudo service %s status");
   }
 
   private int signal(int signum) throws JSchException {
-    return sshShell.exec(String.format("kill -%d $(cat %s)", signum, this.pidFilePath)).returnCode;
+    LOG.debug("Sending signal {} to {} on {}@{}", signum, getName(), sshShell.getUsername(), sshShell.getHostname());
+    return sshShell.exec(String.format("sudo kill -%d $(< %s)", signum, this.pidFilePath)).returnCode;
   }
 
   private int serviceCommand(String command) throws JSchException {
+    LOG.debug("Sending service {} to {} on {}@{}", command, getName(), sshShell.getUsername(), sshShell.getHostname());
     return sshShell.exec(String.format("sudo service %s %s", this.name, command)).returnCode;
+  }
+
+  public String getName() {
+    return this.name;
   }
 
   /**
@@ -108,6 +129,18 @@ public class RemoteProcess {
    * @throws JSchException
    */
   public boolean isRunning() throws JSchException {
-    return sshShell.exec(String.format("service %s status | grep OK", this.name)).returnCode == 0;
+    LOG.debug("Checking the status of {} on {}@{}", getName(), sshShell.getUsername(), sshShell.getHostname());
+    return sshShell.exec(String.format(this.statusCommand, this.name)).returnCode == 0;
+  }
+
+  /**
+   * Returns whether the process exists on a remote {@code SshShell}.
+   *
+   * @return {@code true} if the process exists, otherwise {@code false}
+   */
+  public boolean exists() throws JSchException {
+    LOG.debug("Checking if {} exists", getName());
+    //TODO: There should be a less sketchy method of figuring out if a service exists
+    return sshShell.exec(String.format("sudo service %s 2>&1 | grep -q '%s: unrecognized service'")).returnCode == 1;
   }
 }
