@@ -140,14 +140,14 @@ public class ChaosMonkeyService extends AbstractScheduledService {
 
         int interval;
         try {
-          interval = Integer.parseInt(conf.get(service + ".interval"));
+          interval = conf.getInt(service + ".interval");
         } catch (NumberFormatException | NullPointerException e) {
           throw new IllegalArgumentException("The following process does not have a valid interval: " + service, e);
         }
 
-        double killProbability = Double.parseDouble(conf.get(service + ".killProbability", "0.0"));
-        double stopProbability = Double.parseDouble(conf.get(service + ".stopProbability", "0.0"));
-        double restartProbability = Double.parseDouble(conf.get(service + ".restartProbability", "0.0"));
+        double killProbability = conf.getDouble(service + ".killProbability", 0.0);
+        double stopProbability = conf.getDouble(service + ".stopProbability", 0.0);
+        double restartProbability = conf.getDouble(service + ".restartProbability", 0.0);
 
         if (killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
           throw new IllegalArgumentException("The following process may not have all of killProbability, " +
