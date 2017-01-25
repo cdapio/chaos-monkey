@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -118,8 +117,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
       throw new IllegalArgumentException("Cluster ID not specified");
     }
 
-    List<NodeProperties> propertiesList = new ArrayList<>(ChaosMonkeyHelper.getNodeProperties(clusterId, conf)
-                                                            .values());
+    Collection<NodeProperties> propertiesList = ChaosMonkeyHelper.getNodeProperties(clusterId, conf).values();
     ArrayList<SshShell> sshShells = new ArrayList<>();
 
     for (NodeProperties nodeProperties : propertiesList) {
