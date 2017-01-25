@@ -18,6 +18,7 @@ package co.cask.chaosmonkey;
 
 
 import co.cask.chaosmonkey.conf.Configuration;
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.jcraft.jsch.JSchException;
@@ -158,14 +159,27 @@ public class ChaosMonkeyRunner {
                                                " and restartProbability of over 1.0: " + service);
         }
 
-        String statusCommand = conf.get(service + ".statusCommand");
-
         RemoteProcess process;
-        if (statusCommand != null) {
-          process = new RemoteProcess(service, pidPath, sshShell, statusCommand);
-        } else {
-          process = new RemoteProcess(service, pidPath, sshShell);
+        switch (conf.get(service + ".init.style", "sysv")) {
+          case "sysv":
+            process = new SysVRemoteProcess(service, pidPath, sshShell);
+            break;
+          case "custom":
+            ImmutableMap.Builder<String, String> map = ImmutableMap.builder();
+
+            for (String configOption : Constants.CustomRemoteProcess.CONFIG_OPTIONS) {
+              String optionKey = String.format("%s.init.%s", service, configOption);
+              if (conf.get(optionKey) != null) {
+                map.put(configOption, conf.get(optionKey));
+              }
+            }
+
+            process = new CustomRemoteProcess(service, pidPath, sshShell, map.build());
+            break;
+          default:
+            throw new IllegalArgumentException("The following process does not have a valid init.style" + service);
         }
+
         if (process.exists()) {
           LOGGER.debug("Created {} with pidPath: {}, stopProbability: {}, killProbability: {}, " +
                          "restartProbability: {}, interval: {}",

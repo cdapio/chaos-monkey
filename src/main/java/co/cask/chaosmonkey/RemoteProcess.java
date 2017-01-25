@@ -23,84 +23,54 @@ import org.slf4j.LoggerFactory;
 /**
  * A remote process that ChaosMonkey can interact with.
  */
-public class RemoteProcess {
-  private static final Logger LOG = LoggerFactory.getLogger(RemoteProcess.class);
-
-  private final String name;
-  private final String pidFilePath;
-  private final SshShell sshShell;
-  private final String statusCommand;
+public interface RemoteProcess {
 
   /**
-   * Create a new {@code RemoteProcess}.
+   * Returns this process's name.
    *
-   * @param name The name of the process on the remote host
-   * @param pidFilePath The path to its pidfile on the remote host
-   * @param sshShell The {@code SshShell} that should be used to execute remote commands on the remote
-   * @param statusCommand A bash command that, when run, will return 0 if and only if the service is running;
-   *                      may include one %s which will be replaced with the service name
+   * @return The name of this process.
    */
-  public RemoteProcess(String name, String pidFilePath, SshShell sshShell, String statusCommand) {
-    this.name = name;
-    this.pidFilePath = pidFilePath;
-    this.sshShell = sshShell;
-    this.statusCommand = statusCommand;
-  }
+   String getName();
 
   /**
-   * Create a new {@code RemoteProcess} using the standard status command, {@code sudo service <name> status}.
+   * Executes a command and returns the return code.
    *
-   * @param name The name of the process on the remote host
-   * @param pidFilePath The path to its pidfile on the remote host
-   * @param sshShell The {@code SshShell} that should be used to execute remote commands on the remote
+   * @param command The command to be executed
+   * @return The return code after running the command
+   * @throws JSchException
    */
-  public RemoteProcess(String name, String pidFilePath, SshShell sshShell) {
-    this(name, pidFilePath, sshShell, "sudo service %s status");
-  }
-
-  private int signal(int signum) throws JSchException {
-    LOG.debug("Sending signal {} to {} on {}@{}", signum, getName(), sshShell.getUsername(), sshShell.getIpAddress());
-    return sshShell.exec(String.format("sudo kill -%d $(< %s)", signum, this.pidFilePath)).returnCode;
-  }
-
-  private int serviceCommand(String command) throws JSchException {
-    LOG.debug("Sending service {} to {} on {}@{}", command, getName(), sshShell.getUsername(), sshShell.getIpAddress());
-    return sshShell.exec(String.format("sudo service %s %s", this.name, command)).returnCode;
-  }
-
-  public String getName() {
-    return this.name;
-  }
+   int execAndGetReturnCode(String command) throws JSchException;
 
   /**
-   * Starts the process using {@code service <name> start}.
+   * Executes a command and returns if it was successful.
+   *
+   * @param command The command to be executed
+   * @return {@code true} if the command was sucessful, otherwise {@code false}
+   * @throws JSchException
+   */
+   boolean execAndReturnSucessful(String command) throws JSchException;
+
+  /**
+   * Starts the process.
+   *
+   * @return The return code from running the process.
+   */
+   int start() throws JSchException;
+
+  /**
+   * Restarts the process.
+   *
+   * @return The return code from running the process.
+   */
+   int restart() throws JSchException;
+
+  /**
+   * Stops the process.
    *
    * @return The return code from running the process.
    * @throws JSchException
    */
-  public int start() throws JSchException {
-    return serviceCommand("start");
-  }
-
-  /**
-   * Restarts the process using {@code service <name> --full-restart}.
-   *
-   * @return The return code from running the process.
-   * @throws JSchException
-   */
-  public int restart() throws JSchException {
-    return serviceCommand("--full-restart");
-  }
-
-  /**
-   * Stops the process using {@code service <name> stop}.
-   *
-   * @return The return code from running the process.
-   * @throws JSchException
-   */
-  public int stop() throws JSchException {
-    return serviceCommand("stop");
-  }
+   int stop() throws JSchException;
 
   /**
    * Terminates the process by sending it SIGTERM.
@@ -108,9 +78,7 @@ public class RemoteProcess {
    * @return The return code from running the process.
    * @throws JSchException
    */
-  public int terminate() throws JSchException {
-    return signal(Constants.RemoteProcess.SIGTERM);
-  }
+   int terminate() throws JSchException;
 
   /**
    * Kills the process by sending it SIGKILL.
@@ -118,9 +86,7 @@ public class RemoteProcess {
    * @return The return code from running the process.
    * @throws JSchException
    */
-  public int kill() throws JSchException {
-    return signal(Constants.RemoteProcess.SIGKILL);
-  }
+   int kill() throws JSchException;
 
   /**
    * Returns whether the process is running.
@@ -128,18 +94,12 @@ public class RemoteProcess {
    * @return {@code true} if running, otherwise {@code false}.
    * @throws JSchException
    */
-  public boolean isRunning() throws JSchException {
-    LOG.debug("Checking the status of {} on {}@{}", getName(), sshShell.getUsername(), sshShell.getIpAddress());
-    return sshShell.exec(String.format(this.statusCommand, this.name)).returnCode == 0;
-  }
+   boolean isRunning() throws JSchException;
 
   /**
    * Returns whether the process exists on a remote {@code SshShell}.
    *
    * @return {@code true} if the process exists, otherwise {@code false}
    */
-  public boolean exists() throws JSchException {
-    LOG.debug("Checking if {} exists", getName());
-    return sshShell.exec(String.format("test -e /etc/init.d/%s", getName())).returnCode == 0;
-  }
+   boolean exists() throws JSchException;
 }
