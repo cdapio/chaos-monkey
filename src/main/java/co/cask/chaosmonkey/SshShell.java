@@ -44,21 +44,21 @@ public class SshShell {
 
   private final JSch jsch;
   private final String username;
-  private final NodeProperties nodeProperties;
+  private final String ipAddress;
 
   /**
    * Constructs a new {@code SshShell}.
    *
    * @param username The username to connect with
-   * @param nodeProperties Holds information about the node to connect to
+   * @param ipAddress The IP address of the host
    * @param privateKey The location of the private key file
    * @param passphrase The passphrase encrypting the private key
    * @throws JSchException
    */
-  public SshShell(String username, NodeProperties nodeProperties,
+  public SshShell(String username, String ipAddress,
                   String privateKey, String passphrase) throws JSchException {
     this.username = username;
-    this.nodeProperties = nodeProperties;
+    this.ipAddress = ipAddress;
 
     this.jsch = new JSch();
     this.jsch.setConfig("StrictHostKeyChecking", "no");
@@ -86,23 +86,23 @@ public class SshShell {
    * Constructs a new {@code SshShell} where the private key is unencrypted.
    *
    * @param username The username to connect with
-   * @param nodeProperties Holds information about the node to connect to
+   * @param ipAddress The IP address of the host
    * @param privateKey The location of the private key file
    * @throws JSchException
    */
-  public SshShell(String username, NodeProperties nodeProperties, String privateKey) throws JSchException {
-    this(username, nodeProperties, privateKey, null);
+  public SshShell(String username, String ipAddress, String privateKey) throws JSchException {
+    this(username, ipAddress, privateKey, null);
   }
 
   /**
    * Constructs a new {@code SshShell} by looking in the default key locations; keys should be unencrypted.
    *
    * @param username The username to connect with
-   * @param nodeProperties Holds information about the node to connect to
+   * @param ipAddress The IP address of the host
    * @throws JSchException
    */
-  public SshShell(String username, NodeProperties nodeProperties) throws JSchException {
-    this(username, nodeProperties, null);
+  public SshShell(String username, String ipAddress) throws JSchException {
+    this(username, ipAddress, null);
 
     boolean noIdentity = true;
     for (String relativeKeyPath : RELATIVE_KEY_PATHS) {
@@ -128,7 +128,7 @@ public class SshShell {
    * @throws JSchException
    */
   public ShellOutput exec(String command, InputStream input) throws JSchException {
-    Session session = jsch.getSession(this.username, this.getNodeProperties().getAccessIpAddress());
+    Session session = jsch.getSession(this.username, this.getIpAddress());
     command = String.format("bash -lc '%s'", command);
     try {
       session.connect();
@@ -141,7 +141,7 @@ public class SshShell {
         channel.setOutputStream(output);
         channel.setErrStream(error);
         channel.connect();
-        LOG.debug("Executing '{}' to {}@{}", command, getUsername(), this.getNodeProperties().getAccessIpAddress());
+        LOG.debug("Executing '{}' to {}@{}", command, getUsername(), getIpAddress());
 
         while (channel.getExitStatus() < 0) {
           try {
@@ -167,8 +167,8 @@ public class SshShell {
     return this.username;
   }
 
-  public NodeProperties getNodeProperties() {
-    return this.nodeProperties;
+  public String getIpAddress() {
+    return this.ipAddress;
   }
 
   /**
