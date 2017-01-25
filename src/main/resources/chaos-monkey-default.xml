@@ -24,11 +24,6 @@
   </property>
 
   <property>
-    <name>services</name>
-    <value>hbase-regionserver,hbase-master</value>
-  </property>
-
-  <property>
     <name>hbase-regionserver.pidPath</name>
     <value>/var/run/hbase/hbase-hbase-regionserver.pid</value>
   </property>

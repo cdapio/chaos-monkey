@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -118,59 +117,58 @@ public class ChaosMonkeyService extends AbstractScheduledService {
       throw new IllegalArgumentException("Cluster ID not specified");
     }
 
-    Map<String, NodeProperties> propertiesMap = ChaosMonkeyHelper.getNodeProperties(clusterId, conf);
+    Collection<NodeProperties> propertiesList = ChaosMonkeyHelper.getNodeProperties(clusterId, conf).values();
     ArrayList<SshShell> sshShells = new ArrayList<>();
 
-    for (String nodeId : propertiesMap.keySet()) {
+    for (NodeProperties nodeProperties : propertiesList) {
       if (privateKey != null) {
         if (keyPassphrase != null) {
-          sshShells.add(new SshShell(username, propertiesMap.get(nodeId).getHostname(), privateKey));
+          sshShells.add(new SshShell(username, nodeProperties, privateKey));
         } else {
-          sshShells.add(new SshShell(username, propertiesMap.get(nodeId).getHostname(), privateKey, keyPassphrase));
+          sshShells.add(new SshShell(username, nodeProperties, privateKey, keyPassphrase));
         }
       } else {
-        sshShells.add(new SshShell(username, propertiesMap.get(nodeId).getHostname()));
+        sshShells.add(new SshShell(username, nodeProperties));
       }
     }
 
     Collection<ChaosMonkeyService> services = new LinkedList<>();
-    for (String service : conf.get("services").split(",")) {
-      String pidPath = conf.get(service + ".pidPath");
-      if (pidPath == null) {
-        throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
-      }
+    for (SshShell sshShell : sshShells) {
+      for (String service : sshShell.getNodeProperties().getServices()) {
+        String pidPath = conf.get(service + ".pidPath");
+        if (pidPath == null) {
+          throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
+        }
 
-      int interval;
-      try {
-        interval = Integer.parseInt(conf.get(service + ".interval"));
-      } catch (NumberFormatException | NullPointerException e) {
-        throw new IllegalArgumentException("The following process does not have a valid interval: " + service, e);
-      }
+        int interval;
+        try {
+          interval = Integer.parseInt(conf.get(service + ".interval"));
+        } catch (NumberFormatException | NullPointerException e) {
+          throw new IllegalArgumentException("The following process does not have a valid interval: " + service, e);
+        }
 
-      double killProbability = Double.parseDouble(conf.get(service + ".killProbability", "0.0"));
-      double stopProbability = Double.parseDouble(conf.get(service + ".stopProbability", "0.0"));
-      double restartProbability = Double.parseDouble(conf.get(service + ".restartProbability", "0.0"));
+        double killProbability = Double.parseDouble(conf.get(service + ".killProbability", "0.0"));
+        double stopProbability = Double.parseDouble(conf.get(service + ".stopProbability", "0.0"));
+        double restartProbability = Double.parseDouble(conf.get(service + ".restartProbability", "0.0"));
 
-      if (killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
-        throw new IllegalArgumentException("The following process may not have all of killProbability, " +
-                                             "stopProbability and restartProbability equal to 0.0 or undefined: "
-                                             + service);
-      }
-      if (stopProbability + killProbability + restartProbability > 1) {
-        throw new IllegalArgumentException("The following process has a combined killProbability, stopProbability" +
-                                             " and restartProbability of over 1.0: " + service);
-      }
+        if (killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
+          throw new IllegalArgumentException("The following process may not have all of killProbability, " +
+                                               "stopProbability and restartProbability equal to 0.0 or undefined: "
+                                               + service);
+        }
+        if (stopProbability + killProbability + restartProbability > 1) {
+          throw new IllegalArgumentException("The following process has a combined killProbability, stopProbability" +
+                                               " and restartProbability of over 1.0: " + service);
+        }
 
-      String statusCommand = conf.get(service + ".statusCommand");
+        String statusCommand = conf.get(service + ".statusCommand");
 
-      for (SshShell sshShell : sshShells) {
         RemoteProcess process;
         if (statusCommand != null) {
           process = new RemoteProcess(service, pidPath, sshShell, statusCommand);
         } else {
           process = new RemoteProcess(service, pidPath, sshShell);
         }
-
         if (process.exists()) {
           LOGGER.debug("Created {} with pidPath: {}, stopProbability: {}, killProbability: {}, " +
                          "restartProbability: {}, interval: {}",
