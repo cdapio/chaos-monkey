@@ -177,11 +177,11 @@ public class ChaosMonkeyService extends AbstractScheduledService {
                                                                          restartProbability, interval);
 
           LOGGER.debug("The {} service has been added for {}@{}",
-                       service, sshShell.getUsername(), sshShell.getHostname());
+                       service, sshShell.getUsername(), sshShell.getNodeProperties().getAccessIpAddress());
           services.add(chaosMonkeyService);
         } else {
           LOGGER.info("The {} service does not exist on {}@{}... Skipping",
-                      service, sshShell.getUsername(), sshShell.getHostname());
+                      service, sshShell.getUsername(), sshShell.getNodeProperties().getAccessIpAddress());
         }
       }
     }

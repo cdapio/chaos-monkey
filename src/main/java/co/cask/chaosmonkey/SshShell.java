@@ -167,10 +167,6 @@ public class SshShell {
     return this.username;
   }
 
-  public String getHostname() {
-    return this.nodeProperties.getHostname();
-  }
-
   public NodeProperties getNodeProperties() {
     return this.nodeProperties;
   }
