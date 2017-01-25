@@ -128,7 +128,7 @@ public class SshShell {
    * @throws JSchException
    */
   public ShellOutput exec(String command, InputStream input) throws JSchException {
-    Session session = jsch.getSession(this.username, this.getHostname());
+    Session session = jsch.getSession(this.username, this.getNodeProperties().getAccessIpAddress());
     command = String.format("bash -lc '%s'", command);
     try {
       session.connect();
@@ -141,7 +141,7 @@ public class SshShell {
         channel.setOutputStream(output);
         channel.setErrStream(error);
         channel.connect();
-        LOG.debug("Executing '{}' to {}@{}", command, getUsername(), getHostname());
+        LOG.debug("Executing '{}' to {}@{}", command, getUsername(), this.getNodeProperties().getAccessIpAddress());
 
         while (channel.getExitStatus() < 0) {
           try {
