@@ -37,5 +37,6 @@ public class Constants {
     public static final String TENANTID = "coopr.tenantId";
     public static final String SERVERURI = "coopr.server.uri";
     public static final String APIVERSION = "coopr.api.version";
+    public static final String CLUSTERID = "coopr.clusterId";
   }
 }

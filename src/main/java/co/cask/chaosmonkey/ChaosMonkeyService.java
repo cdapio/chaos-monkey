@@ -111,14 +111,9 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     String username = conf.get("username", System.getProperty("user.name"));
     String privateKey = conf.get("privateKey");
     String keyPassphrase = conf.get("keyPassphrase");
-    String clusterId = conf.get("clusterId");
 
-    if (clusterId == null || clusterId.isEmpty()) {
-      throw new IllegalArgumentException("Cluster ID not specified");
-    }
-
-    Collection<NodeProperties> propertiesList = ChaosMonkeyHelper.getNodeProperties(clusterId, conf).values();
     Collection<ChaosMonkeyService> services = new LinkedList<>();
+    Collection<NodeProperties> propertiesList = ChaosMonkeyHelper.getNodeProperties(conf).values();
 
     for (NodeProperties nodeProperties : propertiesList) {
       SshShell sshShell;

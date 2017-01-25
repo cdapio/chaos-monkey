@@ -33,4 +33,9 @@
         </description>
     </property>
 
+    <property>
+        <name>coopr.clusterId</name>
+        <value>invalid cluster ID</value>
+    </property>
+
 </configuration>

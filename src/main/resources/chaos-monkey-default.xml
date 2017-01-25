@@ -19,7 +19,7 @@
 
 <configuration>
   <property>
-    <name>clusterId</name>
+    <name>coopr.clusterId</name>
     <value>00000001</value>
   </property>
 
