@@ -118,23 +118,21 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     }
 
     Collection<NodeProperties> propertiesList = ChaosMonkeyHelper.getNodeProperties(clusterId, conf).values();
-    ArrayList<SshShell> sshShells = new ArrayList<>();
+    Collection<ChaosMonkeyService> services = new LinkedList<>();
 
     for (NodeProperties nodeProperties : propertiesList) {
+      SshShell sshShell;
       if (privateKey != null) {
         if (keyPassphrase != null) {
-          sshShells.add(new SshShell(username, nodeProperties, privateKey));
+          sshShell = new SshShell(username, nodeProperties.getAccessIpAddress(), privateKey);
         } else {
-          sshShells.add(new SshShell(username, nodeProperties, privateKey, keyPassphrase));
+          sshShell = new SshShell(username, nodeProperties.getAccessIpAddress(), privateKey, keyPassphrase);
         }
       } else {
-        sshShells.add(new SshShell(username, nodeProperties));
+        sshShell = new SshShell(username, nodeProperties.getAccessIpAddress());
       }
-    }
 
-    Collection<ChaosMonkeyService> services = new LinkedList<>();
-    for (SshShell sshShell : sshShells) {
-      for (String service : sshShell.getNodeProperties().getServices()) {
+      for (String service : nodeProperties.getServices()) {
         String pidPath = conf.get(service + ".pidPath");
         if (pidPath == null) {
           throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
@@ -177,11 +175,11 @@ public class ChaosMonkeyService extends AbstractScheduledService {
                                                                          restartProbability, interval);
 
           LOGGER.debug("The {} service has been added for {}@{}",
-                       service, sshShell.getUsername(), sshShell.getHostname());
+                       service, sshShell.getUsername(), nodeProperties.getAccessIpAddress());
           services.add(chaosMonkeyService);
         } else {
           LOGGER.info("The {} service does not exist on {}@{}... Skipping",
-                      service, sshShell.getUsername(), sshShell.getHostname());
+                      service, sshShell.getUsername(), nodeProperties.getAccessIpAddress());
         }
       }
     }

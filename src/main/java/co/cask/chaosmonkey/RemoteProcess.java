@@ -59,12 +59,12 @@ public class RemoteProcess {
   }
 
   private int signal(int signum) throws JSchException {
-    LOG.debug("Sending signal {} to {} on {}@{}", signum, getName(), sshShell.getUsername(), sshShell.getHostname());
+    LOG.debug("Sending signal {} to {} on {}@{}", signum, getName(), sshShell.getUsername(), sshShell.getIpAddress());
     return sshShell.exec(String.format("sudo kill -%d $(< %s)", signum, this.pidFilePath)).returnCode;
   }
 
   private int serviceCommand(String command) throws JSchException {
-    LOG.debug("Sending service {} to {} on {}@{}", command, getName(), sshShell.getUsername(), sshShell.getHostname());
+    LOG.debug("Sending service {} to {} on {}@{}", command, getName(), sshShell.getUsername(), sshShell.getIpAddress());
     return sshShell.exec(String.format("sudo service %s %s", this.name, command)).returnCode;
   }
 
@@ -129,7 +129,7 @@ public class RemoteProcess {
    * @throws JSchException
    */
   public boolean isRunning() throws JSchException {
-    LOG.debug("Checking the status of {} on {}@{}", getName(), sshShell.getUsername(), sshShell.getHostname());
+    LOG.debug("Checking the status of {} on {}@{}", getName(), sshShell.getUsername(), sshShell.getIpAddress());
     return sshShell.exec(String.format(this.statusCommand, this.name)).returnCode == 0;
   }
 
