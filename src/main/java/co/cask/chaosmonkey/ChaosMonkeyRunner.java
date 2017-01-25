@@ -191,7 +191,7 @@ public class ChaosMonkeyRunner {
                        service, sshShell.getUsername(), nodeProperties.getAccessIpAddress());
           services.add(chaosMonkeyService);
         } else {
-          LOGGER.info("The {} service does not exist on {}@{}... Skipping",
+          LOGGER.error("The {} service does not exist on {}@{}! Skipping",
                       service, sshShell.getUsername(), nodeProperties.getAccessIpAddress());
         }
       }
