@@ -24,15 +24,10 @@ import java.util.Map;
  */
 public class NodeProperties {
   private List<String> services;
-  private String hostname;
   private Map<String, String> ipaddresses;
 
   public List<String> getServices() {
     return services;
-  }
-
-  public String getHostname() {
-    return hostname;
   }
 
   public Map<String, String> getIpaddresses() {

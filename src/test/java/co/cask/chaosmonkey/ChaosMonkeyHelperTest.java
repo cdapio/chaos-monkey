@@ -27,8 +27,10 @@ import java.io.IOException;
 public class ChaosMonkeyHelperTest {
 
   @Test(expected = IOException.class)
-  public void testGetHostnamesInvalidInput() throws IOException {
-    Configuration conf = Configuration.create();
-    ChaosMonkeyHelper.getNodeProperties("invalid hostname", conf);
+  public void testGetNodePropertiesInvalidInput() throws IOException {
+    Configuration conf = new Configuration();
+    conf.addResource("chaos-monkey-default.xml");
+    conf.addResource("test-default.xml");
+    ChaosMonkeyHelper.getNodeProperties(conf);
   }
 }
