@@ -29,6 +29,7 @@ public class ChaosMonkeyHelperTest {
   @Test(expected = IOException.class)
   public void testGetNodePropertiesInvalidInput() throws IOException {
     Configuration conf = new Configuration();
+    conf.addResource("chaos-monkey-default.xml");
     conf.addResource("test-default.xml");
     ChaosMonkeyHelper.getNodeProperties(conf);
   }

@@ -50,16 +50,16 @@ public class ChaosMonkeyHelper {
   public static Map<String, NodeProperties> getNodeProperties(Configuration conf) throws IOException {
     HttpClient client = new DefaultHttpClient();
 
-    String clusterId = conf.get(Constants.Coopr.CLUSTERID);
+    String clusterId = conf.get(Constants.Coopr.CLUSTER_ID);
     if (clusterId == null || clusterId.isEmpty()) {
       throw new IllegalArgumentException("Cluster ID not specified");
     }
 
-    HttpPost httpPost = new HttpPost(conf.get(Constants.Coopr.SERVERURI) + "/" +
-                                       conf.get(Constants.Coopr.APIVERSION) + "/" +
+    HttpPost httpPost = new HttpPost(conf.get(Constants.Coopr.SERVER_URI) + "/" +
+                                       conf.get(Constants.Coopr.API_VERSION) + "/" +
                                        "getNodeProperties");
-    httpPost.setHeader("coopr-userid", conf.get(Constants.Coopr.USERID));
-    httpPost.setHeader("coopr-tenantid", conf.get(Constants.Coopr.TENANTID));
+    httpPost.setHeader("coopr-userid", conf.get(Constants.Coopr.USER_ID));
+    httpPost.setHeader("coopr-tenantid", conf.get(Constants.Coopr.TENANT_ID));
     httpPost.setEntity(new ByteArrayEntity(String.format("{\"clusterId\":\"%s\"}", clusterId)
                                              .getBytes("UTF-8")));
 
