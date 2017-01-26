@@ -34,16 +34,40 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
 /**
- * Helper methods for chaos monkey
+ * The main runner for ChaosMonkey.
  */
 public class ChaosMonkeyRunner {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyRunner.class);
   private static final Gson GSON = new Gson();
   private static final Type NODES_TYPE = new TypeToken<Map<String, NodeProperties>>() { }.getType();
+
+  private final Map<String, Collection<ChaosMonkeyService>> ipToService;
+
+  /**
+   * Creates a new {@code ChaosMonkeyRunner} object.
+   *
+   * @param ipToService A {@code Map} from IP addresses to a {@code Collection} of {@code ChaosMonkeyService}s
+   *                    associated with the IP.
+   */
+  public ChaosMonkeyRunner(Map<String, Collection<ChaosMonkeyService>> ipToService) {
+    this.ipToService = ipToService;
+  }
+
+  /**
+   * Starts all services associated with this object.
+   */
+  public void startServices() throws IllegalStateException {
+    for (Map.Entry<String, Collection<ChaosMonkeyService>> entry : this.ipToService.entrySet()) {
+      for (ChaosMonkeyService service : entry.getValue()) {
+        service.startAsync();
+      }
+    }
+  }
 
   /**
    * Gets the Map of NodeProperties for each node in a given cluster
@@ -91,7 +115,7 @@ public class ChaosMonkeyRunner {
     String privateKey = conf.get("privateKey");
     String keyPassphrase = conf.get("keyPassphrase");
 
-    Collection<ChaosMonkeyService> services = new LinkedList<>();
+    Map<String, Collection<ChaosMonkeyService>> ipToServices = new HashMap<>();
     Collection<NodeProperties> propertiesList = ChaosMonkeyRunner.getNodeProperties(conf).values();
 
     for (NodeProperties nodeProperties : propertiesList) {
@@ -106,6 +130,7 @@ public class ChaosMonkeyRunner {
         sshShell = new SshShell(username, nodeProperties.getAccessIpAddress());
       }
 
+      Collection<ChaosMonkeyService> services = new LinkedList<>();
       for (String service : nodeProperties.getServices()) {
         String pidPath = conf.get(service + ".pidPath");
         if (pidPath == null) {
@@ -156,10 +181,11 @@ public class ChaosMonkeyRunner {
                       service, sshShell.getUsername(), nodeProperties.getAccessIpAddress());
         }
       }
+      ipToServices.put(nodeProperties.getAccessIpAddress(), services);
     }
 
-    for (ChaosMonkeyService service : services) {
-      service.startAsync();
-    }
+    ChaosMonkeyRunner runner = new ChaosMonkeyRunner(ipToServices);
+    runner.startServices();
+    // TODO: Start the HTTP service here
   }
 }
