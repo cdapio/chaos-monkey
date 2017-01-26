@@ -43,6 +43,10 @@
     <name>hbase-regionserver.restartProbability</name>
     <value>0</value>
   </property>
+  <property>
+    <name>hbase-regionserver.init.style</name>
+    <value>sysv</value>
+  </property>
 
   <property>
     <name>hbase-master.pidPath</name>
@@ -63,6 +67,10 @@
   <property>
     <name>hbase-master.restartProbability</name>
     <value>0</value>
+  </property>
+  <property>
+    <name>hbase-master.init.style</name>
+    <value>sysv</value>
   </property>
 
   <property>

@@ -1,0 +1,108 @@
+/*
+ * Copyright © 2017 Cask Data, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package co.cask.chaosmonkey;
+
+import com.google.common.collect.ImmutableMap;
+import com.jcraft.jsch.JSchException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * A remote process that ChaosMonkey can interact with.
+ */
+public class CustomRemoteProcess extends SysVRemoteProcess {
+  private static final Logger LOG = LoggerFactory.getLogger(CustomRemoteProcess.class);
+
+  private final ImmutableMap<String, String> customCommands;
+
+  /**
+   * Create a new {@code RemoteProcess}.
+   *
+   * @param name The name of the process on the remote host
+   * @param pidFilePath The path to its pidfile on the remote host
+   * @param sshShell The {@code SshShell} that should be used to execute remote commands on the remote
+   * @param customCommands An override of the default commands
+   */
+  public CustomRemoteProcess(String name, String pidFilePath, SshShell sshShell,
+                             ImmutableMap<String, String> customCommands) {
+    super(name, pidFilePath, sshShell);
+    this.customCommands = customCommands;
+  }
+
+  @Override
+  public int start() throws JSchException {
+    if (customCommands.containsKey(Constants.CustomRemoteProcess.START)) {
+      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.START));
+    } else {
+      return super.start();
+    }
+  }
+
+  @Override
+  public int restart() throws JSchException {
+    if (customCommands.containsKey(Constants.CustomRemoteProcess.RESTART)) {
+      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.RESTART));
+    } else {
+      return super.restart();
+    }
+  }
+
+  @Override
+  public int stop() throws JSchException {
+    if (customCommands.containsKey(Constants.CustomRemoteProcess.STOP)) {
+      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.STOP));
+    } else {
+      return super.stop();
+    }
+  }
+
+  @Override
+  public int terminate() throws JSchException {
+    if (customCommands.containsKey(Constants.CustomRemoteProcess.TERMINATE)) {
+      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.TERMINATE));
+    } else {
+      return super.terminate();
+    }
+  }
+
+  @Override
+  public int kill() throws JSchException {
+    if (customCommands.containsKey(Constants.CustomRemoteProcess.KILL)) {
+      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.KILL));
+    } else {
+      return super.kill();
+    }
+  }
+
+  @Override
+  public boolean isRunning() throws JSchException {
+    if (customCommands.containsKey(Constants.CustomRemoteProcess.IS_RUNNING)) {
+      return execAndReturnSucessful(customCommands.get(Constants.CustomRemoteProcess.IS_RUNNING));
+    } else {
+      return super.isRunning();
+    }
+  }
+
+  @Override
+  public boolean exists() throws JSchException {
+    if (customCommands.containsKey(Constants.CustomRemoteProcess.EXISTS)) {
+      return execAndReturnSucessful(customCommands.get(Constants.CustomRemoteProcess.EXISTS));
+    } else {
+      return super.exists();
+    }
+  }
+}

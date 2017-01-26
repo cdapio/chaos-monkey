@@ -16,6 +16,8 @@
 
 package co.cask.chaosmonkey;
 
+import com.google.common.collect.ImmutableSet;
+
 /**
  * List of constants used by chaos monkey
  */
@@ -27,6 +29,28 @@ public class Constants {
   public static final class RemoteProcess {
     public static final int SIGKILL = 9;
     public static final int SIGTERM = 15;
+  }
+
+  /**
+   * Constants related to {@code CustomRemoteProcess}
+   */
+  public static final class CustomRemoteProcess {
+    public static final String START = "start";
+    public static final String RESTART = "restart";
+    public static final String STOP = "stop";
+    public static final String TERMINATE = "terminate";
+    public static final String KILL = "kill";
+    public static final String IS_RUNNING = "isRunning";
+    public static final String EXISTS = "exists";
+    public static final ImmutableSet<String> CONFIG_OPTIONS = ImmutableSet.of(
+      Constants.CustomRemoteProcess.START,
+      Constants.CustomRemoteProcess.RESTART,
+      Constants.CustomRemoteProcess.STOP,
+      Constants.CustomRemoteProcess.TERMINATE,
+      Constants.CustomRemoteProcess.KILL,
+      Constants.CustomRemoteProcess.IS_RUNNING,
+      Constants.CustomRemoteProcess.EXISTS
+    );
   }
 
   /**
