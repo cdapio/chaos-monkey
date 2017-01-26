@@ -98,9 +98,9 @@ public class ChaosMonkeyRunner {
       SshShell sshShell;
       if (privateKey != null) {
         if (keyPassphrase != null) {
-          sshShell = new SshShell(username, nodeProperties.getAccessIpAddress(), privateKey);
-        } else {
           sshShell = new SshShell(username, nodeProperties.getAccessIpAddress(), privateKey, keyPassphrase);
+        } else {
+          sshShell = new SshShell(username, nodeProperties.getAccessIpAddress(), privateKey);
         }
       } else {
         sshShell = new SshShell(username, nodeProperties.getAccessIpAddress());
