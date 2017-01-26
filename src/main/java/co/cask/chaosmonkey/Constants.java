@@ -16,7 +16,7 @@
 
 package co.cask.chaosmonkey;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * List of constants used by chaos monkey
@@ -42,7 +42,7 @@ public class Constants {
     public static final String KILL = "kill";
     public static final String IS_RUNNING = "isRunning";
     public static final String EXISTS = "exists";
-    public static final ImmutableList<String> CONFIG_OPTIONS = ImmutableList.of(
+    public static final ImmutableSet<String> CONFIG_OPTIONS = ImmutableSet.of(
       Constants.CustomRemoteProcess.START,
       Constants.CustomRemoteProcess.RESTART,
       Constants.CustomRemoteProcess.STOP,

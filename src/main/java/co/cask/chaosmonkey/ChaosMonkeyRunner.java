@@ -160,7 +160,7 @@ public class ChaosMonkeyRunner {
         }
 
         RemoteProcess process;
-        switch (conf.get(service + ".init.style", "sysv")) {
+        switch (conf.get(service + ".init.style")) {
           case "sysv":
             process = new SysVRemoteProcess(service, pidPath, sshShell);
             break;
