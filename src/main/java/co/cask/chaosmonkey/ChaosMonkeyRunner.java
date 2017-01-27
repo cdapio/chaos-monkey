@@ -34,9 +34,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 
 /**
@@ -47,26 +47,23 @@ public class ChaosMonkeyRunner {
   private static final Gson GSON = new Gson();
   private static final Type NODES_TYPE = new TypeToken<Map<String, NodeProperties>>() { }.getType();
 
-  private final Map<String, Collection<ChaosMonkeyService>> ipToService;
+  private final Map<String, ChaosMonkeyService> processToChaosMonkeyService;
 
   /**
    * Creates a new {@code ChaosMonkeyRunner} object.
    *
-   * @param ipToService A {@code Map} from IP addresses to a {@code Collection} of {@code ChaosMonkeyService}s
-   *                    associated with the IP.
+   * @param processToChaosMonkeyService A {@code Map} from process name to {@code ChaosMonkeyService}
    */
-  public ChaosMonkeyRunner(Map<String, Collection<ChaosMonkeyService>> ipToService) {
-    this.ipToService = ipToService;
+  public ChaosMonkeyRunner(Map<String, ChaosMonkeyService> processToChaosMonkeyService) {
+    this.processToChaosMonkeyService = processToChaosMonkeyService;
   }
 
   /**
    * Starts all services associated with this object.
    */
-  public void startServices() throws IllegalStateException {
-    for (Map.Entry<String, Collection<ChaosMonkeyService>> entry : this.ipToService.entrySet()) {
-      for (ChaosMonkeyService service : entry.getValue()) {
-        service.startAsync();
-      }
+  public void startServices() {
+    for (Map.Entry<String, ChaosMonkeyService> entry : processToChaosMonkeyService.entrySet()) {
+      entry.getValue().startAsync();
     }
   }
 
@@ -116,52 +113,68 @@ public class ChaosMonkeyRunner {
     String privateKey = conf.get("privateKey");
     String keyPassphrase = conf.get("keyPassphrase");
 
-    Map<String, Collection<ChaosMonkeyService>> ipToServices = new HashMap<>();
+    Map<String, Collection<String>> processToIp = new HashMap<>();
+    Map<String, ChaosMonkeyService> processToChaosMonkeyService = new HashMap<>();
     Collection<NodeProperties> propertiesList = ChaosMonkeyRunner.getNodeProperties(conf).values();
 
-    for (NodeProperties nodeProperties : propertiesList) {
-      SshShell sshShell;
-      if (privateKey != null) {
-        if (keyPassphrase != null) {
-          sshShell = new SshShell(username, nodeProperties.getAccessIpAddress(), privateKey, keyPassphrase);
-        } else {
-          sshShell = new SshShell(username, nodeProperties.getAccessIpAddress(), privateKey);
+    for (NodeProperties node : propertiesList) {
+      for (String service : node.getServices()) {
+        if (!processToIp.keySet().contains(service)) {
+          processToIp.put(service, new ArrayList<String>());
         }
-      } else {
-        sshShell = new SshShell(username, nodeProperties.getAccessIpAddress());
+        processToIp.get(service).add(node.getAccessIpAddress());
+      }
+    }
+
+    for (String service : processToIp.keySet()) {
+      String pidPath = conf.get(service + ".pidPath");
+      if (pidPath == null) {
+        LOGGER.warn("The following process does not have a pidPath and will be skipped: " + service);
+        continue;
       }
 
-      Collection<ChaosMonkeyService> services = new LinkedList<>();
-      for (String service : nodeProperties.getServices()) {
-        String pidPath = conf.get(service + ".pidPath");
-        if (pidPath == null) {
-          LOGGER.warn("The following process does not have a pidPath and will be skipped: " + service);
-          continue;
-        }
+      int interval;
+      try {
+        interval = conf.getInt(service + ".interval");
+      } catch (NumberFormatException | NullPointerException e) {
+        LOGGER.warn("The following process does not have a valid interval and will be skipped: " + service);
+        continue;
+      }
 
-        int interval;
-        try {
-          interval = conf.getInt(service + ".interval");
-        } catch (NumberFormatException | NullPointerException e) {
-          LOGGER.warn("The following process does not have a valid interval and will be skipped: " + service);
-          continue;
-        }
+      double killProbability = conf.getDouble(service + ".killProbability", 0.0);
+      double stopProbability = conf.getDouble(service + ".stopProbability", 0.0);
+      double restartProbability = conf.getDouble(service + ".restartProbability", 0.0);
+      int minNodesPerIteration = conf.getInt(service + ".minNodesPerIteration", 0);
+      int maxNodesPerIteration = conf.getInt(service + ".maxNodesPerIteration", 0);
 
-        double killProbability = conf.getDouble(service + ".killProbability", 0.0);
-        double stopProbability = conf.getDouble(service + ".stopProbability", 0.0);
-        double restartProbability = conf.getDouble(service + ".restartProbability", 0.0);
+      if (killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
+        LOGGER.warn("The following process may have all of killProbability, stopProbability and " +
+                      "restartProbability equal to 0.0 or undefined and will be skipped: " + service);
+        continue;
+      }
+      if (stopProbability + killProbability + restartProbability > 1) {
+        LOGGER.warn("The following process has a combined killProbability, stopProbability and " +
+                      "restartProbability of over 1.0 and will be skipped: " + service);
+        continue;
+      }
+      if (maxNodesPerIteration <= 0) {
+        LOGGER.warn("The following process has maxNodesPerIteration value of 0 or undefined and will be skipped: " +
+                      service);
+        continue;
+      }
 
-        if (killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
-          LOGGER.warn("The following process may have all of killProbability, stopProbability and " +
-                        "restartProbability equal to 0.0 or undefined and will be skipped: " + service);
-          continue;
+      ArrayList<RemoteProcess> processes = new ArrayList<>();
+      for (String ipAddress : processToIp.get(service)) {
+        SshShell sshShell;
+        if (privateKey != null) {
+          if (keyPassphrase != null) {
+            sshShell = new SshShell(username, ipAddress, privateKey, keyPassphrase);
+          } else {
+            sshShell = new SshShell(username, ipAddress, privateKey);
+          }
+        } else {
+          sshShell = new SshShell(username, ipAddress);
         }
-        if (stopProbability + killProbability + restartProbability > 1) {
-          LOGGER.warn("The following process has a combined killProbability, stopProbability and " +
-                        "restartProbability of over 1.0 and will be skipped: " + service);
-          continue;
-        }
-
         RemoteProcess process;
         switch (conf.get(service + ".init.style")) {
           case "sysv":
@@ -182,26 +195,17 @@ public class ChaosMonkeyRunner {
           default:
             throw new IllegalArgumentException("The following process does not have a valid init.style" + service);
         }
-
-        if (process.exists()) {
-          LOGGER.debug("Created {} with pidPath: {}, stopProbability: {}, killProbability: {}, " +
-                         "restartProbability: {}, interval: {}",
-                       service, pidPath, stopProbability, killProbability, restartProbability, interval);
-          ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(process, stopProbability, killProbability,
-                                                                         restartProbability, interval);
-
-          LOGGER.debug("The {} service has been added for {}@{}",
-                       service, sshShell.getUsername(), nodeProperties.getAccessIpAddress());
-          services.add(chaosMonkeyService);
-        } else {
-          LOGGER.error("The {} service does not exist on {}@{}! Skipping",
-                      service, sshShell.getUsername(), nodeProperties.getAccessIpAddress());
-        }
+        processes.add(process);
       }
-      ipToServices.put(nodeProperties.getAccessIpAddress(), services);
+
+      LOGGER.info("Adding the following process to Chaos Monkey: " + service);
+      ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(processes, stopProbability, killProbability,
+                                                                     restartProbability, interval,
+                                                                     minNodesPerIteration, maxNodesPerIteration);
+      processToChaosMonkeyService.put(service, chaosMonkeyService);
     }
 
-    ChaosMonkeyRunner runner = new ChaosMonkeyRunner(ipToServices);
+    ChaosMonkeyRunner runner = new ChaosMonkeyRunner(processToChaosMonkeyService);
     runner.startServices();
     // TODO: Start the HTTP service here
   }

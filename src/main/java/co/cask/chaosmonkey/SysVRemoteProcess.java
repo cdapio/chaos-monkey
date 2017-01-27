@@ -67,6 +67,8 @@ public class SysVRemoteProcess implements RemoteProcess {
     return this.name;
   }
 
+  public String getAddress() { return this.sshShell.getAddress(); }
+
   /**
    * Starts the process using {@code service <name> start}.
    *
