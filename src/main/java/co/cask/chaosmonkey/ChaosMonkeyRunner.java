@@ -135,14 +135,16 @@ public class ChaosMonkeyRunner {
       for (String service : nodeProperties.getServices()) {
         String pidPath = conf.get(service + ".pidPath");
         if (pidPath == null) {
-          throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
+          LOGGER.warn("The following process does not have a pidPath and will be skipped: " + service);
+          continue;
         }
 
         int interval;
         try {
           interval = conf.getInt(service + ".interval");
         } catch (NumberFormatException | NullPointerException e) {
-          throw new IllegalArgumentException("The following process does not have a valid interval: " + service, e);
+          LOGGER.warn("The following process does not have a valid interval and will be skipped: " + service);
+          continue;
         }
 
         double killProbability = conf.getDouble(service + ".killProbability", 0.0);
@@ -150,13 +152,14 @@ public class ChaosMonkeyRunner {
         double restartProbability = conf.getDouble(service + ".restartProbability", 0.0);
 
         if (killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
-          throw new IllegalArgumentException("The following process may not have all of killProbability, " +
-                                               "stopProbability and restartProbability equal to 0.0 or undefined: "
-                                               + service);
+          LOGGER.warn("The following process may have all of killProbability, stopProbability and " +
+                        "restartProbability equal to 0.0 or undefined and will be skipped: " + service);
+          continue;
         }
         if (stopProbability + killProbability + restartProbability > 1) {
-          throw new IllegalArgumentException("The following process has a combined killProbability, stopProbability" +
-                                               " and restartProbability of over 1.0: " + service);
+          LOGGER.warn("The following process has a combined killProbability, stopProbability and " +
+                        "restartProbability of over 1.0 and will be skipped: " + service);
+          continue;
         }
 
         RemoteProcess process;
