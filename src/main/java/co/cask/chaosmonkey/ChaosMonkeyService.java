@@ -20,7 +20,6 @@ import com.google.common.util.concurrent.AbstractScheduledService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -32,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 public class ChaosMonkeyService extends AbstractScheduledService {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyService.class);
 
-  private ArrayList<RemoteProcess> processes;
+  private List<RemoteProcess> processes;
   private double stopProbability;
   private double killProbability;
   private double restartProbability;
@@ -48,7 +47,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
    * @param restartProbability Probability that this process will be restarted in the current interval
    * @param executionPeriod The rate of execution cycles (in seconds)
    */
-  public ChaosMonkeyService(ArrayList<RemoteProcess> processes,
+  public ChaosMonkeyService(List<RemoteProcess> processes,
                             double stopProbability,
                             double killProbability,
                             double restartProbability,
@@ -71,9 +70,9 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     int numNodes = ThreadLocalRandom.current().nextInt(minNodesPerIteration, maxNodesPerIteration + 1);
 
     if (random < stopProbability) {
-      stop(getAffectedNodes(numNodes));
+      disrupt(getAffectedNodes(numNodes), DisruptionType.STOP);
     } else if (random < stopProbability + killProbability) {
-      kill(getAffectedNodes(numNodes));
+      disrupt(getAffectedNodes(numNodes), DisruptionType.KILL);
     } else if (random < stopProbability + killProbability + restartProbability) {
       restart(getAffectedNodes(numNodes));
     } else {
@@ -81,11 +80,18 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     }
   }
 
-  private void stop(List<RemoteProcess> affectedNodes) throws Exception {
+  private void disrupt(List<RemoteProcess> affectedNodes, DisruptionType disruptionType) throws Exception {
     for (RemoteProcess process : affectedNodes) {
       if (process.isRunning()) {
-        LOGGER.info("Attempting to stop {} on {}", process.getName(), process.getAddress());
-        process.stop();
+        LOGGER.info("Attempting to {} {} on {}", disruptionType.getName(), process.getName(), process.getAddress());
+        switch (disruptionType) {
+          case KILL:
+            process.kill();
+            break;
+          case STOP:
+            process.stop();
+            break;
+        }
 
         if (process.isRunning()) {
           LOGGER.error("{} on {} is still running!", process.getName(), process.getAddress());
@@ -93,41 +99,21 @@ public class ChaosMonkeyService extends AbstractScheduledService {
           LOGGER.info("{} on {} is no longer running", process.getName(), process.getAddress());
         }
       } else {
-        LOGGER.info("{} on {} is not running, skipping stop attempt", process.getName(), process.getAddress());
-      }
-    }
-  }
-
-  private void kill(List<RemoteProcess> affectedNodes) throws Exception {
-    for (RemoteProcess process : affectedNodes) {
-      if (process.isRunning()) {
-        LOGGER.info("Attempting to kill {} on {}", process.getName(), process.getAddress());
-        process.kill();
-
-        if (process.isRunning()) {
-          LOGGER.error("{} on {} is still running!", process.getName(), process.getAddress());
-        } else {
-          LOGGER.info("{} on {} is no longer running", process.getName(), process.getAddress());
-        }
-      } else {
-        LOGGER.info("{} on {} is not running, skipping kill attempt", process.getName(), process.getAddress());
+        LOGGER.info("{} on {} is not running, skipping {} attempt", process.getName(), process.getAddress(),
+                    disruptionType.getName());
       }
     }
   }
 
   private void restart(List<RemoteProcess> affectedNodes) throws Exception {
     for (RemoteProcess process : affectedNodes) {
-      if (!process.isRunning()) {
-        LOGGER.info("Attempting to restart {} on {}", process.getName(), process.getAddress());
-        process.restart();
+      LOGGER.info("Attempting to restart {} on {}", process.getName(), process.getAddress());
+      process.restart();
 
-        if (process.isRunning()) {
-          LOGGER.info("{} on {} is now running", process.getName(), process.getAddress());
-        } else {
-          LOGGER.info("{} on {} did not restart", process.getName(), process.getAddress());
-        }
+      if (process.isRunning()) {
+        LOGGER.info("{} on {} is now running", process.getName(), process.getAddress());
       } else {
-        LOGGER.info("{} on {} is already running, skipping restart attempt", process.getName(), process.getAddress());
+        LOGGER.info("{} on {} did not restart", process.getName(), process.getAddress());
       }
     }
   }
@@ -140,5 +126,20 @@ public class ChaosMonkeyService extends AbstractScheduledService {
   @Override
   protected Scheduler scheduler() {
     return AbstractScheduledService.Scheduler.newFixedRateSchedule(0, this.executionPeriod, TimeUnit.SECONDS);
+  }
+
+  private enum DisruptionType {
+    STOP("stop"),
+    KILL("kill");
+
+    private String name;
+
+    DisruptionType(String name) {
+      this.name = name;
+    }
+
+    public String getName() {
+      return this.name;
+    }
   }
 }
