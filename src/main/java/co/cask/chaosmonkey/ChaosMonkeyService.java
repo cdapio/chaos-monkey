@@ -49,6 +49,8 @@ public class ChaosMonkeyService extends AbstractScheduledService {
    * @param killProbability Probability that this process will be killed in the current interval
    * @param restartProbability Probability that this process will be restarted in the current interval
    * @param executionPeriod The rate of execution cycles (in seconds)
+   * @param minNodesPerIteration The minimum number of nodes that will be affected by chaos monkey each iteration
+   * @param maxNodesPerIteration The maximum number of nodes that will be affected by chaos monkey each iteration
    */
   public ChaosMonkeyService(List<RemoteProcess> processes,
                             double stopProbability,
