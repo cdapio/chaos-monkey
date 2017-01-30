@@ -68,6 +68,9 @@ public class ChaosMonkeyService extends AbstractScheduledService {
     if (this.maxNodesPerIteration < 0) {
       this.maxNodesPerIteration = processes.size() + this.maxNodesPerIteration;
     }
+    if (this.minNodesPerIteration < 0) {
+      this.minNodesPerIteration = processes.size() + this.minNodesPerIteration;
+    }
   }
 
   @Override
