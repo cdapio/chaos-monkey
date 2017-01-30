@@ -42,7 +42,6 @@ public class ChaosMonkeyService extends AbstractScheduledService {
   private Stop stop = new Stop();
   private Restart restart = new Restart();
 
-
   /**
    *
    * @param processes A list of processes that will be managed
@@ -66,6 +65,9 @@ public class ChaosMonkeyService extends AbstractScheduledService {
 
     this.minNodesPerIteration = Math.min(processes.size(), minNodesPerIteration);
     this.maxNodesPerIteration = Math.min(processes.size(), maxNodesPerIteration);
+    if (this.maxNodesPerIteration < 0) {
+      this.maxNodesPerIteration = processes.size() + this.maxNodesPerIteration;
+    }
   }
 
   @Override

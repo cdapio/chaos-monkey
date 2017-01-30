@@ -24,8 +24,8 @@ import java.util.List;
 /**
  * A disruption that halts a running process
  */
-public abstract class HaltingDisruption implements Disruption {
-  private static final Logger LOGGER = LoggerFactory.getLogger(HaltingDisruption.class);
+public abstract class AbstractHaltingDisruption implements Disruption {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHaltingDisruption.class);
 
   @Override
   public void disrupt(List<RemoteProcess> processes) throws Exception {

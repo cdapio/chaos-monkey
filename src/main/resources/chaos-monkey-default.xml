@@ -29,7 +29,7 @@
   </property>
   <property>
     <name>hbase-regionserver.interval</name>
-    <value>3</value>
+    <value>0</value>
   </property>
   <property>
     <name>hbase-regionserver.killProbability</name>
@@ -62,7 +62,7 @@
   </property>
   <property>
     <name>hbase-master.interval</name>
-    <value>3</value>
+    <value>0</value>
   </property>
   <property>
     <name>hbase-master.killProbability</name>

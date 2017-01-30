@@ -21,7 +21,7 @@ import com.jcraft.jsch.JSchException;
 /**
  * A halting disruption that kills the process
  */
-public class Kill extends HaltingDisruption {
+public class Kill extends AbstractHaltingDisruption {
 
   public String getName() {
     return "kill";

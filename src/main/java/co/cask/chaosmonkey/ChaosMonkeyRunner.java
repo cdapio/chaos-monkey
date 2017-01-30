@@ -126,18 +126,20 @@ public class ChaosMonkeyRunner {
     }
 
     for (String service : processToIp.keySet()) {
-      String pidPath = conf.get(service + ".pidPath");
-      if (pidPath == null) {
-        LOGGER.warn("The following process does not have a pidPath and will be skipped: {}", service);
-        continue;
-      }
-
       int interval;
       try {
         interval = conf.getInt(service + ".interval");
-      } catch (NumberFormatException | NullPointerException e) {
+        if (interval <= 0) {
+          throw new IllegalArgumentException();
+        }
+      } catch (IllegalArgumentException | NullPointerException e) {
         LOGGER.warn("The following process does not have a valid interval and will be skipped: {}", service);
         continue;
+      }
+
+      String pidPath = conf.get(service + ".pidPath");
+      if (pidPath == null) {
+        throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
       }
 
       double killProbability = conf.getDouble(service + ".killProbability", 0.0);
@@ -147,19 +149,12 @@ public class ChaosMonkeyRunner {
       int maxNodesPerIteration = conf.getInt(service + ".maxNodesPerIteration", 0);
 
       if (killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
-        LOGGER.warn("The following process may have all of killProbability, stopProbability and " +
-                      "restartProbability equal to 0.0 or undefined and will be skipped: {}", service);
-        continue;
+        throw new IllegalArgumentException("The following process may have all of killProbability, stopProbability " +
+                                             "and restartProbability equal to 0.0 or undefined: " + service);
       }
       if (stopProbability + killProbability + restartProbability > 1) {
-        LOGGER.warn("The following process has a combined killProbability, stopProbability and " +
-                      "restartProbability of over 1.0 and will be skipped: {}", service);
-        continue;
-      }
-      if (maxNodesPerIteration <= 0) {
-        LOGGER.warn("The following process has maxNodesPerIteration value of 0 or undefined and will be skipped: {}",
-                      service);
-        continue;
+        throw new IllegalArgumentException("The following process has a combined killProbability, stopProbability " +
+                                             "and restartProbability of over 1.0: " + service);
       }
 
       LinkedList<RemoteProcess> processes = new LinkedList<>();
