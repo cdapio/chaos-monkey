@@ -33,6 +33,13 @@ public interface RemoteProcess {
    String getName();
 
   /**
+   * Returns the ip address of the host of this process
+   *
+   * @return the ip address of the host of this process
+   */
+   String getAddress();
+
+  /**
    * Executes a command and returns the return code.
    *
    * @param command The command to be executed

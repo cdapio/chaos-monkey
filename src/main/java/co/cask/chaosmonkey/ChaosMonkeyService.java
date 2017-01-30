@@ -20,6 +20,9 @@ import com.google.common.util.concurrent.AbstractScheduledService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -28,62 +31,69 @@ import java.util.concurrent.TimeUnit;
 public class ChaosMonkeyService extends AbstractScheduledService {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyService.class);
 
-  private RemoteProcess process;
+  private List<RemoteProcess> processes;
   private double stopProbability;
   private double killProbability;
   private double restartProbability;
   private int executionPeriod;
+  private int minNodesPerIteration;
+  private int maxNodesPerIteration;
+  private Kill kill = new Kill();
+  private Stop stop = new Stop();
+  private Restart restart = new Restart();
 
   /**
    *
-   * @param process The processes that will be managed
+   * @param processes A list of processes that will be managed
    * @param stopProbability Probability that this process will be stopped in the current interval
    * @param killProbability Probability that this process will be killed in the current interval
    * @param restartProbability Probability that this process will be restarted in the current interval
    * @param executionPeriod The rate of execution cycles (in seconds)
+   * @param minNodesPerIteration The minimum number of nodes that will be affected by chaos monkey each iteration
+   * @param maxNodesPerIteration The maximum number of nodes that will be affected by chaos monkey each iteration
    */
-  public ChaosMonkeyService(RemoteProcess process,
+  public ChaosMonkeyService(List<RemoteProcess> processes,
                             double stopProbability,
                             double killProbability,
                             double restartProbability,
-                            int executionPeriod) {
-    this.process = process;
+                            int executionPeriod,
+                            int minNodesPerIteration,
+                            int maxNodesPerIteration) {
+    this.processes = processes;
     this.stopProbability = stopProbability;
     this.killProbability = killProbability;
     this.restartProbability = restartProbability;
     this.executionPeriod = executionPeriod;
+
+    this.minNodesPerIteration = Math.min(processes.size(), minNodesPerIteration);
+    this.maxNodesPerIteration = Math.min(processes.size(), maxNodesPerIteration);
+    if (this.maxNodesPerIteration < 0) {
+      this.maxNodesPerIteration = processes.size() + this.maxNodesPerIteration;
+    }
+    if (this.minNodesPerIteration < 0) {
+      this.minNodesPerIteration = processes.size() + this.minNodesPerIteration;
+    }
   }
 
   @Override
   protected void runOneIteration() throws Exception {
     double random = Math.random();
+    int numNodes = ThreadLocalRandom.current().nextInt(minNodesPerIteration, maxNodesPerIteration + 1);
 
-    boolean serviceRunningBeforeIteration = process.isRunning();
-    if (random < stopProbability && serviceRunningBeforeIteration) {
-      LOGGER.info("Attempting to stop {}", process.getName());
-      process.stop();
-    } else if (random < stopProbability + killProbability && serviceRunningBeforeIteration) {
-      LOGGER.info("Attempting to kill {}", process.getName());
-      process.kill();
-    } else if (random < stopProbability + killProbability + restartProbability && !serviceRunningBeforeIteration) {
-      LOGGER.info("Attempting to restart {}", process.getName());
-      process.restart();
+    if (random < stopProbability) {
+      stop.disrupt(getAffectedNodes(numNodes));
+    } else if (random < stopProbability + killProbability) {
+      kill.disrupt(getAffectedNodes(numNodes));
+    } else if (random < stopProbability + killProbability + restartProbability) {
+      restart.disrupt(getAffectedNodes(numNodes));
     } else {
       return;
     }
+  }
 
-    // Only do a check after an action has been attempted
-    boolean serviceRunningAfterIteration = process.isRunning();
-    if (serviceRunningBeforeIteration && serviceRunningAfterIteration) {
-      LOGGER.error("{} is still running!", process.getName());
-    } else if (serviceRunningBeforeIteration && !serviceRunningAfterIteration) {
-      LOGGER.info("{} is no longer running", process.getName());
-    } else if (!serviceRunningBeforeIteration && serviceRunningAfterIteration) {
-      LOGGER.info("{} is now running", process.getName());
-    } else if (!serviceRunningBeforeIteration && !serviceRunningAfterIteration) {
-      LOGGER.error("{} did not restart", process.getName());
-    }
-
+  private List<RemoteProcess> getAffectedNodes(int numNodes) {
+    Collections.shuffle(processes);
+    return processes.subList(0, numNodes);
   }
 
   @Override

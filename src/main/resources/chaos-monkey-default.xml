@@ -29,7 +29,7 @@
   </property>
   <property>
     <name>hbase-regionserver.interval</name>
-    <value>3</value>
+    <value>0</value>
   </property>
   <property>
     <name>hbase-regionserver.killProbability</name>
@@ -47,6 +47,14 @@
     <name>hbase-regionserver.init.style</name>
     <value>sysv</value>
   </property>
+  <property>
+    <name>hbase-regionserver.minNodesPerIteration</name>
+    <value>0</value>
+  </property>
+  <property>
+    <name>hbase-regionserver.maxNodesPerIteration</name>
+    <value>0</value>
+  </property>
 
   <property>
     <name>hbase-master.pidPath</name>
@@ -54,7 +62,7 @@
   </property>
   <property>
     <name>hbase-master.interval</name>
-    <value>3</value>
+    <value>0</value>
   </property>
   <property>
     <name>hbase-master.killProbability</name>
@@ -71,6 +79,14 @@
   <property>
     <name>hbase-master.init.style</name>
     <value>sysv</value>
+  </property>
+  <property>
+    <name>hbase-master.minNodesPerIteration</name>
+    <value>0</value>
+  </property>
+  <property>
+    <name>hbase-master.maxNodesPerIteration</name>
+    <value>0</value>
   </property>
 
   <property>
