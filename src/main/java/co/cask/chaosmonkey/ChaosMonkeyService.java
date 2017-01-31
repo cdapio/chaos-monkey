@@ -74,7 +74,7 @@ public class ChaosMonkeyService extends AbstractScheduledService {
       this.minNodesPerIteration = processes.size() + this.minNodesPerIteration;
     }
     if (this.minNodesPerIteration > this.maxNodesPerIteration) {
-      throw new IllegalArgumentException ("minNodePerIteration is greater than maxNodePerIteration for process: "
+      throw new IllegalArgumentException("minNodePerIteration is greater than maxNodePerIteration for process: "
                                             + this.processes.get(0).getName() + "\n" +
                                             "minNodePerIteration: " + this.minNodesPerIteration + "\n" +
                                             "maxNodePerIteration: " + this.maxNodesPerIteration);
