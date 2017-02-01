@@ -83,14 +83,14 @@ public class SysVRemoteProcess implements RemoteProcess {
   }
 
   /**
-   * Restarts the process using {@code service <name> --full-restart}.
+   * Restarts the process using {@code service <name> restart}.
    *
    * @return The return code from running the process.
    * @throws JSchException
    */
   @Override
   public int restart() throws JSchException {
-    return serviceCommand("--full-restart");
+    return serviceCommand("restart");
   }
 
   /**
