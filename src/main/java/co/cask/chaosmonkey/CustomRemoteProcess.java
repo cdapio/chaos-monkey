@@ -45,8 +45,8 @@ public class CustomRemoteProcess extends SysVRemoteProcess {
 
   @Override
   public int start() throws JSchException {
-    if (customCommands.containsKey(Constants.CustomRemoteProcess.START)) {
-      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.START));
+    if (customCommands.containsKey(Constants.RemoteProcess.START)) {
+      return execAndGetReturnCode(customCommands.get(Constants.RemoteProcess.START));
     } else {
       return super.start();
     }
@@ -54,8 +54,8 @@ public class CustomRemoteProcess extends SysVRemoteProcess {
 
   @Override
   public int restart() throws JSchException {
-    if (customCommands.containsKey(Constants.CustomRemoteProcess.RESTART)) {
-      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.RESTART));
+    if (customCommands.containsKey(Constants.RemoteProcess.RESTART)) {
+      return execAndGetReturnCode(customCommands.get(Constants.RemoteProcess.RESTART));
     } else {
       return super.restart();
     }
@@ -63,8 +63,8 @@ public class CustomRemoteProcess extends SysVRemoteProcess {
 
   @Override
   public int stop() throws JSchException {
-    if (customCommands.containsKey(Constants.CustomRemoteProcess.STOP)) {
-      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.STOP));
+    if (customCommands.containsKey(Constants.RemoteProcess.STOP)) {
+      return execAndGetReturnCode(customCommands.get(Constants.RemoteProcess.STOP));
     } else {
       return super.stop();
     }
@@ -72,8 +72,8 @@ public class CustomRemoteProcess extends SysVRemoteProcess {
 
   @Override
   public int terminate() throws JSchException {
-    if (customCommands.containsKey(Constants.CustomRemoteProcess.TERMINATE)) {
-      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.TERMINATE));
+    if (customCommands.containsKey(Constants.RemoteProcess.TERMINATE)) {
+      return execAndGetReturnCode(customCommands.get(Constants.RemoteProcess.TERMINATE));
     } else {
       return super.terminate();
     }
@@ -81,8 +81,8 @@ public class CustomRemoteProcess extends SysVRemoteProcess {
 
   @Override
   public int kill() throws JSchException {
-    if (customCommands.containsKey(Constants.CustomRemoteProcess.KILL)) {
-      return execAndGetReturnCode(customCommands.get(Constants.CustomRemoteProcess.KILL));
+    if (customCommands.containsKey(Constants.RemoteProcess.KILL)) {
+      return execAndGetReturnCode(customCommands.get(Constants.RemoteProcess.KILL));
     } else {
       return super.kill();
     }
@@ -90,8 +90,8 @@ public class CustomRemoteProcess extends SysVRemoteProcess {
 
   @Override
   public boolean isRunning() throws JSchException {
-    if (customCommands.containsKey(Constants.CustomRemoteProcess.IS_RUNNING)) {
-      return execAndReturnSucessful(customCommands.get(Constants.CustomRemoteProcess.IS_RUNNING));
+    if (customCommands.containsKey(Constants.RemoteProcess.IS_RUNNING)) {
+      return execAndReturnSucessful(customCommands.get(Constants.RemoteProcess.IS_RUNNING));
     } else {
       return super.isRunning();
     }
@@ -99,8 +99,8 @@ public class CustomRemoteProcess extends SysVRemoteProcess {
 
   @Override
   public boolean exists() throws JSchException {
-    if (customCommands.containsKey(Constants.CustomRemoteProcess.EXISTS)) {
-      return execAndReturnSucessful(customCommands.get(Constants.CustomRemoteProcess.EXISTS));
+    if (customCommands.containsKey(Constants.RemoteProcess.EXISTS)) {
+      return execAndReturnSucessful(customCommands.get(Constants.RemoteProcess.EXISTS));
     } else {
       return super.exists();
     }

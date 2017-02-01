@@ -37,7 +37,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -48,26 +47,6 @@ public class ChaosMonkeyRunner {
   private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyRunner.class);
   private static final Gson GSON = new Gson();
   private static final Type NODES_TYPE = new TypeToken<Map<String, NodeProperties>>() { }.getType();
-
-  private final Map<String, ChaosMonkeyService> processToChaosMonkeyService;
-
-  /**
-   * Creates a new {@code ChaosMonkeyRunner} object.
-   *
-   * @param processToChaosMonkeyService A {@code Map} from process name to {@code ChaosMonkeyService}
-   */
-  public ChaosMonkeyRunner(Map<String, ChaosMonkeyService> processToChaosMonkeyService) {
-    this.processToChaosMonkeyService = processToChaosMonkeyService;
-  }
-
-  /**
-   * Starts all services associated with this object.
-   */
-  public void startServices() {
-    for (Map.Entry<String, ChaosMonkeyService> entry : processToChaosMonkeyService.entrySet()) {
-      entry.getValue().startAsync();
-    }
-  }
 
   /**
    * Gets the Map of NodeProperties for each node in a given cluster
@@ -116,7 +95,7 @@ public class ChaosMonkeyRunner {
     String keyPassphrase = conf.get("keyPassphrase");
 
     Multimap<String, String> processToIp = HashMultimap.create();
-    Map<String, ChaosMonkeyService> processToChaosMonkeyService = new HashMap<>();
+    Multimap<String, RemoteProcess> ipToProcess = HashMultimap.create();
     Collection<NodeProperties> propertiesList = ChaosMonkeyRunner.getNodeProperties(conf).values();
 
     for (NodeProperties node : propertiesList) {
@@ -177,7 +156,7 @@ public class ChaosMonkeyRunner {
           case "custom":
             ImmutableMap.Builder<String, String> map = ImmutableMap.builder();
 
-            for (String configOption : Constants.CustomRemoteProcess.CONFIG_OPTIONS) {
+            for (String configOption : Constants.RemoteProcess.CONFIG_OPTIONS) {
               String optionKey = String.format("%s.init.%s", service, configOption);
               if (conf.get(optionKey) != null) {
                 map.put(configOption, conf.get(optionKey));
@@ -190,17 +169,17 @@ public class ChaosMonkeyRunner {
             throw new IllegalArgumentException("The following process does not have a valid init.style: " + service);
         }
         processes.add(process);
+        ipToProcess.put(ipAddress, process);
       }
 
       LOGGER.info("Adding the following process to Chaos Monkey: {}", service);
       ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(processes, stopProbability, killProbability,
                                                                      restartProbability, interval,
                                                                      minNodesPerIteration, maxNodesPerIteration);
-      processToChaosMonkeyService.put(service, chaosMonkeyService);
+      chaosMonkeyService.startAsync();
     }
 
-    ChaosMonkeyRunner runner = new ChaosMonkeyRunner(processToChaosMonkeyService);
-    runner.startServices();
-    // TODO: Start the HTTP service here
+    Router router = new Router(ipToProcess);
+    router.startAsync();
   }
 }
