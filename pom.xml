@@ -61,7 +61,6 @@
     <logback.version>1.0.9</logback.version>
     <netty.http.version>0.16.0</netty.http.version>
     <slf4j.version>1.7.5</slf4j.version>
-    <jackson.version>2.5.3</jackson.version>
   </properties>
 
   <distributionManagement>
@@ -156,11 +155,6 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
   </dependencies>
 

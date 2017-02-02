@@ -96,6 +96,7 @@ public class ChaosMonkeyRunner {
 
     Multimap<String, String> processToIp = HashMultimap.create();
     Multimap<String, RemoteProcess> ipToProcess = HashMultimap.create();
+    Multimap<String, RemoteProcess> nameToProcess = HashMultimap.create();
     Collection<NodeProperties> propertiesList = ChaosMonkeyRunner.getNodeProperties(conf).values();
 
     for (NodeProperties node : propertiesList) {
@@ -170,6 +171,7 @@ public class ChaosMonkeyRunner {
         }
         processes.add(process);
         ipToProcess.put(ipAddress, process);
+        nameToProcess.put(service, process);
       }
 
       LOGGER.info("Adding the following process to Chaos Monkey: {}", service);
@@ -179,7 +181,7 @@ public class ChaosMonkeyRunner {
       chaosMonkeyService.startAsync();
     }
 
-    Router router = new Router(ipToProcess);
+    Router router = new Router(conf, ipToProcess, nameToProcess);
     router.startAsync();
   }
 }

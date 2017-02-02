@@ -19,7 +19,6 @@ package co.cask.chaosmonkey;
 import co.cask.chaosmonkey.conf.Configuration;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Multimap;
 import com.jcraft.jsch.JSchException;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -27,8 +26,10 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -40,48 +41,53 @@ import javax.ws.rs.PathParam;
  */
 @Path(Constants.Server.API_VERSION_1)
 public class HttpHandler extends AbstractHttpHandler {
-  private static final Logger LOGGER = LoggerFactory.getLogger(HttpHandler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HttpHandler.class);
 
   private final Configuration conf;
   private final Multimap<String, RemoteProcess> ipToProcess;
-  private static final ObjectMapper mapper = new ObjectMapper();
+  private final Multimap<String, RemoteProcess> nameToProcess;
 
-  HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess) {
+  HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess, Multimap<String,
+              RemoteProcess> nameToProcess) {
     this.conf = conf;
     this.ipToProcess = ipToProcess;
+    this.nameToProcess = nameToProcess;
   }
 
   @POST
   @Path("/services/{service}/{action}")
   public void executeAction(HttpRequest request, HttpResponder responder,
                             @PathParam("service") String service, @PathParam("action") String action) throws Exception {
-    for (RemoteProcess remoteProcess : ipToProcess.values()) {
-      if (remoteProcess.getName().equals(service)) {
-        try {
-          switch (action) {
-            case Constants.RemoteProcess.STOP:
-              remoteProcess.stop();
-              break;
-            case Constants.RemoteProcess.KILL:
-              remoteProcess.kill();
-              break;
-            case Constants.RemoteProcess.TERMINATE:
-              remoteProcess.terminate();
-              break;
-            case Constants.RemoteProcess.START:
-              remoteProcess.start();
-              break;
-            case Constants.RemoteProcess.RESTART:
-              remoteProcess.restart();
-              break;
-            default:
-              responder.sendString(HttpResponseStatus.BAD_REQUEST, "Unknown command: " + action);
-              return;
-          }
-        } catch (JSchException e) {
-          responder.sendString(HttpResponseStatus.BAD_REQUEST, e.getMessage());
-          return;
+    Collection<RemoteProcess> processes = nameToProcess.get(service);
+    if (processes.size() == 0) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown service: " + service);
+      return;
+    }
+    for (RemoteProcess remoteProcess : processes) {
+      try {
+        switch (action) {
+          case Constants.RemoteProcess.STOP:
+            remoteProcess.stop();
+            break;
+          case Constants.RemoteProcess.KILL:
+            remoteProcess.kill();
+            break;
+          case Constants.RemoteProcess.TERMINATE:
+            remoteProcess.terminate();
+            break;
+          case Constants.RemoteProcess.START:
+            remoteProcess.start();
+            break;
+          case Constants.RemoteProcess.RESTART:
+            remoteProcess.restart();
+            break;
+          default:
+            responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown command: " + action);
+            return;
         }
+      } catch (JSchException e) {
+        responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        return;
       }
     }
 
@@ -95,8 +101,8 @@ public class HttpHandler extends AbstractHttpHandler {
   @Path("/nodes")
   public void getNodes(HttpRequest request, HttpResponder responder) throws Exception {
     Map<String, NodeProperties> nodePropertiesMap = ChaosMonkeyRunner.getNodeProperties(conf);
-    String response = mapper.writeValueAsString(nodePropertiesMap.values());
-    responder.sendString(HttpResponseStatus.OK, response);
+    List<NodeProperties> nodePropertiesList = new ArrayList<>(nodePropertiesMap.values());
+    responder.sendJson(HttpResponseStatus.OK, nodePropertiesList);
   }
 
   /**
@@ -106,12 +112,15 @@ public class HttpHandler extends AbstractHttpHandler {
   @Path("/nodes/{ip}/status")
   public void getNodeStatus(HttpRequest request, HttpResponder responder, @PathParam("ip") String ip) throws Exception {
     Collection<RemoteProcess> remoteProcessList = ipToProcess.get(ip);
+    if (remoteProcessList.size() == 0) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown ip: " + ip);
+      return;
+    }
     Map<String, String> statuses = new HashMap<>();
     for (RemoteProcess remoteProcess : remoteProcessList) {
       statuses.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
     }
-    String response = mapper.writeValueAsString(statuses);
-    responder.sendString(HttpResponseStatus.OK, response);
+    responder.sendJson(HttpResponseStatus.OK, statuses);
   }
 
   /**
@@ -129,7 +138,6 @@ public class HttpHandler extends AbstractHttpHandler {
       }
       statuses.put(ipAddress, status);
     }
-    String response = mapper.writeValueAsString(statuses);
-    responder.sendString(HttpResponseStatus.OK, response);
+    responder.sendJson(HttpResponseStatus.OK, statuses);
   }
 }

@@ -32,19 +32,23 @@ public class Router extends AbstractIdleService {
 
   private NettyHttpService httpService;
   private final Multimap<String, RemoteProcess> ipToProcess;
+  private final Multimap<String, RemoteProcess> nameToProcess;
+  private final Configuration conf;
 
-  public Router (Multimap<String, RemoteProcess> ipToProcess) {
+  public Router(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
+                Multimap<String, RemoteProcess> nameToProcess) {
+    this.conf = conf;
     this.ipToProcess = ipToProcess;
+    this.nameToProcess = nameToProcess;
   }
 
   @Override
   protected void startUp() throws Exception {
     LOG.debug("Starting router");
-    Configuration conf = Configuration.create();
 
     this.httpService = NettyHttpService.builder()
       .setPort(Constants.Server.PORT)
-      .addHttpHandlers(ImmutableList.of(new HttpHandler(conf, ipToProcess)))
+      .addHttpHandlers(ImmutableList.of(new HttpHandler(conf, ipToProcess, nameToProcess)))
       .build();
 
     this.httpService.startAsync();
