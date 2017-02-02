@@ -24,7 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
 
 /**
  * The main runner for ChaosMonkey.
@@ -33,13 +35,15 @@ public class ChaosMonkeyMain extends DaemonMain {
   private static final Logger LOG = LoggerFactory.getLogger(ChaosMonkeyMain.class);
 
   private Router router;
+  private Set<ChaosMonkeyService> chaosMonkeyServiceSet;
 
   public static void main(String[] args) throws Exception {
-      new ChaosMonkeyMain().doMain(args);
+    new ChaosMonkeyMain().doMain(args);
   }
 
   @Override
   public void init(String[] args) {
+    chaosMonkeyServiceSet = new HashSet<>();
     try {
       Configuration conf = Configuration.create();
 
@@ -131,7 +135,7 @@ public class ChaosMonkeyMain extends DaemonMain {
         ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(processes, stopProbability, killProbability,
                                                                        restartProbability, interval,
                                                                        minNodesPerIteration, maxNodesPerIteration);
-        chaosMonkeyService.startAsync();
+        chaosMonkeyServiceSet.add(chaosMonkeyService);
       }
 
       router = new Router(conf, ipToProcess, nameToProcess);
@@ -144,14 +148,20 @@ public class ChaosMonkeyMain extends DaemonMain {
   @Override
   public void start() throws Exception {
     router.startAsync();
+    for (ChaosMonkeyService chaosMonkeyService : chaosMonkeyServiceSet) {
+      chaosMonkeyService.startAsync();
+    }
   }
 
   @Override
   public void stop() {
     try {
       router.shutDown();
+      for (ChaosMonkeyService chaosMonkeyService : chaosMonkeyServiceSet) {
+        chaosMonkeyService.stopAsync();
+      }
     } catch (Exception e) {
-      LOG.debug("Exception when trying to shut down server.", e);
+      LOG.warn("Exception when trying to shut down Chaos Monkey.", e);
     }
   }
 

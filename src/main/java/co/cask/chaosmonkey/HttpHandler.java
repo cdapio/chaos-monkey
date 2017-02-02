@@ -47,8 +47,8 @@ public class HttpHandler extends AbstractHttpHandler {
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
 
-  HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess, Multimap<String,
-              RemoteProcess> nameToProcess) {
+  HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
+              Multimap<String, RemoteProcess> nameToProcess) {
     this.conf = conf;
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
