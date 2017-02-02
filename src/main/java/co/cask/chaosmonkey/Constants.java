@@ -19,9 +19,18 @@ package co.cask.chaosmonkey;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * List of constants used by chaos monkey
+ * List of constants used by ChaosMonkey.
  */
 public class Constants {
+
+  /**
+   * Constants related to {@code Server}.
+   */
+  public static final class Server {
+    public static final String API_VERSION_1_TOKEN = "v1";
+    public static final String API_VERSION_1 = "/" + API_VERSION_1_TOKEN;
+    public static final int PORT = 11020;
+  }
 
   /**
    * Constants related to {@code RemoteProcess}.
@@ -29,12 +38,6 @@ public class Constants {
   public static final class RemoteProcess {
     public static final int SIGKILL = 9;
     public static final int SIGTERM = 15;
-  }
-
-  /**
-   * Constants related to {@code CustomRemoteProcess}
-   */
-  public static final class CustomRemoteProcess {
     public static final String START = "start";
     public static final String RESTART = "restart";
     public static final String STOP = "stop";
@@ -43,18 +46,18 @@ public class Constants {
     public static final String IS_RUNNING = "isRunning";
     public static final String EXISTS = "exists";
     public static final ImmutableSet<String> CONFIG_OPTIONS = ImmutableSet.of(
-      Constants.CustomRemoteProcess.START,
-      Constants.CustomRemoteProcess.RESTART,
-      Constants.CustomRemoteProcess.STOP,
-      Constants.CustomRemoteProcess.TERMINATE,
-      Constants.CustomRemoteProcess.KILL,
-      Constants.CustomRemoteProcess.IS_RUNNING,
-      Constants.CustomRemoteProcess.EXISTS
+      Constants.RemoteProcess.START,
+      Constants.RemoteProcess.RESTART,
+      Constants.RemoteProcess.STOP,
+      Constants.RemoteProcess.TERMINATE,
+      Constants.RemoteProcess.KILL,
+      Constants.RemoteProcess.IS_RUNNING,
+      Constants.RemoteProcess.EXISTS
     );
   }
 
   /**
-   * Constants related to Coopr, used for retrieving cluster information
+   * Constants related to Coopr, used for retrieving cluster information.
    */
   public static final class Coopr {
     public static final String USER_ID = "coopr.userId";

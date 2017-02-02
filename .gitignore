@@ -57,3 +57,6 @@ derby.log
 
 # chaos monkey logs
 chaos-monkey*.log
+
+# chaos monkey configs
+chaos-monkey-site.xml
