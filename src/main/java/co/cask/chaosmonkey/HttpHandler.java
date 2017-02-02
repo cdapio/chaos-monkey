@@ -100,7 +100,7 @@ public class HttpHandler extends AbstractHttpHandler {
   @GET
   @Path("/nodes")
   public void getNodes(HttpRequest request, HttpResponder responder) throws Exception {
-    Map<String, NodeProperties> nodePropertiesMap = ChaosMonkeyRunner.getNodeProperties(conf);
+    Map<String, NodeProperties> nodePropertiesMap = ChaosMonkeyHelper.getNodeProperties(conf);
     List<NodeProperties> nodePropertiesList = new ArrayList<>(nodePropertiesMap.values());
     responder.sendJson(HttpResponseStatus.OK, nodePropertiesList);
   }

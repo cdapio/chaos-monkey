@@ -24,13 +24,13 @@ import java.io.IOException;
 /**
  * Tests for Chaos Monkey Helper class
  */
-public class ChaosMonkeyRunnerTest {
+public class ChaosMonkeyHelperTest {
 
   @Test(expected = IOException.class)
   public void testGetNodePropertiesInvalidInput() throws IOException {
     Configuration conf = new Configuration();
     conf.addResource("chaos-monkey-default.xml");
     conf.addResource("test-default.xml");
-    ChaosMonkeyRunner.getNodeProperties(conf);
+    ChaosMonkeyHelper.getNodeProperties(conf);
   }
 }
