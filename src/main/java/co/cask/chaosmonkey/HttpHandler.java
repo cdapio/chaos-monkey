@@ -46,12 +46,42 @@ public class HttpHandler extends AbstractHttpHandler {
   private final Configuration conf;
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
+  private static final RollingRestart ROLLING_RESTART = new RollingRestart();
 
   HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
               Multimap<String, RemoteProcess> nameToProcess) {
     this.conf = conf;
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
+  }
+
+  @POST
+  @Path("/rolling-restart/{service}/{restartTime}/{delay}")
+  public void rollingRestart(HttpRequest request, HttpResponder responder,
+                             @PathParam("service") String service,
+                             @PathParam("restartTime") int restartTime,
+                             @PathParam("delay") int delay) throws Exception {
+    responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
+    ROLLING_RESTART.disrupt(getSpecifiedProcesses(service), restartTime, delay);
+  }
+
+  @POST
+  @Path("/rolling-restart/{service}/{delay}")
+  public void rollingRestart(HttpRequest request, HttpResponder responder,
+                             @PathParam("service") String service,
+                             @PathParam("delay") int delay) throws Exception {
+
+    responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
+    ROLLING_RESTART.disrupt(getSpecifiedProcesses(service), delay);
+  }
+
+  @POST
+  @Path("/rolling-restart/{service}")
+  public void rollingRestart(HttpRequest request, HttpResponder responder,
+                             @PathParam("service") String service) throws Exception {
+
+    responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
+    ROLLING_RESTART.disrupt(getSpecifiedProcesses(service));
   }
 
   @POST
@@ -139,5 +169,17 @@ public class HttpHandler extends AbstractHttpHandler {
       statuses.put(ipAddress, status);
     }
     responder.sendJson(HttpResponseStatus.OK, statuses);
+  }
+
+  private List<RemoteProcess> getSpecifiedProcesses(String service) {
+    Collection<RemoteProcess> allProcesses = ipToProcess.values();
+    List<RemoteProcess> specifiedProcesses = new ArrayList<>();
+
+    for (RemoteProcess remoteProcess : allProcesses) {
+      if (remoteProcess.getName().equals(service)) {
+        specifiedProcesses.add(remoteProcess);
+      }
+    }
+    return specifiedProcesses;
   }
 }
