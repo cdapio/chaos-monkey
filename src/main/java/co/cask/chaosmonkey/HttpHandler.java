@@ -19,13 +19,19 @@ package co.cask.chaosmonkey;
 import co.cask.chaosmonkey.conf.Configuration;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.jcraft.jsch.JSchException;
+import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,6 +48,7 @@ import javax.ws.rs.PathParam;
 @Path(Constants.Server.API_VERSION_1)
 public class HttpHandler extends AbstractHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(HttpHandler.class);
+  private static final Gson GSON = new Gson();
 
   private final Configuration conf;
   private final Multimap<String, RemoteProcess> ipToProcess;
@@ -63,6 +70,22 @@ public class HttpHandler extends AbstractHttpHandler {
       responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown service: " + service);
       return;
     }
+
+    if (action.equals("rolling-restart")) {
+      ActionArguments actionArguments;
+      try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
+        actionArguments = GSON.fromJson(reader, ActionArguments.class);
+      } catch (JsonSyntaxException e) {
+        responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
+        return;
+      }
+      RollingRestart rollingRestart = new RollingRestart(actionArguments);
+
+      responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
+      rollingRestart.disrupt(new ArrayList<>(processes));
+      return;
+    }
+
     for (RemoteProcess remoteProcess : processes) {
       try {
         switch (action) {
