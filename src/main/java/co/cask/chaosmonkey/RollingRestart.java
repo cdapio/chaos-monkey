@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Restarts given service on each node sequentially
@@ -27,32 +28,23 @@ import java.util.List;
 public class RollingRestart implements Disruption {
   private static final Logger LOG = LoggerFactory.getLogger(RollingRestart.class);
 
+  private int restartTime;
+  private int delay;
+
+  public RollingRestart (ActionArguments actionArguments) {
+    this.restartTime = (actionArguments == null || actionArguments.getRestartTime() == null ||
+      actionArguments.getRestartTime() < 0) ? 30 : actionArguments.getRestartTime();
+    this.delay = (actionArguments == null || actionArguments.getDelay() == null ||
+      actionArguments.getDelay() < 0) ? 120 : actionArguments.getDelay();
+  }
+
   @Override
   public void disrupt(List<RemoteProcess> processes) throws Exception {
-    disrupt(processes, 2 * 60 * 1000);
-  }
-
-  public void disrupt(List<RemoteProcess> processes, int delay) throws Exception {
-    disrupt(processes, 30 * 1000, delay);
-  }
-
-  public void disrupt(List<RemoteProcess> processes, int restartTime, int delay) throws Exception {
     for (RemoteProcess process : processes) {
       process.stop();
-
-      try {
-        Thread.sleep(restartTime);
-      } catch(InterruptedException ex) {
-        Thread.currentThread().interrupt();
-      }
-
+      TimeUnit.SECONDS.sleep(this.restartTime);
       process.start();
-
-      try {
-        Thread.sleep(delay);
-      } catch(InterruptedException ex) {
-        Thread.currentThread().interrupt();
-      }
+      TimeUnit.SECONDS.sleep(this.delay);
     }
   }
 

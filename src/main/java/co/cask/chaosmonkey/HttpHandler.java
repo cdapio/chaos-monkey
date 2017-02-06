@@ -19,13 +19,18 @@ package co.cask.chaosmonkey;
 import co.cask.chaosmonkey.conf.Configuration;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
+import com.google.gson.Gson;
 import com.jcraft.jsch.JSchException;
+import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,44 +47,17 @@ import javax.ws.rs.PathParam;
 @Path(Constants.Server.API_VERSION_1)
 public class HttpHandler extends AbstractHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(HttpHandler.class);
+  private static final Gson GSON = new Gson();
 
   private final Configuration conf;
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
-  private static final RollingRestart ROLLING_RESTART = new RollingRestart();
 
   HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
               Multimap<String, RemoteProcess> nameToProcess) {
     this.conf = conf;
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
-  }
-
-  @POST
-  @Path("/rolling-restart/{service}/{restartTime}/{delay}")
-  public void rollingRestart(HttpRequest request, HttpResponder responder,
-                             @PathParam("service") String service,
-                             @PathParam("restartTime") int restartTime,
-                             @PathParam("delay") int delay) throws Exception {
-    responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
-    ROLLING_RESTART.disrupt(getSpecifiedProcesses(service), restartTime, delay);
-  }
-
-  @POST
-  @Path("/rolling-restart/{service}/{delay}")
-  public void rollingRestart(HttpRequest request, HttpResponder responder,
-                             @PathParam("service") String service,
-                             @PathParam("delay") int delay) throws Exception {
-    responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
-    ROLLING_RESTART.disrupt(getSpecifiedProcesses(service), delay);
-  }
-
-  @POST
-  @Path("/rolling-restart/{service}")
-  public void rollingRestart(HttpRequest request, HttpResponder responder,
-                             @PathParam("service") String service) throws Exception {
-    responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
-    ROLLING_RESTART.disrupt(getSpecifiedProcesses(service));
   }
 
   @POST
@@ -91,6 +69,19 @@ public class HttpHandler extends AbstractHttpHandler {
       responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown service: " + service);
       return;
     }
+
+    if (action.equals("rolling-restart")) {
+      ActionArguments actionArguments;
+      try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
+        actionArguments = GSON.fromJson(reader, ActionArguments.class);
+      }
+      RollingRestart rollingRestart = new RollingRestart(actionArguments);
+
+      responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
+      rollingRestart.disrupt(new ArrayList<>(nameToProcess.get(service)));
+      return;
+    }
+
     for (RemoteProcess remoteProcess : processes) {
       try {
         switch (action) {
@@ -167,17 +158,5 @@ public class HttpHandler extends AbstractHttpHandler {
       statuses.put(ipAddress, status);
     }
     responder.sendJson(HttpResponseStatus.OK, statuses);
-  }
-
-  private List<RemoteProcess> getSpecifiedProcesses(String service) {
-    Collection<RemoteProcess> allProcesses = ipToProcess.values();
-    List<RemoteProcess> specifiedProcesses = new ArrayList<>();
-
-    for (RemoteProcess remoteProcess : allProcesses) {
-      if (remoteProcess.getName().equals(service)) {
-        specifiedProcesses.add(remoteProcess);
-      }
-    }
-    return specifiedProcesses;
   }
 }
