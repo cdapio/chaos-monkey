@@ -70,7 +70,6 @@ public class HttpHandler extends AbstractHttpHandler {
   public void rollingRestart(HttpRequest request, HttpResponder responder,
                              @PathParam("service") String service,
                              @PathParam("delay") int delay) throws Exception {
-
     responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
     ROLLING_RESTART.disrupt(getSpecifiedProcesses(service), delay);
   }
@@ -79,7 +78,6 @@ public class HttpHandler extends AbstractHttpHandler {
   @Path("/rolling-restart/{service}")
   public void rollingRestart(HttpRequest request, HttpResponder responder,
                              @PathParam("service") String service) throws Exception {
-
     responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
     ROLLING_RESTART.disrupt(getSpecifiedProcesses(service));
   }

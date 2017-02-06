@@ -25,7 +25,7 @@ import java.util.List;
  * Restarts given service on each node sequentially
  */
 public class RollingRestart implements Disruption {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RollingRestart.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RollingRestart.class);
 
   @Override
   public void disrupt(List<RemoteProcess> processes) throws Exception {
