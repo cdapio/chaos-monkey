@@ -22,6 +22,7 @@ import co.cask.http.HttpResponder;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.jcraft.jsch.JSchException;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -74,11 +75,14 @@ public class HttpHandler extends AbstractHttpHandler {
       ActionArguments actionArguments;
       try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
         actionArguments = GSON.fromJson(reader, ActionArguments.class);
+      } catch (JsonSyntaxException e) {
+        responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
+        return;
       }
       RollingRestart rollingRestart = new RollingRestart(actionArguments);
 
       responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
-      rollingRestart.disrupt(new ArrayList<>(nameToProcess.get(service)));
+      rollingRestart.disrupt(new ArrayList<>(processes));
       return;
     }
 

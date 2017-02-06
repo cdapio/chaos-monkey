@@ -16,6 +16,8 @@
 
 package co.cask.chaosmonkey;
 
+import javax.annotation.Nullable;
+
 /**
  * ActionArguments represents the request body of the action endpoint
  */
@@ -23,10 +25,12 @@ public class ActionArguments {
   private Integer restartTime;
   private Integer delay;
 
+  @Nullable
   public Integer getRestartTime() {
     return restartTime;
   }
 
+  @Nullable
   public Integer getDelay() {
     return delay;
   }

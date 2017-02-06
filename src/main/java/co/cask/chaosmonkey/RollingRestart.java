@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 /**
  * Restarts given service on each node sequentially
@@ -31,7 +32,7 @@ public class RollingRestart implements Disruption {
   private int restartTime;
   private int delay;
 
-  public RollingRestart (ActionArguments actionArguments) {
+  public RollingRestart(@Nullable ActionArguments actionArguments) {
     this.restartTime = (actionArguments == null || actionArguments.getRestartTime() == null ||
       actionArguments.getRestartTime() < 0) ? 30 : actionArguments.getRestartTime();
     this.delay = (actionArguments == null || actionArguments.getDelay() == null ||
