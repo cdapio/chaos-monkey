@@ -18,6 +18,7 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
+import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
@@ -36,7 +37,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.GET;
@@ -141,11 +141,11 @@ public class HttpHandler extends AbstractHttpHandler {
       responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown ip: " + ip);
       return;
     }
-    Map<String, String> statuses = new HashMap<>();
+    NodeStatus status = new NodeStatus(ip);
     for (RemoteProcess remoteProcess : remoteProcessList) {
-      statuses.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
+      status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
     }
-    responder.sendJson(HttpResponseStatus.OK, statuses);
+    responder.sendJson(HttpResponseStatus.OK, status);
   }
 
   /**
@@ -155,9 +155,9 @@ public class HttpHandler extends AbstractHttpHandler {
   @Path("/status")
   public void getNodeStatuses(HttpRequest request, HttpResponder responder) throws Exception {
     List<NodeStatus> statuses = new ArrayList<>();
-    for (String ipAddress : ipToProcess.keySet()) {
-      Collection<RemoteProcess> remoteProcessList = ipToProcess.get(ipAddress);
-      NodeStatus status = new NodeStatus(ipAddress);
+    for (String ip : ipToProcess.keySet()) {
+      Collection<RemoteProcess> remoteProcessList = ipToProcess.get(ip);
+      NodeStatus status = new NodeStatus(ip);
       for (RemoteProcess remoteProcess : remoteProcessList) {
         status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
       }

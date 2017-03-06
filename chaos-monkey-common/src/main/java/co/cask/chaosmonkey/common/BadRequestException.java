@@ -14,27 +14,29 @@
  * the License.
  */
 
-package co.cask.chaosmonkey;
+package co.cask.chaosmonkey.common;
 
-import java.util.List;
-import java.util.Map;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 /**
- * NodeProperties represents the JSON object returned by coopr
+ * Thrown when the input was bad.
  */
-public class NodeProperties {
-  private List<String> services;
-  private Map<String, String> ipaddresses;
+public class BadRequestException extends Exception implements HttpErrorStatusProvider {
 
-  public List<String> getServices() {
-    return services;
+  public BadRequestException(String message) {
+    super(message);
   }
 
-  public Map<String, String> getIpaddresses() {
-    return ipaddresses;
+  public BadRequestException(Throwable cause) {
+    super(cause);
   }
 
-  public String getAccessIpAddress() {
-    return ipaddresses.get("access_v4");
+  public BadRequestException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  @Override
+  public int getStatusCode() {
+    return HttpResponseStatus.BAD_REQUEST.getCode();
   }
 }
