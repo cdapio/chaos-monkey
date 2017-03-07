@@ -16,10 +16,7 @@
 
 package co.cask.chaosmonkey.client;
 
-import co.cask.chaosmonkey.common.BadRequestException;
 import co.cask.chaosmonkey.common.Constants;
-import co.cask.chaosmonkey.common.InternalServerErrorException;
-import co.cask.chaosmonkey.common.NotFoundException;
 import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.common.http.HttpRequest;
@@ -34,6 +31,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
 
 /**
  * Provides ways to interact with Chaos Monkey.
@@ -130,7 +130,7 @@ public class ChaosMonkeyClient {
   private void executeAction(String service, String action)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action);
-    HttpRequest request = HttpRequest.get(url).build();
+    HttpRequest request = HttpRequest.post(url).build();
     HttpResponse response = HttpRequests.execute(request);
 
     int responseCode = response.getResponseCode();
