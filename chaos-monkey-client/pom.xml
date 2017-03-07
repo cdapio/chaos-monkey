@@ -27,6 +27,10 @@
 
   <artifactId>chaos-monkey-client</artifactId>
 
+  <properties>
+    <cask.common.version>0.7.1</cask.common.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>co.cask.chaosmonkey</groupId>
@@ -38,6 +42,17 @@
       <artifactId>chaos-monkey-common</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>co.cask.common</groupId>
+      <artifactId>common-http</artifactId>
+      <version>${cask.common.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava-io</artifactId>
+      <version>r03</version>
+    </dependency>
+
   </dependencies>
 
 </project>

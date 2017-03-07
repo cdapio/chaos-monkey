@@ -16,28 +16,23 @@
 
 package co.cask.chaosmonkey.client;
 
-import co.cask.chaosmonkey.client.config.ClientConfig;
 import co.cask.chaosmonkey.common.BadRequestException;
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.InternalServerErrorException;
 import co.cask.chaosmonkey.common.NotFoundException;
 import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
+import co.cask.common.http.HttpRequest;
+import co.cask.common.http.HttpRequests;
+import co.cask.common.http.HttpResponse;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
-import java.net.URI;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -48,16 +43,18 @@ public class ChaosMonkeyClient {
   private static final Type PROPERTIES_TYPE = new TypeToken<List<NodeProperties>>() { }.getType();
   private static final Gson GSON = new Gson();
 
-  private final HttpClient client;
-  private final ClientConfig config;
+  private final String hostname;
+  private final int port;
+  private final boolean sslEnabled;
 
-  public ChaosMonkeyClient(ClientConfig config) {
-    this(config, new DefaultHttpClient());
+  public ChaosMonkeyClient(String hostname, int port) {
+    this(hostname, port, false);
   }
 
-  public ChaosMonkeyClient(ClientConfig config, HttpClient client) {
-    this.config = config;
-    this.client = client;
+  public ChaosMonkeyClient(String hostname, int port, boolean sslEnabled) {
+    this.hostname = hostname;
+    this.port = port;
+    this.sslEnabled = sslEnabled;
   }
 
   /**
@@ -132,24 +129,31 @@ public class ChaosMonkeyClient {
 
   private void executeAction(String service, String action)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    URI uri = config.getConnectionConfig().resolveURI(Constants.Server.API_VERSION_1_TOKEN,
-                                                      "services/" + service + "/" + action);
-    HttpPost httpPost = new HttpPost(uri);
-    HttpResponse response = client.execute(httpPost);
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action);
+    HttpRequest request = HttpRequest.get(url).build();
+    HttpResponse response = HttpRequests.execute(request);
 
-    int responseCode = response.getStatusLine().getStatusCode();
-    String reasonPhrase = response.getStatusLine().getReasonPhrase();
-    EntityUtils.consume(response.getEntity());
+    int responseCode = response.getResponseCode();
+    String responseMessage = response.getResponseMessage();
     if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
       throw new NotFoundException("Service not found: " + service);
     } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
-      throw new BadRequestException(String.format("Bad Request. Reason: %s", reasonPhrase));
+      throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
     } else if (responseCode == HttpURLConnection.HTTP_INTERNAL_ERROR) {
-      throw new InternalServerErrorException(String.format("Internal Error. Reason: %s", reasonPhrase));
+      throw new InternalServerErrorException(String.format("Internal Error. Reason: %s", responseMessage));
     }
   }
 
   //TODO: add request body and rolling restart status
+  /**
+   * Starts a rolling restart of the specified service
+   *
+   * @param service The name of the service to be rolling restarted
+   * @throws IOException if a network error occurrred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
   public void rollingRestart(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     executeAction(service, "rolling-restart");
@@ -162,15 +166,11 @@ public class ChaosMonkeyClient {
    * @throws IOException if a network error occurred
    */
   public List<NodeStatus> getAllStatuses() throws IOException {
-    URI uri = config.getConnectionConfig().resolveURI(Constants.Server.API_VERSION_1_TOKEN, "status");
-    HttpGet httpGet = new HttpGet(uri);
-    HttpResponse response = client.execute(httpGet);
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "status");
+    HttpRequest request = HttpRequest.get(url).build();
+    HttpResponse response = HttpRequests.execute(request);
 
-    List<NodeStatus> statuses;
-    try (Reader reader = new InputStreamReader(response.getEntity().getContent())) {
-      statuses = GSON.fromJson(reader, STATUSES_TYPE);
-    }
-    return statuses;
+    return GSON.fromJson(response.getResponseBodyAsString(), STATUSES_TYPE);
   }
 
   /**
@@ -181,16 +181,11 @@ public class ChaosMonkeyClient {
    * @throws IOException if a network error occurred
    */
   public NodeStatus getStatus(String ipAddress) throws IOException {
-    URI uri = config.getConnectionConfig().resolveURI(Constants.Server.API_VERSION_1_TOKEN,
-                                                      "nodes/" + ipAddress + "/status");
-    HttpGet httpGet = new HttpGet(uri);
-    HttpResponse response = client.execute(httpGet);
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "nodes/" + ipAddress + "/status");
+    HttpRequest request = HttpRequest.get(url).build();
+    HttpResponse response = HttpRequests.execute(request);
 
-    NodeStatus status;
-    try (Reader reader = new InputStreamReader(response.getEntity().getContent())) {
-      status = GSON.fromJson(reader, NodeStatus.class);
-    }
-    return status;
+    return GSON.fromJson(response.getResponseBodyAsString(), NodeStatus.class);
   }
 
   /**
@@ -200,14 +195,18 @@ public class ChaosMonkeyClient {
    * @throws IOException if a network error occurred
    */
   public List<NodeProperties> getNodeProperties() throws IOException {
-    URI uri = config.getConnectionConfig().resolveURI(Constants.Server.API_VERSION_1_TOKEN, "nodes");
-    HttpGet httpGet = new HttpGet(uri);
-    HttpResponse response = client.execute(httpGet);
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "nodes");
+    HttpRequest request = HttpRequest.get(url).build();
+    HttpResponse response = HttpRequests.execute(request);
 
-    List<NodeProperties> nodePropertiesList;
-    try (Reader reader = new InputStreamReader(response.getEntity().getContent())) {
-      nodePropertiesList = GSON.fromJson(reader, PROPERTIES_TYPE);
-    }
-    return  nodePropertiesList;
+    return GSON.fromJson(response.getResponseBodyAsString(), PROPERTIES_TYPE);
+  }
+
+  private String getURL() throws MalformedURLException {
+    return String.format("%s://%s:%d", sslEnabled ? "https" : "http", hostname, port);
+  }
+
+  private URL resolveURL(String apiVersion, String path) throws MalformedURLException{
+    return new URL(getURL() + String.format("/%s/%s", apiVersion, path));
   }
 }

@@ -66,18 +66,4 @@ public class Constants {
     public static final String API_VERSION = "coopr.api.version";
     public static final String CLUSTER_ID = "coopr.clusterId";
   }
-
-  /**
-   * Router Configuration.
-   */
-  public static final class Router {
-    public static final String ADDRESS = "router.bind.address";
-    public static final String ROUTER_PORT = "router.bind.port";
-    public static final String ROUTER_SSL_PORT = "router.ssl.bind.port";
-
-    /**
-     * Defaults.
-     */
-    public static final String DEFAULT_ROUTER_PORT = "11020";
-  }
 }

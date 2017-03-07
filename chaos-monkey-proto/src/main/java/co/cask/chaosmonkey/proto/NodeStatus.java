@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
+ * NodeStatus represents the running status of each service on a node
  */
 public class NodeStatus {
   public String ipAddress;
