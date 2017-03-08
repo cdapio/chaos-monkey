@@ -23,7 +23,13 @@
   <groupId>co.cask.chaosmonkey</groupId>
   <artifactId>chaos-monkey</artifactId>
   <version>0.1.0</version>
-  <packaging>jar</packaging>
+  <modules>
+    <module>chaos-monkey-standalone</module>
+    <module>chaos-monkey-client</module>
+    <module>chaos-monkey-proto</module>
+    <module>chaos-monkey-common</module>
+  </modules>
+  <packaging>pom</packaging>
   <name>Cask Chaos Monkey</name>
   <description>A Chaos Monkey implementation for testing CDAP resiliency. </description>
   <url>https://github.com/caskdata/chaos-monkey</url>
