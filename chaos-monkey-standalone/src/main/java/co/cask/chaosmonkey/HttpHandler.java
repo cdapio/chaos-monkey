@@ -20,6 +20,7 @@ import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
+import co.cask.chaosmonkey.proto.RollingRestartStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
 import com.google.common.base.Charsets;
@@ -55,12 +56,14 @@ public class HttpHandler extends AbstractHttpHandler {
   private final Configuration conf;
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
+  private final RollingRestart rollingRestart;
 
   HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
               Multimap<String, RemoteProcess> nameToProcess) {
     this.conf = conf;
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
+    this.rollingRestart = new RollingRestart();
   }
 
   @POST
@@ -81,10 +84,8 @@ public class HttpHandler extends AbstractHttpHandler {
         responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
         return;
       }
-      RollingRestart rollingRestart = new RollingRestart(actionArguments);
 
-      responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
-      rollingRestart.disrupt(new ArrayList<>(processes));
+      this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments, responder);
       return;
     }
 
@@ -117,6 +118,14 @@ public class HttpHandler extends AbstractHttpHandler {
     }
 
     responder.sendString(HttpResponseStatus.OK, "success");
+  }
+
+  @GET
+  @Path("/services/{service}/rolling-restart/status")
+  public void getRollingRestartStatus(HttpRequest request, HttpResponder responder,
+                                      @PathParam("service") String service) throws Exception {
+    responder.sendJson(HttpResponseStatus.OK,
+                       new RollingRestartStatus(service, this.rollingRestart.isRunning(service)));
   }
 
   /**
