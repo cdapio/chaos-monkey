@@ -206,7 +206,7 @@ public class ChaosMonkeyClient {
     return String.format("%s://%s:%d", sslEnabled ? "https" : "http", hostname, port);
   }
 
-  private URL resolveURL(String apiVersion, String path) throws MalformedURLException{
+  private URL resolveURL(String apiVersion, String path) throws MalformedURLException {
     return new URL(getURL() + String.format("/%s/%s", apiVersion, path));
   }
 }
