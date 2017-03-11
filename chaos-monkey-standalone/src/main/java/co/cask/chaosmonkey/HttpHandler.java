@@ -18,7 +18,6 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
-import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
@@ -38,7 +37,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -53,12 +51,14 @@ public class HttpHandler extends AbstractHttpHandler {
   private static final Gson GSON = new Gson();
 
   private final Configuration conf;
+  private final ClusterInfoCollector clusterInfoCollector;
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
 
-  HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
-              Multimap<String, RemoteProcess> nameToProcess) {
+  HttpHandler(Configuration conf, ClusterInfoCollector clusterInfoCollector,
+              Multimap<String, RemoteProcess> ipToProcess, Multimap<String, RemoteProcess> nameToProcess) {
     this.conf = conf;
+    this.clusterInfoCollector = clusterInfoCollector;
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
   }
@@ -125,9 +125,8 @@ public class HttpHandler extends AbstractHttpHandler {
   @GET
   @Path("/nodes")
   public void getNodes(HttpRequest request, HttpResponder responder) throws Exception {
-    Map<String, NodeProperties> nodePropertiesMap = ChaosMonkeyHelper.getNodeProperties(conf);
-    List<NodeProperties> nodePropertiesList = new ArrayList<>(nodePropertiesMap.values());
-    responder.sendJson(HttpResponseStatus.OK, nodePropertiesList);
+    responder.sendJson(HttpResponseStatus.OK,
+                       new ArrayList<>(clusterInfoCollector.getNodeProperties(conf)));
   }
 
   /**

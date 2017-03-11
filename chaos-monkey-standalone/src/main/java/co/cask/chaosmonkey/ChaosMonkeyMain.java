@@ -38,6 +38,7 @@ public class ChaosMonkeyMain extends DaemonMain {
 
   private Router router;
   private Set<ChaosMonkeyService> chaosMonkeyServiceSet;
+  private ClusterInfoCollector clusterInfoCollector;
 
   public static void main(String[] args) throws Exception {
     new ChaosMonkeyMain().doMain(args);
@@ -48,6 +49,8 @@ public class ChaosMonkeyMain extends DaemonMain {
     chaosMonkeyServiceSet = new HashSet<>();
     try {
       Configuration conf = Configuration.create();
+      clusterInfoCollector = Class.forName(conf.get(Constants.Coopr.COOPR_INFO_COLLECTOR_CLASS))
+        .asSubclass(ClusterInfoCollector.class).newInstance();
 
       String username = conf.get("username", System.getProperty("user.name"));
       String privateKey = conf.get("privateKey");
@@ -56,7 +59,7 @@ public class ChaosMonkeyMain extends DaemonMain {
       Multimap<String, String> processToIp = HashMultimap.create();
       Multimap<String, RemoteProcess> ipToProcess = HashMultimap.create();
       Multimap<String, RemoteProcess> nameToProcess = HashMultimap.create();
-      Collection<NodeProperties> propertiesList = ChaosMonkeyHelper.getNodeProperties(conf).values();
+      Collection<NodeProperties> propertiesList = clusterInfoCollector.getNodeProperties(conf);
 
       for (NodeProperties node : propertiesList) {
         for (String service : node.getServices()) {
@@ -140,7 +143,7 @@ public class ChaosMonkeyMain extends DaemonMain {
         chaosMonkeyServiceSet.add(chaosMonkeyService);
       }
 
-      router = new Router(conf, ipToProcess, nameToProcess);
+      router = new Router(conf, clusterInfoCollector, ipToProcess, nameToProcess);
     } catch (Throwable t) {
       LOG.error(t.getMessage(), t);
       throw new RuntimeException(t);

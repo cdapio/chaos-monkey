@@ -17,20 +17,21 @@
 package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.conf.Configuration;
-import org.junit.Test;
+import co.cask.chaosmonkey.proto.NodeProperties;
 
-import java.io.IOException;
+import java.util.Collection;
 
 /**
- * Tests for Chaos Monkey Helper class
+ * ClusterInfoCollector allows for different ways to collect location and services of nodes in a cluster
  */
-public class ChaosMonkeyHelperTest {
+public interface ClusterInfoCollector {
 
-  @Test(expected = IOException.class)
-  public void testGetNodePropertiesInvalidInput() throws IOException {
-    Configuration conf = new Configuration();
-    conf.addResource("chaos-monkey-default.xml");
-    conf.addResource("test-default.xml");
-    ChaosMonkeyHelper.getNodeProperties(conf);
-  }
+  /**
+   * Gathers the location and services of each node to be used by Chaos Monkey
+   *
+   * @param conf instance of {@link Configuration}
+   * @return Collection of {@link NodeProperties}
+   * @throws Exception
+   */
+  Collection<NodeProperties> getNodeProperties(Configuration conf) throws Exception;
 }

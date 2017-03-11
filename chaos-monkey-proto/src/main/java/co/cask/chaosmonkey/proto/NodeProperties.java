@@ -16,6 +16,7 @@
 
 package co.cask.chaosmonkey.proto;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +26,19 @@ import java.util.Map;
 public class NodeProperties {
   private List<String> services;
   private Map<String, String> ipaddresses;
+
+  public NodeProperties(List<String> services, String ipAddress) {
+    Map<String, String> ipAddresses = new HashMap<>();
+    ipAddresses.put("access_v4", ipAddress);
+
+    this.services = services;
+    this.ipaddresses = ipAddresses;
+  }
+
+  public NodeProperties(List<String> services, Map<String, String> ipaddresses) {
+    this.services = services;
+    this.ipaddresses = ipaddresses;
+  }
 
   public List<String> getServices() {
     return services;

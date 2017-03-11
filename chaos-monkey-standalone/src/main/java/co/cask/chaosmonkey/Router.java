@@ -32,13 +32,15 @@ public class Router extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(Router.class);
 
   private NettyHttpService httpService;
+  private ClusterInfoCollector clusterInfoCollector;
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
   private final Configuration conf;
 
-  public Router(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
-                Multimap<String, RemoteProcess> nameToProcess) {
+  public Router(Configuration conf, ClusterInfoCollector clusterInfoCollector,
+                Multimap<String, RemoteProcess> ipToProcess, Multimap<String, RemoteProcess> nameToProcess) {
     this.conf = conf;
+    this.clusterInfoCollector = clusterInfoCollector;
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
   }
@@ -49,7 +51,7 @@ public class Router extends AbstractIdleService {
 
     this.httpService = NettyHttpService.builder()
       .setPort(Constants.Server.PORT)
-      .addHttpHandlers(ImmutableList.of(new HttpHandler(conf, ipToProcess, nameToProcess)))
+      .addHttpHandlers(ImmutableList.of(new HttpHandler(conf, clusterInfoCollector, ipToProcess, nameToProcess)))
       .build();
 
     this.httpService.startAsync();
