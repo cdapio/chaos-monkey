@@ -32,6 +32,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -149,7 +150,7 @@ public class ChaosMonkeyClient {
    * Starts a rolling restart of the specified service
    *
    * @param service The name of the service to perform rolling restart on
-   * @throws IOException if a network error occurrred
+   * @throws IOException if a network error occurred
    * @throws NotFoundException if specified service does not exist
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
@@ -165,7 +166,7 @@ public class ChaosMonkeyClient {
    * @param service The name of the service to perform rolling restart on
    * @param restartTimeSeconds Number of seconds a service is kept offline before restarting
    * @param delaySeconds Number of seconds between restarting each service
-   * @throws IOException if a network error occurrred
+   * @throws IOException if a network error occurred
    */
   public void rollingRestart(String service, int restartTimeSeconds, int delaySeconds)
     throws IOException {
@@ -188,7 +189,7 @@ public class ChaosMonkeyClient {
    *
    * @param service The name of the service to be queried
    * @return true if running, false otherwise
-   * @throws IOException if a network error occurrred
+   * @throws IOException if a network error occurred
    */
   public boolean isRollingRestartRunning(String service) throws IOException {
     return isActionRunning(service, "rolling-restart");
@@ -200,7 +201,7 @@ public class ChaosMonkeyClient {
    * @param service The name of the service to be queried
    * @param action The name of the action to be queried
    * @return true if running, false otherwise
-   * @throws IOException if a network error occurrred
+   * @throws IOException if a network error occurred
    */
   public boolean isActionRunning(String service, String action) throws IOException {
     URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action + "/status");
@@ -208,6 +209,20 @@ public class ChaosMonkeyClient {
     HttpResponse response = HttpRequests.execute(request);
 
     return GSON.fromJson(response.getResponseBodyAsString(), ActionStatus.class).isRunning();
+  }
+
+  /**
+   * Blocks execution until rolling restart is done on specified service.
+   * Rolling restart status is checked every 1 second
+   *
+   * @param service The name of the service to be queried
+   * @throws IOException if a network error occurred
+   * @throws InterruptedException
+   */
+  public void waitForRollingRestart(String service) throws IOException, InterruptedException {
+    while (isRollingRestartRunning(service)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
   }
 
   /**
