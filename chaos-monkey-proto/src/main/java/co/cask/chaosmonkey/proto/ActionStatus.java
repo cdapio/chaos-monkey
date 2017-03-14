@@ -19,17 +19,23 @@ package co.cask.chaosmonkey.proto;
 /**
  * Data to be sent when querying for rolling restart status
  */
-public class RollingRestartStatus {
+public class ActionStatus {
   private String processName;
+  private String actionName;
   private boolean isRunning;
 
-  public RollingRestartStatus(String processName, boolean isRunning) {
+  public ActionStatus(String processName, String actionName, boolean isRunning) {
     this.processName = processName;
+    this.actionName = actionName;
     this.isRunning = isRunning;
   }
 
   public String getProcessName() {
     return this.processName;
+  }
+
+  public String getActionName() {
+    return this.actionName;
   }
 
   public boolean isRunning() {

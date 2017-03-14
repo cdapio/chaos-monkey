@@ -20,7 +20,7 @@ import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
-import co.cask.chaosmonkey.proto.RollingRestartStatus;
+import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
 import com.google.common.base.Charsets;
@@ -57,6 +57,7 @@ public class HttpHandler extends AbstractHttpHandler {
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
   private final RollingRestart rollingRestart;
+  private final DisruptionService disruptionService;
 
   HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
               Multimap<String, RemoteProcess> nameToProcess) {
@@ -64,6 +65,7 @@ public class HttpHandler extends AbstractHttpHandler {
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
     this.rollingRestart = new RollingRestart();
+    this.disruptionService = new DisruptionService();
   }
 
   @POST
@@ -76,56 +78,67 @@ public class HttpHandler extends AbstractHttpHandler {
       return;
     }
 
-    if (action.equals("rolling-restart")) {
-      ActionArguments actionArguments;
-      try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
-        actionArguments = GSON.fromJson(reader, ActionArguments.class);
-      } catch (JsonSyntaxException e) {
-        responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
-        return;
-      }
-
-      this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments, responder);
-      return;
-    }
-
-    for (RemoteProcess remoteProcess : processes) {
+    if (disruptionService.checkAndStart(service, action)) {
       try {
-        switch (action) {
-          case Constants.RemoteProcess.STOP:
-            remoteProcess.stop();
-            break;
-          case Constants.RemoteProcess.KILL:
-            remoteProcess.kill();
-            break;
-          case Constants.RemoteProcess.TERMINATE:
-            remoteProcess.terminate();
-            break;
-          case Constants.RemoteProcess.START:
-            remoteProcess.start();
-            break;
-          case Constants.RemoteProcess.RESTART:
-            remoteProcess.restart();
-            break;
-          default:
-            responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown command: " + action);
+        if (action.equals("rolling-restart")) {
+          ActionArguments actionArguments;
+          try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
+            actionArguments = GSON.fromJson(reader, ActionArguments.class);
+          } catch (JsonSyntaxException e) {
+            responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
             return;
+          }
+
+          responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
+          this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments);
+          return;
         }
-      } catch (JSchException e) {
-        responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-        return;
+
+        for (RemoteProcess remoteProcess : processes) {
+          try {
+            switch (action) {
+              case Constants.RemoteProcess.STOP:
+                remoteProcess.stop();
+                break;
+              case Constants.RemoteProcess.KILL:
+                remoteProcess.kill();
+                break;
+              case Constants.RemoteProcess.TERMINATE:
+                remoteProcess.terminate();
+                break;
+              case Constants.RemoteProcess.START:
+                remoteProcess.start();
+                break;
+              case Constants.RemoteProcess.RESTART:
+                remoteProcess.restart();
+                break;
+              default:
+                responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown command: " + action);
+                return;
+            }
+          } catch (JSchException e) {
+            responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            return;
+          }
+        }
+      } finally {
+        disruptionService.release(service, action);
       }
+    } else {
+      responder.sendString(HttpResponseStatus.CONFLICT, action + " is already running for: " + service);
+      return;
     }
 
     responder.sendString(HttpResponseStatus.OK, "success");
   }
 
   @GET
-  @Path("/services/{service}/rolling-restart/status")
+  @Path("/services/{service}/{action}/status")
   public void getRollingRestartStatus(HttpRequest request, HttpResponder responder,
-                                      @PathParam("service") String service) throws Exception {
+                                      @PathParam("service") String service,
+                                      @PathParam("action") String action) throws Exception {
     responder.sendJson(HttpResponseStatus.OK,
-                       new RollingRestartStatus(service, this.rollingRestart.isRunning(service)));
+                       new ActionStatus(service, action, disruptionService.checkRunning(service, action)));
   }
 
   /**

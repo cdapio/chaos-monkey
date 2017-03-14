@@ -19,7 +19,7 @@ package co.cask.chaosmonkey.client;
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
-import co.cask.chaosmonkey.proto.RollingRestartStatus;
+import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.common.http.HttpRequest;
 import co.cask.common.http.HttpRequests;
 import co.cask.common.http.HttpResponse;
@@ -165,7 +165,7 @@ public class ChaosMonkeyClient {
    * @param service The name of the service to perform rolling restart on
    * @param restartTimeSeconds Number of seconds a service is kept offline before restarting
    * @param delaySeconds Number of seconds between restarting each service
-   * @throws IOException
+   * @throws IOException if a network error occurrred
    */
   public void rollingRestart(String service, int restartTimeSeconds, int delaySeconds)
     throws IOException {
@@ -188,14 +188,26 @@ public class ChaosMonkeyClient {
    *
    * @param service The name of the service to be queried
    * @return true if running, false otherwise
-   * @throws IOException
+   * @throws IOException if a network error occurrred
    */
   public boolean isRollingRestartRunning(String service) throws IOException {
-    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/rolling-restart/status");
+    return isActionRunning(service, "rolling-restart");
+  }
+
+  /**
+   * Returns whether an action is running on the given service
+   *
+   * @param service The name of the service to be queried
+   * @param action The name of the action to be queried
+   * @return true if running, false otherwise
+   * @throws IOException if a network error occurrred
+   */
+  public boolean isActionRunning(String service, String action) throws IOException {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action + "/status");
     HttpRequest request = HttpRequest.get(url).build();
     HttpResponse response = HttpRequests.execute(request);
 
-    return GSON.fromJson(response.getResponseBodyAsString(), RollingRestartStatus.class).isRunning();
+    return GSON.fromJson(response.getResponseBodyAsString(), ActionStatus.class).isRunning();
   }
 
   /**
