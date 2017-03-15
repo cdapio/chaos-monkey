@@ -57,7 +57,7 @@ public class DisruptionService {
                       ActionArguments actionArguments, HttpResponder responder) throws Exception {
     if (checkAndStart(service, action)) {
       try {
-        if (action.equals("rolling-restart")) {
+        if (action.equals(Constants.Action.ROLLING_RESTART)) {
           responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
           this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments);
           return;
@@ -66,19 +66,19 @@ public class DisruptionService {
         for (RemoteProcess remoteProcess : processes) {
           try {
             switch (action) {
-              case Constants.RemoteProcess.STOP:
+              case Constants.Action.STOP:
                 remoteProcess.stop();
                 break;
-              case Constants.RemoteProcess.KILL:
+              case Constants.Action.KILL:
                 remoteProcess.kill();
                 break;
-              case Constants.RemoteProcess.TERMINATE:
+              case Constants.Action.TERMINATE:
                 remoteProcess.terminate();
                 break;
-              case Constants.RemoteProcess.START:
+              case Constants.Action.START:
                 remoteProcess.start();
                 break;
-              case Constants.RemoteProcess.RESTART:
+              case Constants.Action.RESTART:
                 remoteProcess.restart();
                 break;
               default:

@@ -56,6 +56,9 @@ public class Constants {
     );
   }
 
+  /**
+   * Constants related to actions performed by Chaos Monkey through http handler
+   */
   public static final class Action {
     public static final String START = "start";
     public static final String RESTART = "restart";
