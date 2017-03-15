@@ -20,13 +20,13 @@ import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
+import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.jcraft.jsch.JSchException;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -55,12 +55,14 @@ public class HttpHandler extends AbstractHttpHandler {
   private final Configuration conf;
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
+  private final DisruptionService disruptionService;
 
   HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
               Multimap<String, RemoteProcess> nameToProcess) {
     this.conf = conf;
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
+    this.disruptionService = new DisruptionService(nameToProcess.keySet());
   }
 
   @POST
@@ -73,50 +75,32 @@ public class HttpHandler extends AbstractHttpHandler {
       return;
     }
 
-    if (action.equals("rolling-restart")) {
-      ActionArguments actionArguments;
-      try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
-        actionArguments = GSON.fromJson(reader, ActionArguments.class);
-      } catch (JsonSyntaxException e) {
-        responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
-        return;
-      }
-      RollingRestart rollingRestart = new RollingRestart(actionArguments);
-
-      responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
-      rollingRestart.disrupt(new ArrayList<>(processes));
+    Action actionEnum;
+    try {
+      actionEnum = Action.valueOf(action.toUpperCase().replace('-', '_'));
+    } catch (IllegalArgumentException e) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown action: " + action);
       return;
     }
 
-    for (RemoteProcess remoteProcess : processes) {
-      try {
-        switch (action) {
-          case Constants.RemoteProcess.STOP:
-            remoteProcess.stop();
-            break;
-          case Constants.RemoteProcess.KILL:
-            remoteProcess.kill();
-            break;
-          case Constants.RemoteProcess.TERMINATE:
-            remoteProcess.terminate();
-            break;
-          case Constants.RemoteProcess.START:
-            remoteProcess.start();
-            break;
-          case Constants.RemoteProcess.RESTART:
-            remoteProcess.restart();
-            break;
-          default:
-            responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown command: " + action);
-            return;
-        }
-      } catch (JSchException e) {
-        responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-        return;
-      }
+    ActionArguments actionArguments;
+    try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
+      actionArguments = GSON.fromJson(reader, ActionArguments.class);
+    } catch (JsonSyntaxException e) {
+      responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
+      return;
     }
 
-    responder.sendString(HttpResponseStatus.OK, "success");
+    disruptionService.disrupt(actionEnum, service, processes, actionArguments, responder);
+  }
+
+  @GET
+  @Path("/services/{service}/{action}/status")
+  public void getRollingRestartStatus(HttpRequest request, HttpResponder responder,
+                                      @PathParam("service") String service,
+                                      @PathParam("action") String action) throws Exception {
+    responder.sendJson(HttpResponseStatus.OK,
+                       new ActionStatus(service, action, disruptionService.isRunning(service, action)));
   }
 
   /**

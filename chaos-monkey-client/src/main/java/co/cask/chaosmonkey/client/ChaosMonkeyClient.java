@@ -19,6 +19,7 @@ package co.cask.chaosmonkey.client;
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
+import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.common.http.HttpRequest;
 import co.cask.common.http.HttpRequests;
 import co.cask.common.http.HttpResponse;
@@ -31,6 +32,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -136,7 +138,7 @@ public class ChaosMonkeyClient {
     int responseCode = response.getResponseCode();
     String responseMessage = response.getResponseMessage();
     if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-      throw new NotFoundException("Service not found: " + service);
+      throw new NotFoundException(String.format("Service not found: %s", service));
     } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
       throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
     } else if (responseCode == HttpURLConnection.HTTP_INTERNAL_ERROR) {
@@ -144,12 +146,11 @@ public class ChaosMonkeyClient {
     }
   }
 
-  //TODO: add request body and rolling restart status
   /**
    * Starts a rolling restart of the specified service
    *
-   * @param service The name of the service to be rolling restarted
-   * @throws IOException if a network error occurrred
+   * @param service The name of the service to perform rolling restart on
+   * @throws IOException if a network error occurred
    * @throws NotFoundException if specified service does not exist
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
@@ -157,6 +158,71 @@ public class ChaosMonkeyClient {
   public void rollingRestart(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     executeAction(service, "rolling-restart");
+  }
+
+  /**
+   * Starts a rolling restart of the specified service using given restart time and delay
+   *
+   * @param service The name of the service to perform rolling restart on
+   * @param restartTimeSeconds Number of seconds a service is kept offline before restarting
+   * @param delaySeconds Number of seconds between restarting each service
+   * @throws IOException if a network error occurred
+   */
+  public void rollingRestart(String service, int restartTimeSeconds, int delaySeconds)
+    throws IOException {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/rolling-restart");
+    HttpRequest request = HttpRequest.post(url)
+      .withBody(String.format("{restartTime:%d,delay:%d}", restartTimeSeconds, delaySeconds)).build();
+    HttpResponse response = HttpRequests.execute(request);
+
+    int responseCode = response.getResponseCode();
+    String responseMessage = response.getResponseMessage();
+    if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+      throw new NotFoundException(String.format("Service not found: %s", service));
+    } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
+      throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
+    }
+  }
+
+  /**
+   * Returns whether the specified service is undergoing rolling restart
+   *
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
+   * @throws IOException if a network error occurred
+   */
+  public boolean isRollingRestartRunning(String service) throws IOException {
+    return isActionRunning(service, "rolling-restart");
+  }
+
+  /**
+   * Returns whether an action is running on the given service
+   *
+   * @param service The name of the service to be queried
+   * @param action The name of the action to be queried
+   * @return true if running, false otherwise
+   * @throws IOException if a network error occurred
+   */
+  public boolean isActionRunning(String service, String action) throws IOException {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action + "/status");
+    HttpRequest request = HttpRequest.get(url).build();
+    HttpResponse response = HttpRequests.execute(request);
+
+    return GSON.fromJson(response.getResponseBodyAsString(), ActionStatus.class).isRunning();
+  }
+
+  /**
+   * Blocks execution until rolling restart is done on specified service.
+   * Rolling restart status is checked every 1 second
+   *
+   * @param service The name of the service to be queried
+   * @throws IOException if a network error occurred
+   * @throws InterruptedException
+   */
+  public void waitForRollingRestart(String service) throws IOException, InterruptedException {
+    while (isRollingRestartRunning(service)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
   }
 
   /**

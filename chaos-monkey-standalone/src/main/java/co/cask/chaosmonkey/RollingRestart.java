@@ -18,6 +18,7 @@ package co.cask.chaosmonkey;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.plugin.dom.exception.InvalidStateException;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -29,23 +30,33 @@ import javax.annotation.Nullable;
 public class RollingRestart implements Disruption {
   private static final Logger LOG = LoggerFactory.getLogger(RollingRestart.class);
 
-  private int restartTime;
-  private int delay;
-
-  public RollingRestart(@Nullable ActionArguments actionArguments) {
-    this.restartTime = (actionArguments == null || actionArguments.getRestartTime() == null ||
-      actionArguments.getRestartTime() < 0) ? 30 : actionArguments.getRestartTime();
-    this.delay = (actionArguments == null || actionArguments.getDelay() == null ||
-      actionArguments.getDelay() < 0) ? 120 : actionArguments.getDelay();
-  }
-
   @Override
   public void disrupt(List<RemoteProcess> processes) throws Exception {
+    disrupt(processes, null);
+  }
+
+  /**
+   * Starts a rolling restart on given list of processes.
+   *
+   * @param processes         List of processes to rolling restart, must be of same type
+   * @param actionArguments   Optional, configuration for delay and duration of rolling restart
+   * @throws Exception
+   */
+  public void disrupt(List<RemoteProcess> processes, @Nullable ActionArguments actionArguments) throws Exception {
+    if (processes.size() < 1) {
+      throw new InvalidStateException("Process list has an invalid size of: " + processes.size());
+    }
+
+    int restartTime = (actionArguments == null || actionArguments.getRestartTime() == null ||
+      actionArguments.getRestartTime() < 0) ? 30 : actionArguments.getRestartTime();
+    int delay = (actionArguments == null || actionArguments.getDelay() == null ||
+      actionArguments.getDelay() < 0) ? 120 : actionArguments.getDelay();
+
     for (RemoteProcess process : processes) {
       process.stop();
-      TimeUnit.SECONDS.sleep(this.restartTime);
+      TimeUnit.SECONDS.sleep(restartTime);
       process.start();
-      TimeUnit.SECONDS.sleep(this.delay);
+      TimeUnit.SECONDS.sleep(delay);
     }
   }
 
