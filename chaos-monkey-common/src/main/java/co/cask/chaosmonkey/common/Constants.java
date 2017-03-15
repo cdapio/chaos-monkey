@@ -56,24 +56,23 @@ public class Constants {
     );
   }
 
-  /**
-   * Constants related to actions performed by Chaos Monkey through http handler
-   */
-  public static final class Action {
-    public static final String START = "start";
-    public static final String RESTART = "restart";
-    public static final String STOP = "stop";
-    public static final String TERMINATE = "terminate";
-    public static final String KILL = "kill";
-    public static final String ROLLING_RESTART = "rolling-restart";
-    public static final String[] ACTIONS = {
-      Action.START,
-      Action.RESTART,
-      Action.STOP,
-      Action.TERMINATE,
-      Action.KILL,
-      Action.ROLLING_RESTART
-    };
+  public enum Action {
+    START("start"),
+    RESTART("restart"),
+    STOP("stop"),
+    TERMINATE("terminate"),
+    KILL("kill"),
+    ROLLING_RESTART("rolling-restart");
+
+    private String command;
+
+    Action(String command) {
+      this.command = command;
+    }
+
+    public String getCommand() {
+      return this.command;
+    }
   }
 
   /**

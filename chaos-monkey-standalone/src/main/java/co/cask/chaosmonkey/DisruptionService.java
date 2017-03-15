@@ -39,8 +39,8 @@ public class DisruptionService {
   public DisruptionService(Set<String> services) {
     status = HashBasedTable.create();
     for (String service : services) {
-      for (String action : Constants.Action.ACTIONS) {
-        status.put(service, action, new AtomicBoolean(false));
+      for (Constants.Action action : Constants.Action.values()) {
+        status.put(service, action.getCommand(), new AtomicBoolean(false));
       }
     }
     rollingRestart = new RollingRestart();
@@ -53,49 +53,46 @@ public class DisruptionService {
     return status.get(service, action).get();
   }
 
-  public void disrupt(String action, String service, Collection<RemoteProcess> processes,
+  public void disrupt(Constants.Action action, String service, Collection<RemoteProcess> processes,
                       ActionArguments actionArguments, HttpResponder responder) throws Exception {
-    if (checkAndStart(service, action)) {
-      try {
-        if (action.equals(Constants.Action.ROLLING_RESTART)) {
-          responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
-          this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments);
-          return;
-        }
-
-        for (RemoteProcess remoteProcess : processes) {
-          try {
-            switch (action) {
-              case Constants.Action.STOP:
-                remoteProcess.stop();
-                break;
-              case Constants.Action.KILL:
-                remoteProcess.kill();
-                break;
-              case Constants.Action.TERMINATE:
-                remoteProcess.terminate();
-                break;
-              case Constants.Action.START:
-                remoteProcess.start();
-                break;
-              case Constants.Action.RESTART:
-                remoteProcess.restart();
-                break;
-              default:
-                responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown command: " + action);
-                return;
-            }
-          } catch (JSchException e) {
-            responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-            return;
-          }
-        }
-      } finally {
-        release(service, action);
-      }
-    } else {
+    if (!checkAndStart(service, action.getCommand())) {
       responder.sendString(HttpResponseStatus.CONFLICT, action + " is already running for: " + service);
       return;
+    }
+
+    try {
+      if (action == Constants.Action.ROLLING_RESTART) {
+        responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
+        this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments);
+        return;
+      }
+
+      for (RemoteProcess remoteProcess : processes) {
+        try {
+          switch (action) {
+            case STOP:
+              remoteProcess.stop();
+              break;
+            case KILL:
+              remoteProcess.kill();
+              break;
+            case TERMINATE:
+              remoteProcess.terminate();
+              break;
+            case START:
+              remoteProcess.start();
+              break;
+            case RESTART:
+              remoteProcess.restart();
+              break;
+          }
+        } catch (JSchException e) {
+          responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+          return;
+        }
+      }
+    } finally {
+      release(service, action.getCommand());
     }
     responder.sendString(HttpResponseStatus.OK, "success");
   }
@@ -106,6 +103,8 @@ public class DisruptionService {
   }
 
   private void release(String service, String action) {
-    status.put(service, action, new AtomicBoolean(false));
+    AtomicBoolean atomicBoolean = status.get(service, action);
+    atomicBoolean.set(false);
+    status.put(service, action, atomicBoolean);
   }
 }

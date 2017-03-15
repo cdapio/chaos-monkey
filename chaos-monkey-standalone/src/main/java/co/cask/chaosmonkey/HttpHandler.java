@@ -75,6 +75,14 @@ public class HttpHandler extends AbstractHttpHandler {
       return;
     }
 
+    Constants.Action actionEnum;
+    try {
+      actionEnum = Constants.Action.valueOf(action.toUpperCase().replace('-', '_'));
+    } catch (IllegalArgumentException e) {
+      responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown action: " + action);
+      return;
+    }
+
     ActionArguments actionArguments;
     try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
       actionArguments = GSON.fromJson(reader, ActionArguments.class);
@@ -83,7 +91,7 @@ public class HttpHandler extends AbstractHttpHandler {
       return;
     }
 
-    disruptionService.disrupt(action, service, processes, actionArguments, responder);
+    disruptionService.disrupt(actionEnum, service, processes, actionArguments, responder);
   }
 
   @GET
