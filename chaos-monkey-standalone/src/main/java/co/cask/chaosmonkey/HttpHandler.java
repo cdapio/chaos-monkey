@@ -75,9 +75,9 @@ public class HttpHandler extends AbstractHttpHandler {
       return;
     }
 
-    Constants.Action actionEnum;
+    Action actionEnum;
     try {
-      actionEnum = Constants.Action.valueOf(action.toUpperCase().replace('-', '_'));
+      actionEnum = Action.valueOf(action.toUpperCase().replace('-', '_'));
     } catch (IllegalArgumentException e) {
       responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown action: " + action);
       return;

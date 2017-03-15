@@ -39,7 +39,7 @@ public class DisruptionService {
   public DisruptionService(Set<String> services) {
     status = HashBasedTable.create();
     for (String service : services) {
-      for (Constants.Action action : Constants.Action.values()) {
+      for (Action action : Action.values()) {
         status.put(service, action.getCommand(), new AtomicBoolean(false));
       }
     }
@@ -53,7 +53,7 @@ public class DisruptionService {
     return status.get(service, action).get();
   }
 
-  public void disrupt(Constants.Action action, String service, Collection<RemoteProcess> processes,
+  public void disrupt(Action action, String service, Collection<RemoteProcess> processes,
                       ActionArguments actionArguments, HttpResponder responder) throws Exception {
     if (!checkAndStart(service, action.getCommand())) {
       responder.sendString(HttpResponseStatus.CONFLICT, action + " is already running for: " + service);
@@ -61,7 +61,7 @@ public class DisruptionService {
     }
 
     try {
-      if (action == Constants.Action.ROLLING_RESTART) {
+      if (action == Action.ROLLING_RESTART) {
         responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
         this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments);
         return;
@@ -105,6 +105,5 @@ public class DisruptionService {
   private void release(String service, String action) {
     AtomicBoolean atomicBoolean = status.get(service, action);
     atomicBoolean.set(false);
-    status.put(service, action, atomicBoolean);
   }
 }

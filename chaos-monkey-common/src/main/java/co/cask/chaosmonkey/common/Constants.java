@@ -56,25 +56,6 @@ public class Constants {
     );
   }
 
-  public enum Action {
-    START("start"),
-    RESTART("restart"),
-    STOP("stop"),
-    TERMINATE("terminate"),
-    KILL("kill"),
-    ROLLING_RESTART("rolling-restart");
-
-    private String command;
-
-    Action(String command) {
-      this.command = command;
-    }
-
-    public String getCommand() {
-      return this.command;
-    }
-  }
-
   /**
    * Constants related to Coopr, used for retrieving cluster information.
    */
