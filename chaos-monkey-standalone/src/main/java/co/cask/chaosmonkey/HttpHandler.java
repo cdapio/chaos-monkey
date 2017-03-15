@@ -27,7 +27,6 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.jcraft.jsch.JSchException;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -56,7 +55,6 @@ public class HttpHandler extends AbstractHttpHandler {
   private final Configuration conf;
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
-  private final RollingRestart rollingRestart;
   private final DisruptionService disruptionService;
 
   HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
@@ -64,8 +62,7 @@ public class HttpHandler extends AbstractHttpHandler {
     this.conf = conf;
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
-    this.rollingRestart = new RollingRestart();
-    this.disruptionService = new DisruptionService();
+    this.disruptionService = new DisruptionService(nameToProcess.keySet());
   }
 
   @POST
@@ -78,58 +75,15 @@ public class HttpHandler extends AbstractHttpHandler {
       return;
     }
 
-    if (disruptionService.checkAndStart(service, action)) {
-      try {
-        if (action.equals("rolling-restart")) {
-          ActionArguments actionArguments;
-          try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
-            actionArguments = GSON.fromJson(reader, ActionArguments.class);
-          } catch (JsonSyntaxException e) {
-            responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
-            return;
-          }
-
-          responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
-          this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments);
-          return;
-        }
-
-        for (RemoteProcess remoteProcess : processes) {
-          try {
-            switch (action) {
-              case Constants.RemoteProcess.STOP:
-                remoteProcess.stop();
-                break;
-              case Constants.RemoteProcess.KILL:
-                remoteProcess.kill();
-                break;
-              case Constants.RemoteProcess.TERMINATE:
-                remoteProcess.terminate();
-                break;
-              case Constants.RemoteProcess.START:
-                remoteProcess.start();
-                break;
-              case Constants.RemoteProcess.RESTART:
-                remoteProcess.restart();
-                break;
-              default:
-                responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown command: " + action);
-                return;
-            }
-          } catch (JSchException e) {
-            responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-            return;
-          }
-        }
-      } finally {
-        disruptionService.release(service, action);
-      }
-    } else {
-      responder.sendString(HttpResponseStatus.CONFLICT, action + " is already running for: " + service);
+    ActionArguments actionArguments;
+    try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
+      actionArguments = GSON.fromJson(reader, ActionArguments.class);
+    } catch (JsonSyntaxException e) {
+      responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
       return;
     }
 
-    responder.sendString(HttpResponseStatus.OK, "success");
+    disruptionService.disrupt(action, service, processes, actionArguments, responder);
   }
 
   @GET
@@ -138,7 +92,7 @@ public class HttpHandler extends AbstractHttpHandler {
                                       @PathParam("service") String service,
                                       @PathParam("action") String action) throws Exception {
     responder.sendJson(HttpResponseStatus.OK,
-                       new ActionStatus(service, action, disruptionService.checkRunning(service, action)));
+                       new ActionStatus(service, action, disruptionService.isRunning(service, action)));
   }
 
   /**

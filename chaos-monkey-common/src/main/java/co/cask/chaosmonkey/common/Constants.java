@@ -56,6 +56,23 @@ public class Constants {
     );
   }
 
+  public static final class Action {
+    public static final String START = "start";
+    public static final String RESTART = "restart";
+    public static final String STOP = "stop";
+    public static final String TERMINATE = "terminate";
+    public static final String KILL = "kill";
+    public static final String ROLLING_RESTART = "rolling-restart";
+    public static final String[] ACTIONS = {
+      Action.START,
+      Action.RESTART,
+      Action.STOP,
+      Action.TERMINATE,
+      Action.KILL,
+      Action.ROLLING_RESTART
+    };
+  }
+
   /**
    * Constants related to Coopr, used for retrieving cluster information.
    */
