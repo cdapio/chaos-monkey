@@ -22,6 +22,7 @@ import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.http.NettyHttpService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,16 +35,14 @@ public class Router extends AbstractIdleService {
 
   private NettyHttpService httpService;
   private ClusterInfoCollector clusterInfoCollector;
-  private final Multimap<String, RemoteProcess> ipToProcess;
-  private final Multimap<String, RemoteProcess> nameToProcess;
+  private Table<String, String, RemoteProcess> processTable;
   private final Configuration conf;
 
   public Router(Configuration conf, ClusterInfoCollector clusterInfoCollector,
-                Multimap<String, RemoteProcess> ipToProcess, Multimap<String, RemoteProcess> nameToProcess) {
+                Table<String, String, RemoteProcess> processTable) {
     this.conf = conf;
     this.clusterInfoCollector = clusterInfoCollector;
-    this.ipToProcess = ipToProcess;
-    this.nameToProcess = nameToProcess;
+    this.processTable = processTable;
   }
 
   @Override
@@ -52,7 +51,7 @@ public class Router extends AbstractIdleService {
 
     this.httpService = NettyHttpService.builder()
       .setPort(Constants.Server.PORT)
-      .addHttpHandlers(ImmutableList.of(new HttpHandler(conf, clusterInfoCollector, ipToProcess, nameToProcess)))
+      .addHttpHandlers(ImmutableList.of(new HttpHandler(conf, clusterInfoCollector, processTable)))
       .build();
 
     this.httpService.startAsync();
