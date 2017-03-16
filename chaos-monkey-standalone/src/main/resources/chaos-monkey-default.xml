@@ -106,20 +106,20 @@
   </property>
 
   <property>
-    <name>coopr.userId</name>
+    <name>cluster.info.collector.coopr.userId</name>
     <value>admin</value>
   </property>
   <property>
-    <name>coopr.tenantId</name>
+    <name>cluster.info.collector.coopr.tenantId</name>
     <value>superadmin</value>
   </property>
 
   <property>
-    <name>coopr.server.uri</name>
+    <name>cluster.info.collector.coopr.server.uri</name>
     <value>http://localhost:55054</value>
   </property>
   <property>
-    <name>coopr.api.version</name>
+    <name>cluster.info.collector.coopr.api.version</name>
     <value>v2</value>
   </property>
 </configuration>

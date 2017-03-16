@@ -18,6 +18,7 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
+import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.NodeProperties;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -26,8 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -47,10 +50,17 @@ public class ChaosMonkeyMain extends DaemonMain {
   @Override
   public void init(String[] args) {
     chaosMonkeyServiceSet = new HashSet<>();
+    Configuration conf = Configuration.create();
     try {
-      Configuration conf = Configuration.create();
-      clusterInfoCollector = Class.forName(conf.get(Constants.Coopr.COOPR_INFO_COLLECTOR_CLASS))
+      clusterInfoCollector = Class.forName(conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS))
         .asSubclass(ClusterInfoCollector.class).newInstance();
+      Map<String, String> clusterInfoCollectorConf = new HashMap<>();
+      for (Map.Entry<String, String> entry :
+        conf.getValByRegex(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CONF_PREFIX + "*").entrySet()) {
+        clusterInfoCollectorConf.put(entry.getKey().replace(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CONF_PREFIX, ""),
+                                     entry.getValue());
+      }
+      clusterInfoCollector.initialize(clusterInfoCollectorConf);
 
       String username = conf.get("username", System.getProperty("user.name"));
       String privateKey = conf.get("privateKey");
@@ -59,7 +69,7 @@ public class ChaosMonkeyMain extends DaemonMain {
       Multimap<String, String> processToIp = HashMultimap.create();
       Multimap<String, RemoteProcess> ipToProcess = HashMultimap.create();
       Multimap<String, RemoteProcess> nameToProcess = HashMultimap.create();
-      Collection<NodeProperties> propertiesList = clusterInfoCollector.getNodeProperties(conf);
+      Collection<NodeProperties> propertiesList = clusterInfoCollector.getNodeProperties();
 
       for (NodeProperties node : propertiesList) {
         for (String service : node.getServices()) {
@@ -144,6 +154,10 @@ public class ChaosMonkeyMain extends DaemonMain {
       }
 
       router = new Router(conf, clusterInfoCollector, ipToProcess, nameToProcess);
+    } catch (ClassNotFoundException e) {
+      LOG.error("Unable to instantiate cluster info collector class: " +
+                  conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS));
+      throw new RuntimeException(e);
     } catch (Throwable t) {
       LOG.error(t.getMessage(), t);
       throw new RuntimeException(t);

@@ -18,6 +18,7 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
+import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
@@ -117,16 +118,6 @@ public class HttpHandler extends AbstractHttpHandler {
     }
 
     responder.sendString(HttpResponseStatus.OK, "success");
-  }
-
-  /**
-   * Gets node properties of all nodes in the current cluster, whether or not it is managed by the chaos monkey
-   */
-  @GET
-  @Path("/nodes")
-  public void getNodes(HttpRequest request, HttpResponder responder) throws Exception {
-    responder.sendJson(HttpResponseStatus.OK,
-                       new ArrayList<>(clusterInfoCollector.getNodeProperties(conf)));
   }
 
   /**

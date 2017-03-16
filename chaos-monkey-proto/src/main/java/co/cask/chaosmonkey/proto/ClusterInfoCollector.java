@@ -14,12 +14,10 @@
  * the License.
  */
 
-package co.cask.chaosmonkey;
-
-import co.cask.chaosmonkey.common.conf.Configuration;
-import co.cask.chaosmonkey.proto.NodeProperties;
+package co.cask.chaosmonkey.proto;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * ClusterInfoCollector allows for different ways to collect location and services of nodes in a cluster
@@ -27,11 +25,18 @@ import java.util.Collection;
 public interface ClusterInfoCollector {
 
   /**
+   * Initialize the cluster info collector with given configurations
+   *
+   * @param properties configurations for cluster info collector
+   * @throws Exception
+   */
+  void initialize(Map<String, String> properties) throws Exception;
+
+  /**
    * Gathers the location and services of each node to be used by Chaos Monkey
    *
-   * @param conf instance of {@link Configuration}
    * @return Collection of {@link NodeProperties}
    * @throws Exception
    */
-  Collection<NodeProperties> getNodeProperties(Configuration conf) throws Exception;
+  Collection<NodeProperties> getNodeProperties() throws Exception;
 }

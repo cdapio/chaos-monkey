@@ -188,20 +188,6 @@ public class ChaosMonkeyClient {
     return GSON.fromJson(response.getResponseBodyAsString(), NodeStatus.class);
   }
 
-  /**
-   * Gets information about each node in the configured cluster
-   *
-   * @return list of {@link NodeProperties}
-   * @throws IOException if a network error occurred
-   */
-  public List<NodeProperties> getNodeProperties() throws IOException {
-    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "nodes");
-    HttpRequest request = HttpRequest.get(url).build();
-    HttpResponse response = HttpRequests.execute(request);
-
-    return GSON.fromJson(response.getResponseBodyAsString(), PROPERTIES_TYPE);
-  }
-
   private String getURL() throws MalformedURLException {
     return String.format("%s://%s:%d", sslEnabled ? "https" : "http", hostname, port);
   }

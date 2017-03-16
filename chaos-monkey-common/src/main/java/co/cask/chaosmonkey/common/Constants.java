@@ -60,11 +60,18 @@ public class Constants {
    * Constants related to Coopr, used for retrieving cluster information.
    */
   public static final class Coopr {
-    public static final String COOPR_INFO_COLLECTOR_CLASS = "cluster.info.collector.class";
     public static final String USER_ID = "coopr.userId";
     public static final String TENANT_ID = "coopr.tenantId";
     public static final String SERVER_URI = "coopr.server.uri";
     public static final String API_VERSION = "coopr.api.version";
     public static final String CLUSTER_ID = "coopr.clusterId";
+  }
+
+  /**
+   * Constants related to plugins for Chaos Monkey
+   */
+  public static final class Plugins {
+    public static final String CLUSTER_INFO_COLLECTOR_CLASS = "cluster.info.collector.class";
+    public static final String CLUSTER_INFO_COLLECTOR_CONF_PREFIX = "cluster.info.collector.";
   }
 }

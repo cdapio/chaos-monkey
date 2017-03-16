@@ -18,6 +18,7 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
+import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.http.NettyHttpService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
