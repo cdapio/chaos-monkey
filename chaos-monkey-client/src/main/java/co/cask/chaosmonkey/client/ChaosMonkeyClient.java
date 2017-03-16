@@ -17,9 +17,9 @@
 package co.cask.chaosmonkey.client;
 
 import co.cask.chaosmonkey.common.Constants;
+import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
-import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.common.http.HttpRequest;
 import co.cask.common.http.HttpRequests;
 import co.cask.common.http.HttpResponse;
