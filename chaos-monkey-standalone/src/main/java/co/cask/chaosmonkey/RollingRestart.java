@@ -18,7 +18,6 @@ package co.cask.chaosmonkey;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.plugin.dom.exception.InvalidStateException;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +43,7 @@ public class RollingRestart implements Disruption {
    */
   public void disrupt(List<RemoteProcess> processes, @Nullable ActionArguments actionArguments) throws Exception {
     if (processes.size() < 1) {
-      throw new InvalidStateException("Process list has an invalid size of: " + processes.size());
+      throw new IllegalStateException("Process list has an invalid size of: " + processes.size());
     }
 
     int restartTime = (actionArguments == null || actionArguments.getRestartTime() == null ||
