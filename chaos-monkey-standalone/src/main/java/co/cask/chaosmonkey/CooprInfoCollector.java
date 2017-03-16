@@ -38,28 +38,25 @@ import java.util.Map;
 public class CooprInfoCollector implements ClusterInfoCollector {
   private static final Gson GSON = new Gson();
   private static final Type NODES_TYPE = new TypeToken<Map<String, NodeProperties>>() { }.getType();
-  private Map<String, String> properties = new HashMap<>();
+  private HttpRequest request;
 
   @Override
   public void initialize(Map<String, String> properties) throws Exception {
-    this.properties = properties;
-  }
-
-  @Override
-  public Collection<NodeProperties> getNodeProperties() throws Exception {
     String clusterId = properties.get(Constants.Coopr.CLUSTER_ID);
     if (clusterId == null || clusterId.isEmpty()) {
       throw new IllegalArgumentException("Cluster ID not specified");
     }
-
     URL url = new URL(properties.get(Constants.Coopr.SERVER_URI) + "/" +
                         properties.get(Constants.Coopr.API_VERSION) + "/getNodeProperties");
-    HttpRequest request = HttpRequest.get(url)
+    this.request = HttpRequest.get(url)
       .addHeader("coopr-userid", properties.get(Constants.Coopr.USER_ID))
       .addHeader("coopr-tenantid", properties.get(Constants.Coopr.TENANT_ID))
       .withBody(String.format("{\"clusterId\":\"%s\"}", clusterId)).build();
-    HttpResponse response = HttpRequests.execute(request);
+  }
 
+  @Override
+  public Collection<NodeProperties> getNodeProperties() throws Exception {
+    HttpResponse response = HttpRequests.execute(request);
     Map<String, NodeProperties> nodes =  GSON.fromJson(response.getResponseBodyAsString(), NODES_TYPE);
     return nodes.values();
   }
