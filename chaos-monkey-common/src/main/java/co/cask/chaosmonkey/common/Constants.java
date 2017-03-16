@@ -66,4 +66,12 @@ public class Constants {
     public static final String API_VERSION = "coopr.api.version";
     public static final String CLUSTER_ID = "coopr.clusterId";
   }
+
+  /**
+   * Constants related to plugins for Chaos Monkey
+   */
+  public static final class Plugins {
+    public static final String CLUSTER_INFO_COLLECTOR_CLASS = "cluster.info.collector.class";
+    public static final String CLUSTER_INFO_COLLECTOR_CONF_PREFIX = "cluster.info.collector.";
+  }
 }

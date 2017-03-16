@@ -18,7 +18,7 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
-import co.cask.chaosmonkey.proto.NodeProperties;
+import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.http.AbstractHttpHandler;
@@ -38,7 +38,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -53,13 +52,15 @@ public class HttpHandler extends AbstractHttpHandler {
   private static final Gson GSON = new Gson();
 
   private final Configuration conf;
+  private final ClusterInfoCollector clusterInfoCollector;
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
   private final DisruptionService disruptionService;
 
-  HttpHandler(Configuration conf, Multimap<String, RemoteProcess> ipToProcess,
-              Multimap<String, RemoteProcess> nameToProcess) {
+  HttpHandler(Configuration conf, ClusterInfoCollector clusterInfoCollector,
+              Multimap<String, RemoteProcess> ipToProcess, Multimap<String, RemoteProcess> nameToProcess) {
     this.conf = conf;
+    this.clusterInfoCollector = clusterInfoCollector;
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
     this.disruptionService = new DisruptionService(nameToProcess.keySet());
@@ -101,17 +102,6 @@ public class HttpHandler extends AbstractHttpHandler {
                                       @PathParam("action") String action) throws Exception {
     responder.sendJson(HttpResponseStatus.OK,
                        new ActionStatus(service, action, disruptionService.isRunning(service, action)));
-  }
-
-  /**
-   * Gets node properties of all nodes in the current cluster, whether or not it is managed by the chaos monkey
-   */
-  @GET
-  @Path("/nodes")
-  public void getNodes(HttpRequest request, HttpResponder responder) throws Exception {
-    Map<String, NodeProperties> nodePropertiesMap = ChaosMonkeyHelper.getNodeProperties(conf);
-    List<NodeProperties> nodePropertiesList = new ArrayList<>(nodePropertiesMap.values());
-    responder.sendJson(HttpResponseStatus.OK, nodePropertiesList);
   }
 
   /**
