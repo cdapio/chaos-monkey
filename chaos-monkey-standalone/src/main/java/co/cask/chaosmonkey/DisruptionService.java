@@ -16,8 +16,6 @@
 
 package co.cask.chaosmonkey;
 
-import co.cask.chaosmonkey.common.Constants;
-import co.cask.http.HttpResponder;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.jcraft.jsch.JSchException;
@@ -26,6 +24,9 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -34,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DisruptionService {
 
   private Table<String, String, AtomicBoolean> status;
-  private RollingRestart rollingRestart;
 
   public DisruptionService(Set<String> services) {
     status = HashBasedTable.create();
@@ -43,7 +43,6 @@ public class DisruptionService {
         status.put(service, action.getCommand(), new AtomicBoolean(false));
       }
     }
-    rollingRestart = new RollingRestart();
   }
 
   public boolean isRunning(String service, String action) {
@@ -53,48 +52,14 @@ public class DisruptionService {
     return status.get(service, action).get();
   }
 
-  public void disrupt(Action action, String service, Collection<RemoteProcess> processes,
-                      ActionArguments actionArguments, HttpResponder responder) throws Exception {
+  public HttpResponseStatus disrupt(Action action, String service, Collection<RemoteProcess> processes,
+                      ActionArguments actionArguments) throws Exception {
     if (!checkAndStart(service, action.getCommand())) {
-      responder.sendString(HttpResponseStatus.CONFLICT, action + " is already running for: " + service);
-      return;
+      return HttpResponseStatus.CONFLICT;
     }
-
-    try {
-      if (action == Action.ROLLING_RESTART) {
-        responder.sendString(HttpResponseStatus.OK, "Starting rolling restart");
-        this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments);
-        return;
-      }
-
-      for (RemoteProcess remoteProcess : processes) {
-        try {
-          switch (action) {
-            case STOP:
-              remoteProcess.stop();
-              break;
-            case KILL:
-              remoteProcess.kill();
-              break;
-            case TERMINATE:
-              remoteProcess.terminate();
-              break;
-            case START:
-              remoteProcess.start();
-              break;
-            case RESTART:
-              remoteProcess.restart();
-              break;
-          }
-        } catch (JSchException e) {
-          responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-          return;
-        }
-      }
-    } finally {
-      release(service, action.getCommand());
-    }
-    responder.sendString(HttpResponseStatus.OK, "success");
+    ExecutorService executor = Executors.newFixedThreadPool(1);
+    executor.submit(new DisruptionThread(action, service, processes, actionArguments, status));
+    return HttpResponseStatus.OK;
   }
 
   private boolean checkAndStart(String service, String action) {
@@ -102,8 +67,65 @@ public class DisruptionService {
     return atomicBoolean.compareAndSet(false, true);
   }
 
-  private void release(String service, String action) {
-    AtomicBoolean atomicBoolean = status.get(service, action);
-    atomicBoolean.set(false);
+  static class DisruptionThread implements Callable<Void> {
+    private final Action action;
+    private final String service;
+    private final Collection<RemoteProcess> processes;
+    private final ActionArguments actionArguments;
+    private final RollingRestart rollingRestart;
+    private final Table<String, String, AtomicBoolean> status;
+
+    DisruptionThread(Action action, String service,  Collection<RemoteProcess> processes,
+                     ActionArguments actionArguments, Table<String, String, AtomicBoolean> status) {
+      this.action = action;
+      this.service = service;
+      this.processes = processes;
+      this.actionArguments = actionArguments;
+      this.rollingRestart = new RollingRestart();
+      this.status = status;
+    }
+
+    @Override
+    public Void call() throws Exception {
+      try {
+        if (action == Action.ROLLING_RESTART) {
+          this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments);
+          return null;
+        }
+
+        for (RemoteProcess remoteProcess : processes) {
+          try {
+            switch (action) {
+              case STOP:
+                remoteProcess.stop();
+                break;
+              case KILL:
+                remoteProcess.kill();
+                break;
+              case TERMINATE:
+                remoteProcess.terminate();
+                break;
+              case START:
+                remoteProcess.start();
+                break;
+              case RESTART:
+                remoteProcess.restart();
+                break;
+            }
+          } catch (JSchException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      } finally {
+        release(service, action.getCommand());
+      }
+
+      return null;
+    }
+
+    private void release(String service, String action) {
+      AtomicBoolean atomicBoolean = status.get(service, action);
+      atomicBoolean.set(false);
+    }
   }
 }

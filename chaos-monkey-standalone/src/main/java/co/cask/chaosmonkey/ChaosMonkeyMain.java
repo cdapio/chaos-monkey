@@ -153,7 +153,7 @@ public class ChaosMonkeyMain extends DaemonMain {
         chaosMonkeyServiceSet.add(chaosMonkeyService);
       }
 
-      router = new Router(conf, clusterInfoCollector, ipToProcess, nameToProcess);
+      router = new Router(ipToProcess, nameToProcess);
     } catch (ClassNotFoundException e) {
       LOG.error("Unable to instantiate cluster info collector class: " +
                   conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS));

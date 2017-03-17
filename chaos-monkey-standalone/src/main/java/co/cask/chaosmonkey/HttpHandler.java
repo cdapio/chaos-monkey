@@ -17,9 +17,7 @@
 package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
-import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.ActionStatus;
-import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
@@ -38,6 +36,10 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -51,16 +53,11 @@ public class HttpHandler extends AbstractHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(HttpHandler.class);
   private static final Gson GSON = new Gson();
 
-  private final Configuration conf;
-  private final ClusterInfoCollector clusterInfoCollector;
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
   private final DisruptionService disruptionService;
 
-  HttpHandler(Configuration conf, ClusterInfoCollector clusterInfoCollector,
-              Multimap<String, RemoteProcess> ipToProcess, Multimap<String, RemoteProcess> nameToProcess) {
-    this.conf = conf;
-    this.clusterInfoCollector = clusterInfoCollector;
+  HttpHandler(Multimap<String, RemoteProcess> ipToProcess, Multimap<String, RemoteProcess> nameToProcess) {
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
     this.disruptionService = new DisruptionService(nameToProcess.keySet());
@@ -92,7 +89,8 @@ public class HttpHandler extends AbstractHttpHandler {
       return;
     }
 
-    disruptionService.disrupt(actionEnum, service, processes, actionArguments, responder);
+    HttpResponseStatus responseStatus = disruptionService.disrupt(actionEnum, service, processes, actionArguments);
+    responder.sendString(responseStatus, responseStatus.getReasonPhrase());
   }
 
   @GET
@@ -138,5 +136,44 @@ public class HttpHandler extends AbstractHttpHandler {
       statuses.add(status);
     }
     responder.sendJson(HttpResponseStatus.OK, statuses);
+  }
+
+  /**
+   * Asynchronously get the status of all services managed by chaos monkey
+   */
+  @GET
+  @Path("/statusAsync")
+  public void getNodeStatusesAsync(HttpRequest request, HttpResponder responder) throws Exception {
+    ExecutorService executor = Executors.newFixedThreadPool(ipToProcess.keySet().size());
+    List<Status> threads = new ArrayList<>();
+    for (String ip : ipToProcess.keySet()) {
+      threads.add(new Status(ip, ipToProcess.get(ip)));
+    }
+    List<Future<NodeStatus>> results = executor.invokeAll(threads);
+
+    List<NodeStatus> statuses = new ArrayList<>();
+    for (Future<NodeStatus> result : results) {
+      statuses.add(result.get());
+    }
+    responder.sendJson(HttpResponseStatus.OK, statuses);
+  }
+
+  static class Status implements Callable<NodeStatus> {
+    private final Collection<RemoteProcess> processes;
+    private final String ip;
+
+    Status(String ip, Collection<RemoteProcess> processes) {
+      this.ip = ip;
+      this.processes = processes;
+    }
+
+    @Override
+    public NodeStatus call() throws Exception {
+      NodeStatus status = new NodeStatus(ip);
+      for (RemoteProcess remoteProcess : processes) {
+        status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
+      }
+      return status;
+    }
   }
 }
