@@ -19,7 +19,7 @@ package co.cask.chaosmonkey;
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
-import co.cask.chaosmonkey.proto.NodeProperties;
+import co.cask.chaosmonkey.proto.ClusterNode;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -28,7 +28,6 @@ import com.google.common.collect.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -69,12 +68,11 @@ public class ChaosMonkeyMain extends DaemonMain {
       String keyPassphrase = conf.get("keyPassphrase");
 
       Multimap<String, String> processToIp = HashMultimap.create();
-      Collection<NodeProperties> propertiesList = clusterInfoCollector.getNodeProperties();
       Table<String, String, RemoteProcess> processTable = HashBasedTable.create();
 
-      for (NodeProperties node : propertiesList) {
+      for (ClusterNode node : clusterInfoCollector.getNodeProperties()) {
         for (String service : node.getServices()) {
-          processToIp.put(service, node.getAccessIpAddress());
+          processToIp.put(service, node.getIp());
         }
       }
 

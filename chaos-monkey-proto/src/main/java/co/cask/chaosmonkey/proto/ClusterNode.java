@@ -17,26 +17,24 @@
 package co.cask.chaosmonkey.proto;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
- * ClusterInfoCollector allows for different ways to collect location and services of nodes in a cluster
+ * Represents a node, with information to be returned from {@link ClusterInfoCollector}
  */
-public interface ClusterInfoCollector {
+public class ClusterNode {
+  protected Collection<String> services;
+  protected String ip;
 
-  /**
-   * Initialize the cluster info collector with given configurations
-   *
-   * @param properties configurations for cluster info collector
-   * @throws Exception
-   */
-  void initialize(Map<String, String> properties) throws Exception;
+  public ClusterNode(Collection<String> services, String ip) {
+    this.services = services;
+    this.ip = ip;
+  }
 
-  /**
-   * Gathers the location and services of each node to be used by Chaos Monkey
-   *
-   * @return Collection of {@link ClusterNode}
-   * @throws Exception
-   */
-  Collection<ClusterNode> getNodeProperties() throws Exception;
+  public Collection<String> getServices() {
+    return services;
+  }
+
+  public String getIp() {
+    return ip;
+  }
 }

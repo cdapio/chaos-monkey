@@ -14,41 +14,30 @@
  * the License.
  */
 
-package co.cask.chaosmonkey.proto;
+package co.cask.chaosmonkey;
 
+import co.cask.chaosmonkey.proto.ClusterNode;
+
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * NodeProperties represents the JSON object returned by coopr
  */
-public class NodeProperties {
-  private List<String> services;
+public class CooprNodeProperties extends ClusterNode {
   private Map<String, String> ipaddresses;
 
-  public NodeProperties(List<String> services, String ipAddress) {
+  public CooprNodeProperties(Collection<String> services, String ipAddress) {
+    super(services, ipAddress);
     Map<String, String> ipAddresses = new HashMap<>();
     ipAddresses.put("access_v4", ipAddress);
 
-    this.services = services;
     this.ipaddresses = ipAddresses;
   }
 
-  public NodeProperties(List<String> services, Map<String, String> ipaddresses) {
-    this.services = services;
-    this.ipaddresses = ipaddresses;
-  }
-
-  public List<String> getServices() {
-    return services;
-  }
-
-  public Map<String, String> getIpaddresses() {
-    return ipaddresses;
-  }
-
-  public String getAccessIpAddress() {
+  @Override
+  public String getIp() {
     return ipaddresses.get("access_v4");
   }
 }
