@@ -18,11 +18,12 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.proto.ActionStatus;
+import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
 import com.google.common.base.Charsets;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.sun.jersey.api.ConflictException;
@@ -36,6 +37,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -54,23 +57,66 @@ public class HttpHandler extends AbstractHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(HttpHandler.class);
   private static final Gson GSON = new Gson();
 
-  private final Multimap<String, RemoteProcess> ipToProcess;
-  private final Multimap<String, RemoteProcess> nameToProcess;
   private final DisruptionService disruptionService;
+  private final Table<String, String, RemoteProcess> processTable;
   private final ExecutorService executor;
 
-  HttpHandler(Multimap<String, RemoteProcess> ipToProcess, Multimap<String, RemoteProcess> nameToProcess) {
-    this.ipToProcess = ipToProcess;
-    this.nameToProcess = nameToProcess;
-    this.disruptionService = new DisruptionService(nameToProcess.keySet());
-    this.executor = Executors.newFixedThreadPool(ipToProcess.keySet().size());
+  HttpHandler(Table<String, String, RemoteProcess> processTable) {
+    this.disruptionService = new DisruptionService(processTable.columnKeySet());
+    this.processTable = processTable;
+    this.executor = Executors.newFixedThreadPool(processTable.rowKeySet().size());
   }
 
   @POST
   @Path("/services/{service}/{action}")
   public void executeAction(HttpRequest request, HttpResponder responder,
                             @PathParam("service") String service, @PathParam("action") String action) throws Exception {
-    Collection<RemoteProcess> processes = nameToProcess.get(service);
+    ActionArguments actionArguments;
+    Collection<RemoteProcess> processes = processTable.column(service).values();
+    try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
+      actionArguments = GSON.fromJson(reader, ActionArguments.class);
+    } catch (JsonSyntaxException e) {
+      responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body: " + e.getMessage());
+      return;
+    }
+
+    if (actionArguments == null) {
+      // NO OP
+    } else if (actionArguments.getNodes() != null) {
+      processes = new HashSet<>();
+      List<String> invalidNodes = new ArrayList<>();
+      for (String nodeIp : actionArguments.getNodes()) {
+        RemoteProcess process = processTable.get(nodeIp, service);
+        if (process == null) {
+          invalidNodes.add(nodeIp);
+        } else {
+          processes.add(process);
+        }
+      }
+      if (!invalidNodes.isEmpty()) {
+        responder.sendString(HttpResponseStatus.BAD_REQUEST, "The following nodes do not exist, or they do not " +
+          "support " + service + ": " + invalidNodes);
+        return;
+      }
+    } else if (actionArguments.getCount() != null) {
+      int count = actionArguments.getCount();
+      if (count <= 0) {
+        responder.sendString(HttpResponseStatus.BAD_REQUEST, "count cannot be less than or equal to zero: " + count);
+      }
+      List<RemoteProcess> processList = new ArrayList<>(processTable.column(service).values());
+      Collections.shuffle(processList);
+      processes = new HashSet<>(processList.subList(0, Math.min(processList.size(), count)));
+    } else if (actionArguments.getPercentage() != null) {
+      double percentage = actionArguments.getPercentage();
+      if (percentage <= 0 || percentage > 100) {
+        responder.sendString(HttpResponseStatus.BAD_REQUEST, "percentage needs to be between 0 and 100: " + percentage);
+      }
+      List<RemoteProcess> processList = new ArrayList<>(processTable.column(service).values());
+      Collections.shuffle(processList);
+      processes = new HashSet<>(processList.subList(0, (int) Math.round(processList.size() *
+                                                                          (actionArguments.getPercentage() / 100))));
+    }
+
     if (processes.size() == 0) {
       responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown service: " + service);
       return;
@@ -81,14 +127,6 @@ public class HttpHandler extends AbstractHttpHandler {
       actionEnum = Action.valueOf(action.toUpperCase().replace('-', '_'));
     } catch (IllegalArgumentException e) {
       responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown action: " + action);
-      return;
-    }
-
-    ActionArguments actionArguments;
-    try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
-      actionArguments = GSON.fromJson(reader, ActionArguments.class);
-    } catch (JsonSyntaxException e) {
-      responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
       return;
     }
 
@@ -117,13 +155,13 @@ public class HttpHandler extends AbstractHttpHandler {
   @GET
   @Path("/nodes/{ip}/status")
   public void getNodeStatus(HttpRequest request, HttpResponder responder, @PathParam("ip") String ip) throws Exception {
-    Collection<RemoteProcess> remoteProcessList = ipToProcess.get(ip);
-    if (remoteProcessList.size() == 0) {
+    Collection<RemoteProcess> remoteProcesses = processTable.row(ip).values();
+    if (remoteProcesses.isEmpty()) {
       responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown ip: " + ip);
       return;
     }
     NodeStatus status = new NodeStatus(ip);
-    for (RemoteProcess remoteProcess : remoteProcessList) {
+    for (RemoteProcess remoteProcess : remoteProcesses) {
       status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
     }
     responder.sendJson(HttpResponseStatus.OK, status);
@@ -136,8 +174,8 @@ public class HttpHandler extends AbstractHttpHandler {
   @Path("/status")
   public void getNodeStatuses(HttpRequest request, HttpResponder responder) throws Exception {
     List<Status> threads = new ArrayList<>();
-    for (String ip : ipToProcess.keySet()) {
-      threads.add(new Status(ip, ipToProcess.get(ip)));
+    for (String ip : processTable.rowKeySet()) {
+      threads.add(new Status(ip, processTable.row(ip).values()));
     }
     List<Future<NodeStatus>> results = executor.invokeAll(threads);
 

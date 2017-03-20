@@ -19,7 +19,7 @@ package co.cask.chaosmonkey;
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.http.NettyHttpService;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,12 +31,10 @@ public class Router extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(Router.class);
 
   private NettyHttpService httpService;
-  private final Multimap<String, RemoteProcess> ipToProcess;
-  private final Multimap<String, RemoteProcess> nameToProcess;
+  private Table<String, String, RemoteProcess> processTable;
 
-  public Router(Multimap<String, RemoteProcess> ipToProcess, Multimap<String, RemoteProcess> nameToProcess) {
-    this.ipToProcess = ipToProcess;
-    this.nameToProcess = nameToProcess;
+  public Router(Table<String, String, RemoteProcess> processTable) {
+    this.processTable = processTable;
   }
 
   @Override
@@ -45,7 +43,7 @@ public class Router extends AbstractIdleService {
 
     this.httpService = NettyHttpService.builder()
       .setPort(Constants.Server.PORT)
-      .addHttpHandlers(ImmutableList.of(new HttpHandler(ipToProcess, nameToProcess)))
+      .addHttpHandlers(ImmutableList.of(new HttpHandler(processTable)))
       .build();
 
     this.httpService.startAsync();

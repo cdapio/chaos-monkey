@@ -20,9 +20,11 @@ import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.NodeProperties;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +69,8 @@ public class ChaosMonkeyMain extends DaemonMain {
       String keyPassphrase = conf.get("keyPassphrase");
 
       Multimap<String, String> processToIp = HashMultimap.create();
-      Multimap<String, RemoteProcess> ipToProcess = HashMultimap.create();
-      Multimap<String, RemoteProcess> nameToProcess = HashMultimap.create();
       Collection<NodeProperties> propertiesList = clusterInfoCollector.getNodeProperties();
+      Table<String, String, RemoteProcess> processTable = HashBasedTable.create();
 
       for (NodeProperties node : propertiesList) {
         for (String service : node.getServices()) {
@@ -142,8 +143,7 @@ public class ChaosMonkeyMain extends DaemonMain {
               throw new IllegalArgumentException("The following process does not have a valid init.style: " + service);
           }
           processes.add(process);
-          ipToProcess.put(ipAddress, process);
-          nameToProcess.put(service, process);
+          processTable.put(ipAddress, service, process);
         }
 
         LOG.info("Adding the following process to Chaos Monkey: {}", service);
@@ -153,7 +153,7 @@ public class ChaosMonkeyMain extends DaemonMain {
         chaosMonkeyServiceSet.add(chaosMonkeyService);
       }
 
-      router = new Router(ipToProcess, nameToProcess);
+      router = new Router(processTable);
     } catch (ClassNotFoundException e) {
       LOG.error("Unable to instantiate cluster info collector class: " +
                   conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS));
