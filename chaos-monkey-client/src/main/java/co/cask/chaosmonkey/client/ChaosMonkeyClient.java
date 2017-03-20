@@ -31,6 +31,7 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.BadRequestException;
@@ -74,6 +75,52 @@ public class ChaosMonkeyClient {
   }
 
   /**
+   * Starts the specified service on 'count' nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be started
+   * @param count The number of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void start(String service, int count)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "start", "count", Integer.toString(count));
+  }
+
+  /**
+   * Starts the specified service on percentage of nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be started
+   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void start(String service, double percentage)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "start", "percentage", Double.toString(percentage));
+  }
+
+  /**
+   * Starts the specified service on given nodes
+   *
+   * @param service The name of the service to be started
+   * @param nodes Collection of ip addresses of affected nodes
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void start(String service, Collection<String> nodes)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    String collectionJSON = GSON.toJson(nodes);
+    executeActionWithArgument(service, "start", "nodes", collectionJSON);
+  }
+
+  /**
    * Restarts the specified service
    *
    * @param service The name of the service to be restarted
@@ -85,6 +132,52 @@ public class ChaosMonkeyClient {
   public void restart(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     executeAction(service, "restart");
+  }
+
+  /**
+   * Restarts the specified service on 'count' nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be restarted
+   * @param count The number of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void restart(String service, int count)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "restart", "count", Integer.toString(count));
+  }
+
+  /**
+   * Restarts the specified service on percentage of nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be restarted
+   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void restart(String service, double percentage)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "restart", "percentage", Double.toString(percentage));
+  }
+
+  /**
+   * Restarts the specified service on given nodes
+   *
+   * @param service The name of the service to be restarted
+   * @param nodes Collection of ip addresses of affected nodes
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void restart(String service, Collection<String> nodes)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    String collectionJSON = GSON.toJson(nodes);
+    executeActionWithArgument(service, "restart", "nodes", collectionJSON);
   }
 
   /**
@@ -102,6 +195,52 @@ public class ChaosMonkeyClient {
   }
 
   /**
+   * Stops the specified service on 'count' nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be stopped
+   * @param count The number of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void stop(String service, int count)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "stop", "count", Integer.toString(count));
+  }
+
+  /**
+   * Stops the specified service on percentage of nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be stopped
+   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void stop(String service, double percentage)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "stop", "percentage", Double.toString(percentage));
+  }
+
+  /**
+   * Stops the specified service on given nodes
+   *
+   * @param service The name of the service to be stopped
+   * @param nodes Collection of ip addresses of affected nodes
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void stop(String service, Collection<String> nodes)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    String collectionJSON = GSON.toJson(nodes);
+    executeActionWithArgument(service, "stop", "nodes", collectionJSON);
+  }
+
+  /**
    * Terminates the specified service
    *
    * @param service The name of the service to be terminated
@@ -113,6 +252,52 @@ public class ChaosMonkeyClient {
   public void terminate(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     executeAction(service, "terminate");
+  }
+
+  /**
+   * Terminates the specified service on 'count' nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be terminated
+   * @param count The number of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void terminate(String service, int count)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "terminate", "count", Integer.toString(count));
+  }
+
+  /**
+   * Terminates the specified service on percentage of nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be terminated
+   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void terminate(String service, double percentage)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "terminate", "percentage", Double.toString(percentage));
+  }
+
+  /**
+   * Terminates the specified service on given nodes
+   *
+   * @param service The name of the service to be terminated
+   * @param nodes Collection of ip addresses of affected nodes
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void terminate(String service, Collection<String> nodes)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    String collectionJSON = GSON.toJson(nodes);
+    executeActionWithArgument(service, "terminate", "nodes", collectionJSON);
   }
 
   /**
@@ -129,6 +314,52 @@ public class ChaosMonkeyClient {
     executeAction(service, "kill");
   }
 
+  /**
+   * Kills the specified service on 'count' nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be killed
+   * @param count The number of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void kill(String service, int count)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "kill", "count", Integer.toString(count));
+  }
+
+  /**
+   * Kills the specified service on percentage of nodes chosen arbitrarily
+   *
+   * @param service The name of the service to be killed
+   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void kill(String service, double percentage)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    executeActionWithArgument(service, "kill", "percentage", Double.toString(percentage));
+  }
+
+  /**
+   * Kills the specified service on given nodes
+   *
+   * @param service The name of the service to be killed
+   * @param nodes Collection of ip addresses of affected nodes
+   * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
+   */
+  public void kill(String service, Collection<String> nodes)
+    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
+    String collectionJSON = GSON.toJson(nodes);
+    executeActionWithArgument(service, "kill", "nodes", collectionJSON);
+  }
+
   private void executeAction(String service, String action)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action);
@@ -139,6 +370,24 @@ public class ChaosMonkeyClient {
     String responseMessage = response.getResponseMessage();
     if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
       throw new NotFoundException(String.format("Service not found: %s", service));
+    } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
+      throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
+    } else if (responseCode == HttpURLConnection.HTTP_INTERNAL_ERROR) {
+      throw new InternalServerErrorException(String.format("Internal Error. Reason: %s", responseMessage));
+    }
+  }
+
+  private void executeActionWithArgument(String service, String action, String field, String value)
+    throws IOException {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action);
+    HttpRequest request = HttpRequest.post(url)
+      .withBody(String.format("{%s:%s}", field, value)).build();
+    HttpResponse response = HttpRequests.execute(request);
+
+    int responseCode = response.getResponseCode();
+    String responseMessage = response.getResponseMessage();
+    if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+      throw new NotFoundException("Service not found: " + service);
     } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
       throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
     } else if (responseCode == HttpURLConnection.HTTP_INTERNAL_ERROR) {

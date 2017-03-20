@@ -16,14 +16,18 @@
 
 package co.cask.chaosmonkey;
 
+import java.util.Collection;
 import javax.annotation.Nullable;
 
 /**
  * ActionArguments represents the request body of the action endpoint
  */
 public class ActionArguments {
+  private Collection<String> nodes;
   private Integer restartTime;
   private Integer delay;
+  private Integer count;
+  private Double percentage;
 
   @Nullable
   public Integer getRestartTime() {
@@ -33,5 +37,20 @@ public class ActionArguments {
   @Nullable
   public Integer getDelay() {
     return delay;
+  }
+
+  @Nullable
+  public Collection<String> getNodes() {
+    return nodes;
+  }
+
+  @Nullable
+  public Integer getCount() {
+    return count;
+  }
+
+  @Nullable
+  public Double getPercentage() {
+    return percentage;
   }
 }
