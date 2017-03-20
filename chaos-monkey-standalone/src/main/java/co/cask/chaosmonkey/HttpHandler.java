@@ -75,7 +75,7 @@ public class HttpHandler extends AbstractHttpHandler {
     try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
       actionArguments = GSON.fromJson(reader, ActionArguments.class);
     } catch (JsonSyntaxException e) {
-      responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body");
+      responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body: " + e.getMessage());
       return;
     }
 
@@ -83,17 +83,18 @@ public class HttpHandler extends AbstractHttpHandler {
       // NO OP
     } else if (actionArguments.getNodes() != null) {
       processes = new HashSet<>();
-      List<String> invalidNode = new ArrayList<>();
+      List<String> invalidNodes = new ArrayList<>();
       for (String nodeIp : actionArguments.getNodes()) {
         RemoteProcess process = processTable.get(nodeIp, service);
         if (process == null) {
-          invalidNode.add(nodeIp);
+          invalidNodes.add(nodeIp);
+        } else {
+          processes.add(process);
         }
-        processes.add(process);
       }
-      if (invalidNode.size() > 0) {
+      if (!invalidNodes.isEmpty()) {
         responder.sendString(HttpResponseStatus.BAD_REQUEST, "The following nodes do not exist, or they do not " +
-          "support " + service + ": " + invalidNode);
+          "support " + service + ": " + invalidNodes);
         return;
       }
     } else if (actionArguments.getCount() != null) {
@@ -106,13 +107,13 @@ public class HttpHandler extends AbstractHttpHandler {
       processes = new HashSet<>(processList.subList(0, Math.min(processList.size(), count)));
     } else if (actionArguments.getPercentage() != null) {
       double percentage = actionArguments.getPercentage();
-      if (percentage <= 0 || percentage > 1) {
-        responder.sendString(HttpResponseStatus.BAD_REQUEST, "percentage needs to be between 0 and 1: " + percentage);
+      if (percentage <= 0 || percentage > 100) {
+        responder.sendString(HttpResponseStatus.BAD_REQUEST, "percentage needs to be between 0 and 100: " + percentage);
       }
       List<RemoteProcess> processList = new ArrayList<>(processTable.column(service).values());
       Collections.shuffle(processList);
       processes = new HashSet<>(processList.subList(0, (int) Math.round(processList.size() *
-                                                                          actionArguments.getPercentage())));
+                                                                          (actionArguments.getPercentage() / 100))));
     }
 
     if (processes.size() == 0) {
@@ -147,7 +148,7 @@ public class HttpHandler extends AbstractHttpHandler {
   @Path("/nodes/{ip}/status")
   public void getNodeStatus(HttpRequest request, HttpResponder responder, @PathParam("ip") String ip) throws Exception {
     Collection<RemoteProcess> remoteProcesses = processTable.row(ip).values();
-    if (remoteProcesses.size() == 0) {
+    if (remoteProcesses.isEmpty()) {
       responder.sendString(HttpResponseStatus.NOT_FOUND, "Unknown ip: " + ip);
       return;
     }
