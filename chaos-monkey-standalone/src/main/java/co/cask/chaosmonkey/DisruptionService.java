@@ -18,8 +18,9 @@ package co.cask.chaosmonkey;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
-import com.jcraft.jsch.JSchException;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.SettableFuture;
+import com.sun.jersey.api.ConflictException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,12 +28,15 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Service to keep track of running disruptions
  */
-public class DisruptionService {
+public class DisruptionService extends AbstractIdleService {
+
+  private static final ExecutorService executor = Executors.newFixedThreadPool(1);
 
   private Table<String, String, AtomicBoolean> status;
 
@@ -52,14 +56,23 @@ public class DisruptionService {
     return status.get(service, action).get();
   }
 
-  public HttpResponseStatus disrupt(Action action, String service, Collection<RemoteProcess> processes,
-                      ActionArguments actionArguments) throws Exception {
+  /**
+   * Starts a disruption on given set of processes
+   *
+   * @param action The disruption action
+   * @param service The name of the service to be disrupted
+   * @param processes Collection of {@link RemoteProcess} to be disrupted
+   * @param actionArguments Configurations for the disruption
+   * @return {@link Future<Void>} to signal when the disruption is complete
+   */
+  public Future<Void> disrupt(Action action, String service, Collection<RemoteProcess> processes,
+                              ActionArguments actionArguments) {
+    SettableFuture<Void> future = SettableFuture.create();
     if (!checkAndStart(service, action.getCommand())) {
-      return HttpResponseStatus.CONFLICT;
+      throw new ConflictException(String.format("%s %s is already running", service, action));
     }
-    ExecutorService executor = Executors.newFixedThreadPool(1);
-    executor.submit(new DisruptionThread(action, service, processes, actionArguments, status));
-    return HttpResponseStatus.OK;
+    executor.submit(new DisruptionCallable(action, service, processes, actionArguments, status, future));
+    return future;
   }
 
   private boolean checkAndStart(String service, String action) {
@@ -67,22 +80,35 @@ public class DisruptionService {
     return atomicBoolean.compareAndSet(false, true);
   }
 
-  static class DisruptionThread implements Callable<Void> {
+  @Override
+  protected void startUp() throws Exception {
+    // NO-OP
+  }
+
+  @Override
+  protected void shutDown() throws Exception {
+    executor.shutdown();
+  }
+
+  private static class DisruptionCallable implements Callable<Void> {
     private final Action action;
     private final String service;
     private final Collection<RemoteProcess> processes;
     private final ActionArguments actionArguments;
     private final RollingRestart rollingRestart;
     private final Table<String, String, AtomicBoolean> status;
+    private final SettableFuture<Void> future;
 
-    DisruptionThread(Action action, String service,  Collection<RemoteProcess> processes,
-                     ActionArguments actionArguments, Table<String, String, AtomicBoolean> status) {
+    DisruptionCallable(Action action, String service,  Collection<RemoteProcess> processes,
+                       ActionArguments actionArguments, Table<String, String, AtomicBoolean> status,
+                       SettableFuture<Void> future) {
       this.action = action;
       this.service = service;
       this.processes = processes;
       this.actionArguments = actionArguments;
       this.rollingRestart = new RollingRestart();
       this.status = status;
+      this.future = future;
     }
 
     @Override
@@ -94,32 +120,28 @@ public class DisruptionService {
         }
 
         for (RemoteProcess remoteProcess : processes) {
-          try {
-            switch (action) {
-              case STOP:
-                remoteProcess.stop();
-                break;
-              case KILL:
-                remoteProcess.kill();
-                break;
-              case TERMINATE:
-                remoteProcess.terminate();
-                break;
-              case START:
-                remoteProcess.start();
-                break;
-              case RESTART:
-                remoteProcess.restart();
-                break;
-            }
-          } catch (JSchException e) {
-            throw new RuntimeException(e);
+          switch (action) {
+            case STOP:
+              remoteProcess.stop();
+              break;
+            case KILL:
+              remoteProcess.kill();
+              break;
+            case TERMINATE:
+              remoteProcess.terminate();
+              break;
+            case START:
+              remoteProcess.start();
+              break;
+            case RESTART:
+              remoteProcess.restart();
+              break;
           }
         }
       } finally {
         release(service, action.getCommand());
+        future.set(null);
       }
-
       return null;
     }
 

@@ -25,6 +25,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.sun.jersey.api.ConflictException;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -56,11 +57,13 @@ public class HttpHandler extends AbstractHttpHandler {
   private final Multimap<String, RemoteProcess> ipToProcess;
   private final Multimap<String, RemoteProcess> nameToProcess;
   private final DisruptionService disruptionService;
+  private final ExecutorService executor;
 
   HttpHandler(Multimap<String, RemoteProcess> ipToProcess, Multimap<String, RemoteProcess> nameToProcess) {
     this.ipToProcess = ipToProcess;
     this.nameToProcess = nameToProcess;
     this.disruptionService = new DisruptionService(nameToProcess.keySet());
+    this.executor = Executors.newFixedThreadPool(ipToProcess.keySet().size());
   }
 
   @POST
@@ -89,8 +92,14 @@ public class HttpHandler extends AbstractHttpHandler {
       return;
     }
 
-    HttpResponseStatus responseStatus = disruptionService.disrupt(actionEnum, service, processes, actionArguments);
-    responder.sendString(responseStatus, responseStatus.getReasonPhrase());
+    try {
+      disruptionService.disrupt(actionEnum, service, processes, actionArguments);
+    } catch (ConflictException e) {
+      responder.sendString(HttpResponseStatus.CONFLICT, String.format("Conflict: %s %s is already running",
+                                                                      service, action));
+      return;
+    }
+    responder.sendString(HttpResponseStatus.OK, "success");
   }
 
   @GET
@@ -126,25 +135,6 @@ public class HttpHandler extends AbstractHttpHandler {
   @GET
   @Path("/status")
   public void getNodeStatuses(HttpRequest request, HttpResponder responder) throws Exception {
-    List<NodeStatus> statuses = new ArrayList<>();
-    for (String ip : ipToProcess.keySet()) {
-      Collection<RemoteProcess> remoteProcessList = ipToProcess.get(ip);
-      NodeStatus status = new NodeStatus(ip);
-      for (RemoteProcess remoteProcess : remoteProcessList) {
-        status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
-      }
-      statuses.add(status);
-    }
-    responder.sendJson(HttpResponseStatus.OK, statuses);
-  }
-
-  /**
-   * Asynchronously get the status of all services managed by chaos monkey
-   */
-  @GET
-  @Path("/statusAsync")
-  public void getNodeStatusesAsync(HttpRequest request, HttpResponder responder) throws Exception {
-    ExecutorService executor = Executors.newFixedThreadPool(ipToProcess.keySet().size());
     List<Status> threads = new ArrayList<>();
     for (String ip : ipToProcess.keySet()) {
       threads.add(new Status(ip, ipToProcess.get(ip)));
@@ -158,7 +148,7 @@ public class HttpHandler extends AbstractHttpHandler {
     responder.sendJson(HttpResponseStatus.OK, statuses);
   }
 
-  static class Status implements Callable<NodeStatus> {
+  private static class Status implements Callable<NodeStatus> {
     private final Collection<RemoteProcess> processes;
     private final String ip;
 
