@@ -23,10 +23,12 @@ import com.jcraft.jsch.JSchException;
  */
 public class Stop extends AbstractHaltingDisruption {
 
+  @Override
   public String getName() {
     return "stop";
   }
 
+  @Override
   protected void action(RemoteProcess process) throws JSchException {
     process.stop();
   }

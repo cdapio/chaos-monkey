@@ -22,29 +22,32 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 
 /**
- * A disruption that halts a running process
+ * A disruption that starts a process
  */
-public abstract class AbstractHaltingDisruption implements Disruption {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHaltingDisruption.class);
+public class Start implements Disruption {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Start.class);
 
   @Override
   public void disrupt(Collection<RemoteProcess> processes) throws Exception {
     for (RemoteProcess process : processes) {
-      if (process.isRunning()) {
+      if (!process.isRunning()) {
         LOGGER.info("Attempting to {} {} on {}", this.getName(), process.getName(), process.getAddress());
-        this.action(process);
+        process.start();
 
         if (process.isRunning()) {
-          LOGGER.error("{} on {} is still running!", process.getName(), process.getAddress());
+          LOGGER.info("{} on {} is now running", process.getName(), process.getAddress());
         } else {
-          LOGGER.info("{} on {} is no longer running", process.getName(), process.getAddress());
+          LOGGER.error("{} on {} is still down after start attempt!", process.getName(), process.getAddress());
         }
       } else {
-        LOGGER.info("{} on {} is not running, skipping {} attempt", process.getName(), process.getAddress(),
+        LOGGER.info("{} on {} is already running, skipping {} attempt", process.getName(), process.getAddress(),
                     this.getName());
       }
     }
   }
 
-  protected abstract void action(RemoteProcess process) throws Exception;
+  @Override
+  public String getName() {
+    return "start";
+  }
 }

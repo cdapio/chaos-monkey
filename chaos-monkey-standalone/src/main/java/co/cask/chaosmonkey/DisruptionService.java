@@ -37,6 +37,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DisruptionService extends AbstractIdleService {
 
   private static final ExecutorService executor = Executors.newFixedThreadPool(1);
+  private static final Start start = new Start();
+  private static final Stop stop = new Stop();
+  private static final Kill kill = new Kill();
+  private static final Restart restart = new Restart();
+  private static final Terminate termiante = new Terminate();
 
   private Table<String, String, AtomicBoolean> status;
 
@@ -114,29 +119,24 @@ public class DisruptionService extends AbstractIdleService {
     @Override
     public Void call() throws Exception {
       try {
-        if (action == Action.ROLLING_RESTART) {
-          this.rollingRestart.disrupt(new ArrayList<>(processes), actionArguments);
-          return null;
-        }
-
-        for (RemoteProcess remoteProcess : processes) {
-          switch (action) {
-            case STOP:
-              remoteProcess.stop();
-              break;
-            case KILL:
-              remoteProcess.kill();
-              break;
-            case TERMINATE:
-              remoteProcess.terminate();
-              break;
-            case START:
-              remoteProcess.start();
-              break;
-            case RESTART:
-              remoteProcess.restart();
-              break;
-          }
+        switch (action) {
+          case STOP:
+            stop.disrupt(processes);
+            break;
+          case KILL:
+            kill.disrupt(processes);
+            break;
+          case TERMINATE:
+            termiante.disrupt(processes);
+            break;
+          case START:
+            start.disrupt(processes);
+            break;
+          case RESTART:
+            restart.disrupt(processes);
+            break;
+          case ROLLING_RESTART:
+            rollingRestart.disrupt(processes, actionArguments);
         }
       } finally {
         release(service, action.getCommand());

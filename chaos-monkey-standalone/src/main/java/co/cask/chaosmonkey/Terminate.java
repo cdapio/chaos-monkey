@@ -19,17 +19,17 @@ package co.cask.chaosmonkey;
 import com.jcraft.jsch.JSchException;
 
 /**
- * A halting disruption that kills the process
+ * A halting disruption that terminates the process
  */
-public class Kill extends AbstractHaltingDisruption {
+public class Terminate extends AbstractHaltingDisruption {
 
   @Override
   public String getName() {
-    return "kill";
+    return "terminate";
   }
 
   @Override
   protected void action(RemoteProcess process) throws JSchException {
-    process.kill();
+    process.terminate();
   }
 }
