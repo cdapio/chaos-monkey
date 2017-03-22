@@ -21,7 +21,6 @@ import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.SettableFuture;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -68,6 +67,7 @@ public class DisruptionService extends AbstractIdleService {
    * @param processes Collection of {@link RemoteProcess} to be disrupted
    * @param actionArguments Configurations for the disruption
    * @return {@link Future<Void>} to signal when the disruption is complete
+   * @throws {@link IllegalStateException} if the same disruption is already running
    */
   public Future<Void> disrupt(Action action, String service, Collection<RemoteProcess> processes,
                               ActionArguments actionArguments) {
