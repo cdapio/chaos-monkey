@@ -26,7 +26,7 @@ import java.util.Map;
  * NodeProperties represents the JSON object returned by coopr
  */
 public class CooprNodeProperties extends ClusterNode {
-  private Map<String, String> ipaddresses;
+  private final Map<String, String> ipaddresses;
 
   public CooprNodeProperties(Collection<String> services, String ipAddress) {
     super(services, ipAddress);
@@ -37,7 +37,7 @@ public class CooprNodeProperties extends ClusterNode {
   }
 
   @Override
-  public String getIp() {
+  public String getHost() {
     return ipaddresses.get("access_v4");
   }
 }

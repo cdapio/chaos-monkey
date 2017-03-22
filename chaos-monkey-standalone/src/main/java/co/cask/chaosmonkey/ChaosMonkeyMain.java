@@ -72,7 +72,7 @@ public class ChaosMonkeyMain extends DaemonMain {
 
       for (ClusterNode node : clusterInfoCollector.getNodeProperties()) {
         for (String service : node.getServices()) {
-          processToIp.put(service, node.getIp());
+          processToIp.put(service, node.getHost());
         }
       }
 

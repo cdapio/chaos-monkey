@@ -22,19 +22,19 @@ import java.util.Collection;
  * Represents a node, with information to be returned from {@link ClusterInfoCollector}
  */
 public class ClusterNode {
-  protected Collection<String> services;
-  protected String ip;
+  private final Collection<String> services;
+  private final String host;
 
-  public ClusterNode(Collection<String> services, String ip) {
+  public ClusterNode(Collection<String> services, String host) {
     this.services = services;
-    this.ip = ip;
+    this.host = host;
   }
 
   public Collection<String> getServices() {
     return services;
   }
 
-  public String getIp() {
-    return ip;
+  public String getHost() {
+    return host;
   }
 }
