@@ -16,7 +16,7 @@
 
 package co.cask.chaosmonkey;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * A disruption that alters the status of running processes
@@ -25,9 +25,9 @@ public interface Disruption {
 
   /**
    * Perform the disruption on the given list of processes
-   * @param processes List of processes to disrupt
+   * @param processes Collection of processes to disrupt
    */
-  void disrupt(List<RemoteProcess> processes) throws Exception;
+  void disrupt(Collection<RemoteProcess> processes) throws Exception;
 
   /**
    * Get the name of this disruption

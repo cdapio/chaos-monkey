@@ -17,11 +17,8 @@
 package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
-import co.cask.chaosmonkey.common.conf.Configuration;
-import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.http.NettyHttpService;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.slf4j.Logger;
@@ -34,14 +31,9 @@ public class Router extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(Router.class);
 
   private NettyHttpService httpService;
-  private ClusterInfoCollector clusterInfoCollector;
   private Table<String, String, RemoteProcess> processTable;
-  private final Configuration conf;
 
-  public Router(Configuration conf, ClusterInfoCollector clusterInfoCollector,
-                Table<String, String, RemoteProcess> processTable) {
-    this.conf = conf;
-    this.clusterInfoCollector = clusterInfoCollector;
+  public Router(Table<String, String, RemoteProcess> processTable) {
     this.processTable = processTable;
   }
 
@@ -51,7 +43,7 @@ public class Router extends AbstractIdleService {
 
     this.httpService = NettyHttpService.builder()
       .setPort(Constants.Server.PORT)
-      .addHttpHandlers(ImmutableList.of(new HttpHandler(conf, clusterInfoCollector, processTable)))
+      .addHttpHandlers(ImmutableList.of(new HttpHandler(processTable)))
       .build();
 
     this.httpService.startAsync();

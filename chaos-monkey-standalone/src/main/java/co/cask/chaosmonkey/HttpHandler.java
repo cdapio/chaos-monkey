@@ -17,7 +17,6 @@
 package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
-import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.NodeStatus;
@@ -40,6 +39,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -53,17 +56,14 @@ public class HttpHandler extends AbstractHttpHandler {
   private static final Logger LOG = LoggerFactory.getLogger(HttpHandler.class);
   private static final Gson GSON = new Gson();
 
-  private final Configuration conf;
-  private final ClusterInfoCollector clusterInfoCollector;
   private final DisruptionService disruptionService;
   private final Table<String, String, RemoteProcess> processTable;
+  private final ExecutorService executor;
 
-  HttpHandler(Configuration conf, ClusterInfoCollector clusterInfoCollector,
-              Table<String, String, RemoteProcess> processTable) {
-    this.conf = conf;
-    this.clusterInfoCollector = clusterInfoCollector;
+  HttpHandler(Table<String, String, RemoteProcess> processTable) {
     this.disruptionService = new DisruptionService(processTable.columnKeySet());
     this.processTable = processTable;
+    this.executor = Executors.newFixedThreadPool(processTable.rowKeySet().size());
   }
 
   @POST
@@ -129,7 +129,14 @@ public class HttpHandler extends AbstractHttpHandler {
       return;
     }
 
-    disruptionService.disrupt(actionEnum, service, processes, actionArguments, responder);
+    try {
+      disruptionService.disrupt(actionEnum, service, processes, actionArguments);
+    } catch (IllegalStateException e) {
+      responder.sendString(HttpResponseStatus.CONFLICT, String.format("Conflict: %s %s is already running",
+                                                                      service, action));
+      return;
+    }
+    responder.sendString(HttpResponseStatus.OK, "success");
   }
 
   @GET
@@ -165,15 +172,35 @@ public class HttpHandler extends AbstractHttpHandler {
   @GET
   @Path("/status")
   public void getNodeStatuses(HttpRequest request, HttpResponder responder) throws Exception {
-    List<NodeStatus> statuses = new ArrayList<>();
+    List<Status> threads = new ArrayList<>();
     for (String ip : processTable.rowKeySet()) {
-      Collection<RemoteProcess> remoteProcesses = processTable.row(ip).values();
-      NodeStatus status = new NodeStatus(ip);
-      for (RemoteProcess remoteProcess : remoteProcesses) {
-        status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
-      }
-      statuses.add(status);
+      threads.add(new Status(ip, processTable.row(ip).values()));
+    }
+    List<Future<NodeStatus>> results = executor.invokeAll(threads);
+
+    List<NodeStatus> statuses = new ArrayList<>();
+    for (Future<NodeStatus> result : results) {
+      statuses.add(result.get());
     }
     responder.sendJson(HttpResponseStatus.OK, statuses);
+  }
+
+  private static class Status implements Callable<NodeStatus> {
+    private final Collection<RemoteProcess> processes;
+    private final String ip;
+
+    Status(String ip, Collection<RemoteProcess> processes) {
+      this.ip = ip;
+      this.processes = processes;
+    }
+
+    @Override
+    public NodeStatus call() throws Exception {
+      NodeStatus status = new NodeStatus(ip);
+      for (RemoteProcess remoteProcess : processes) {
+        status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
+      }
+      return status;
+    }
   }
 }

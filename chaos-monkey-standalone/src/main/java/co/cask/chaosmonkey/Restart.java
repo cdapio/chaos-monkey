@@ -19,7 +19,7 @@ package co.cask.chaosmonkey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * A disruption that restarts a process
@@ -27,7 +27,8 @@ import java.util.List;
 public class Restart implements Disruption {
   private static final Logger LOGGER = LoggerFactory.getLogger(Restart.class);
 
-  public void disrupt(List<RemoteProcess> processes) throws Exception {
+  @Override
+  public void disrupt(Collection<RemoteProcess> processes) throws Exception {
     for (RemoteProcess process : processes) {
       LOGGER.info("Attempting to restart {} on {}", process.getName(), process.getAddress());
       process.restart();
@@ -40,6 +41,7 @@ public class Restart implements Disruption {
     }
   }
 
+  @Override
   public String getName() {
     return "restart";
   }
