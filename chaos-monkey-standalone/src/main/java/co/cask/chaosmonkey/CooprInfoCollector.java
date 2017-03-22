@@ -17,9 +17,8 @@
 package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
-import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
-import co.cask.chaosmonkey.proto.NodeProperties;
+import co.cask.chaosmonkey.proto.ClusterNode;
 import co.cask.common.http.HttpRequest;
 import co.cask.common.http.HttpRequests;
 import co.cask.common.http.HttpResponse;
@@ -29,7 +28,6 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -37,7 +35,7 @@ import java.util.Map;
  */
 public class CooprInfoCollector implements ClusterInfoCollector {
   private static final Gson GSON = new Gson();
-  private static final Type NODES_TYPE = new TypeToken<Map<String, NodeProperties>>() { }.getType();
+  private static final Type NODES_TYPE = new TypeToken<Map<String, CooprNodeProperties>>() { }.getType();
   private HttpRequest request;
 
   @Override
@@ -55,9 +53,9 @@ public class CooprInfoCollector implements ClusterInfoCollector {
   }
 
   @Override
-  public Collection<NodeProperties> getNodeProperties() throws Exception {
+  public Collection<ClusterNode> getNodeProperties() throws Exception {
     HttpResponse response = HttpRequests.execute(request);
-    Map<String, NodeProperties> nodes =  GSON.fromJson(response.getResponseBodyAsString(), NODES_TYPE);
+    Map<String, ClusterNode> nodes =  GSON.fromJson(response.getResponseBodyAsString(), NODES_TYPE);
     return nodes.values();
   }
 }

@@ -18,7 +18,6 @@ package co.cask.chaosmonkey.client;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.proto.ActionStatus;
-import co.cask.chaosmonkey.proto.NodeProperties;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.common.http.HttpRequest;
 import co.cask.common.http.HttpRequests;
@@ -43,7 +42,6 @@ import javax.ws.rs.NotFoundException;
  */
 public class ChaosMonkeyClient {
   private static final Type STATUSES_TYPE = new TypeToken<List<NodeStatus>>() { }.getType();
-  private static final Type PROPERTIES_TYPE = new TypeToken<List<NodeProperties>>() { }.getType();
   private static final Gson GSON = new Gson();
 
   private final String hostname;
