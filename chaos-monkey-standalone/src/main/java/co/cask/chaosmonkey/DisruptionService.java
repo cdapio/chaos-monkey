@@ -20,7 +20,6 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.SettableFuture;
-import com.sun.jersey.api.ConflictException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -74,7 +73,7 @@ public class DisruptionService extends AbstractIdleService {
                               ActionArguments actionArguments) {
     SettableFuture<Void> future = SettableFuture.create();
     if (!checkAndStart(service, action.getCommand())) {
-      throw new ConflictException(String.format("%s %s is already running", service, action));
+      throw new IllegalStateException(String.format("%s %s is already running", service, action));
     }
     executor.submit(new DisruptionCallable(action, service, processes, actionArguments, status, future));
     return future;

@@ -26,7 +26,6 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Table;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.sun.jersey.api.ConflictException;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -132,7 +131,7 @@ public class HttpHandler extends AbstractHttpHandler {
 
     try {
       disruptionService.disrupt(actionEnum, service, processes, actionArguments);
-    } catch (ConflictException e) {
+    } catch (IllegalStateException e) {
       responder.sendString(HttpResponseStatus.CONFLICT, String.format("Conflict: %s %s is already running",
                                                                       service, action));
       return;
