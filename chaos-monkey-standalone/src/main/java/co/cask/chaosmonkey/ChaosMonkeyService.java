@@ -16,94 +16,181 @@
 
 package co.cask.chaosmonkey;
 
-import com.google.common.util.concurrent.AbstractScheduledService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import co.cask.chaosmonkey.proto.ActionStatus;
+import co.cask.chaosmonkey.proto.NodeStatus;
+import com.google.common.collect.Table;
+import com.google.gson.Gson;
+import com.jcraft.jsch.JSchException;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import javax.annotation.Nullable;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 
 /**
- * The main service that will be running ChaosMonkey.
+ * {@link ChaosMonkeyService} Allows for user to performed disruptions directly
  */
-public class ChaosMonkeyService extends AbstractScheduledService {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ChaosMonkeyService.class);
+public class ChaosMonkeyService {
+  private static final Gson GSON = new Gson();
 
-  private List<RemoteProcess> processes;
-  private double stopProbability;
-  private double killProbability;
-  private double restartProbability;
-  private int executionPeriod;
-  private int minNodesPerIteration;
-  private int maxNodesPerIteration;
-  private Kill kill = new Kill();
-  private Stop stop = new Stop();
-  private Restart restart = new Restart();
+  private final DisruptionService disruptionService;
+  private final Table<String, String, RemoteProcess> processTable;
+  private final ExecutorService executor;
+
+  public ChaosMonkeyService(Table<String, String, RemoteProcess> processTable) {
+    this.disruptionService = new DisruptionService(processTable.columnKeySet());
+    this.processTable = processTable;
+    this.executor = Executors.newFixedThreadPool(processTable.rowKeySet().size());
+  }
 
   /**
+   * Executes an action on configured processes
    *
-   * @param processes A list of processes that will be managed
-   * @param stopProbability Probability that this process will be stopped in the current interval
-   * @param killProbability Probability that this process will be killed in the current interval
-   * @param restartProbability Probability that this process will be restarted in the current interval
-   * @param executionPeriod The rate of execution cycles (in seconds)
-   * @param minNodesPerIteration The minimum number of nodes that will be affected by chaos monkey each iteration
-   * @param maxNodesPerIteration The maximum number of nodes that will be affected by chaos monkey each iteration
+   * @param service Name of the processes to be disrupted
+   * @param action Name of the action to be performed, {@link Action} contains possible actions
+   * @param nodes Collection of nodes to run action on, must be subset of configured nodes
+   * @param count Number of configured nodes to perform action on
+   * @param percentage Percentage of configured nodes to perform action on
+   * @param restartTime Rolling restart configuration, number of seconds a service is down before restarting
+   * @param delay Rolling restart configuration, number of seconds between restarting service on different nodes
+   * @throws BadRequestException if nodes, count, or percentage contain invalid values
+   * @throws NotFoundException if service or action are not found
+   * @throws IllegalStateException if the same disruption is already running
    */
-  public ChaosMonkeyService(List<RemoteProcess> processes,
-                            double stopProbability,
-                            double killProbability,
-                            double restartProbability,
-                            int executionPeriod,
-                            int minNodesPerIteration,
-                            int maxNodesPerIteration) {
-    this.processes = processes;
-    this.stopProbability = stopProbability;
-    this.killProbability = killProbability;
-    this.restartProbability = restartProbability;
-    this.executionPeriod = executionPeriod;
+  public void executeAction(String service, String action, @Nullable Collection<String> nodes, @Nullable Integer count,
+                            @Nullable Double percentage, @Nullable Integer restartTime, @Nullable Integer delay) {
+    Collection<RemoteProcess> processes = processTable.column(service).values();
 
-    this.minNodesPerIteration = Math.min(processes.size(), minNodesPerIteration);
-    this.maxNodesPerIteration = Math.min(processes.size(), maxNodesPerIteration);
-    if (this.maxNodesPerIteration < 0) {
-      this.maxNodesPerIteration = processes.size() + this.maxNodesPerIteration;
+    if (nodes != null) {
+      processes = new HashSet<>();
+      List<String> invalidNodes = new ArrayList<>();
+      for (String nodeIp : nodes) {
+        RemoteProcess process = processTable.get(nodeIp, service);
+        if (process == null) {
+          invalidNodes.add(nodeIp);
+        } else {
+          processes.add(process);
+        }
+      }
+      if (!invalidNodes.isEmpty()) {
+        throw new BadRequestException("The following nodes do not exist, or they do not " +
+                                    "support " + service + ": " + invalidNodes);
+      }
+    } else if (count != null) {
+      if (count <= 0) {
+        throw new BadRequestException("count cannot be less than or equal to zero: " + count);
+      }
+      List<RemoteProcess> processList = new ArrayList<>(processTable.column(service).values());
+      Collections.shuffle(processList);
+      processes = new HashSet<>(processList.subList(0, Math.min(processList.size(), count)));
+    } else if (percentage != null) {
+      if (percentage <= 0 || percentage > 100) {
+        throw new BadRequestException("percentage needs to be between 0 and 100: " + percentage);
+      }
+      List<RemoteProcess> processList = new ArrayList<>(processTable.column(service).values());
+      Collections.shuffle(processList);
+      processes = new HashSet<>(processList.subList(0, (int) Math.round(processList.size() * (percentage / 100))));
     }
-    if (this.minNodesPerIteration < 0) {
-      this.minNodesPerIteration = processes.size() + this.minNodesPerIteration;
+
+    if (processes.size() == 0) {
+      throw new NotFoundException("Unknown service: " + service);
     }
-    if (this.minNodesPerIteration > this.maxNodesPerIteration) {
-      throw new IllegalArgumentException("minNodePerIteration is greater than maxNodePerIteration for process: "
-                                            + this.processes.get(0).getName() + "\n" +
-                                            "minNodePerIteration: " + this.minNodesPerIteration + "\n" +
-                                            "maxNodePerIteration: " + this.maxNodesPerIteration);
+
+    Action actionEnum;
+    try {
+      actionEnum = Action.valueOf(action.toUpperCase().replace('-', '_'));
+    } catch (IllegalArgumentException e) {
+      throw new NotFoundException("Unknown action: " + action);
+    }
+
+    try {
+      disruptionService.disrupt(actionEnum, service, processes, restartTime, delay);
+    } catch (IllegalStateException e) {
+      throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, action));
     }
   }
 
-  @Override
-  protected void runOneIteration() throws Exception {
-    double random = Math.random();
-    int numNodes = ThreadLocalRandom.current().nextInt(minNodesPerIteration, maxNodesPerIteration + 1);
+  /**
+   * Get the running status of a disruption
+   *
+   * @param service the name of the service to be queried
+   * @param action the name of the action to be queried
+   * @return {@link ActionStatus}
+   */
+  public ActionStatus getActionStatus(String service, String action) {
+    return new ActionStatus(service, action, disruptionService.isRunning(service, action));
+  }
 
-    if (random < stopProbability) {
-      stop.disrupt(getAffectedNodes(numNodes));
-    } else if (random < stopProbability + killProbability) {
-      kill.disrupt(getAffectedNodes(numNodes));
-    } else if (random < stopProbability + killProbability + restartProbability) {
-      restart.disrupt(getAffectedNodes(numNodes));
-    } else {
-      return;
+  /**
+   * Get the status of services on a given node
+   *
+   * @param hostname hostname of the node to query
+   * @return {@link NodeStatus}
+   * @throws JSchException if there was an SSH error
+   * @throws NotFoundException if the hostname does not exist or is not configured
+   */
+  public NodeStatus getNodeStatus(String hostname) throws Exception {
+    Collection<RemoteProcess> remoteProcesses = processTable.row(hostname).values();
+    if (remoteProcesses.isEmpty()) {
+      throw new NotFoundException("Unknown host: " + hostname);
     }
+    NodeStatus status = new NodeStatus(hostname);
+    for (RemoteProcess remoteProcess : remoteProcesses) {
+      status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
+    }
+    return status;
   }
 
-  private List<RemoteProcess> getAffectedNodes(int numNodes) {
-    Collections.shuffle(processes);
-    return processes.subList(0, numNodes);
+  /**
+   * Get the status of serivces on all configured nodes
+   *
+   * @return Collection of {@link NodeStatus}
+   * @throws ExecutionException
+   * @throws InterruptedException
+   */
+  public Collection<NodeStatus> getNodeStatuses() throws Exception {
+    List<Status> threads = new ArrayList<>();
+    for (String ip : processTable.rowKeySet()) {
+      threads.add(new Status(ip, processTable.row(ip).values()));
+    }
+    List<Future<NodeStatus>> results = executor.invokeAll(threads);
+
+    List<NodeStatus> statuses = new ArrayList<>();
+    for (Future<NodeStatus> result : results) {
+      statuses.add(result.get());
+    }
+
+    return statuses;
   }
 
-  @Override
-  protected Scheduler scheduler() {
-    return AbstractScheduledService.Scheduler.newFixedRateSchedule(0, this.executionPeriod, TimeUnit.SECONDS);
+  /**
+   * Callable that gets the status of configured processes on a node
+   */
+  public static class Status implements Callable<NodeStatus> {
+    private final Collection<RemoteProcess> processes;
+    private final String ip;
+
+    Status(String ip, Collection<RemoteProcess> processes) {
+      this.ip = ip;
+      this.processes = processes;
+    }
+
+    @Override
+    public NodeStatus call() throws Exception {
+      NodeStatus status = new NodeStatus(ip);
+      for (RemoteProcess remoteProcess : processes) {
+        status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
+      }
+      return status;
+    }
   }
 }

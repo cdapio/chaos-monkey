@@ -41,7 +41,8 @@ public class ChaosMonkeyMain extends DaemonMain {
   private static final Logger LOG = LoggerFactory.getLogger(ChaosMonkeyMain.class);
 
   private Router router;
-  private Set<ChaosMonkeyService> chaosMonkeyServiceSet;
+  private Set<ChaosMonkey> chaosMonkeySet;
+  private ChaosMonkeyService chaosMonkeyService;
   private ClusterInfoCollector clusterInfoCollector;
 
   public static void main(String[] args) throws Exception {
@@ -50,7 +51,7 @@ public class ChaosMonkeyMain extends DaemonMain {
 
   @Override
   public void init(String[] args) {
-    chaosMonkeyServiceSet = new HashSet<>();
+    chaosMonkeySet = new HashSet<>();
     Configuration conf = Configuration.create();
     try {
       clusterInfoCollector = Class.forName(conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS))
@@ -77,6 +78,13 @@ public class ChaosMonkeyMain extends DaemonMain {
       }
 
       for (String service : processToIp.keySet()) {
+        boolean scheduled = true;
+        String pidPath = conf.get(service + ".pidPath");
+        if (pidPath == null) {
+          LOG.warn("The following process does not have a pidPath and will be skipped: {}", service);
+          continue;
+        }
+
         int interval;
         try {
           interval = conf.getInt(service + ".interval");
@@ -85,12 +93,8 @@ public class ChaosMonkeyMain extends DaemonMain {
           }
         } catch (IllegalArgumentException | NullPointerException e) {
           LOG.warn("The following process does not have a valid interval and will be skipped: {}", service);
-          continue;
-        }
-
-        String pidPath = conf.get(service + ".pidPath");
-        if (pidPath == null) {
-          throw new IllegalArgumentException("The following process does not have a pidPath: " + service);
+          interval = 0; // To avoid variable not initialized error, will not be used
+          scheduled = false;
         }
 
         double killProbability = conf.getDouble(service + ".killProbability", 0.0);
@@ -99,13 +103,15 @@ public class ChaosMonkeyMain extends DaemonMain {
         int minNodesPerIteration = conf.getInt(service + ".minNodesPerIteration", 0);
         int maxNodesPerIteration = conf.getInt(service + ".maxNodesPerIteration", 0);
 
-        if (killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
-          throw new IllegalArgumentException("The following process may have all of killProbability, stopProbability " +
-                                               "and restartProbability equal to 0.0 or undefined: " + service);
+        if (scheduled && killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
+          LOG.warn("The following process may have all of killProbability, stopProbability and restartProbability " +
+                     "equal to 0.0 or undefined: {}", service);
+          scheduled = false;
         }
-        if (stopProbability + killProbability + restartProbability > 1) {
-          throw new IllegalArgumentException("The following process has a combined killProbability, stopProbability " +
-                                               "and restartProbability of over 1.0: " + service);
+        if (scheduled && stopProbability + killProbability + restartProbability > 1) {
+          LOG.warn("The following process has a combined killProbability, stopProbability and restartProbability " +
+                     "of over 1.0: {}", service);
+          scheduled = false;
         }
 
         LinkedList<RemoteProcess> processes = new LinkedList<>();
@@ -121,7 +127,7 @@ public class ChaosMonkeyMain extends DaemonMain {
             sshShell = new SshShell(username, ipAddress);
           }
           RemoteProcess process;
-          switch (conf.get(service + ".init.style")) {
+          switch (conf.get(service + ".init.style", "sysv")) {
             case "sysv":
               process = new SysVRemoteProcess(service, pidPath, sshShell);
               break;
@@ -144,14 +150,17 @@ public class ChaosMonkeyMain extends DaemonMain {
           processTable.put(ipAddress, service, process);
         }
 
-        LOG.info("Adding the following process to Chaos Monkey: {}", service);
-        ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(processes, stopProbability, killProbability,
-                                                                       restartProbability, interval,
-                                                                       minNodesPerIteration, maxNodesPerIteration);
-        chaosMonkeyServiceSet.add(chaosMonkeyService);
+        if (scheduled) {
+          LOG.info("Adding the following process to Chaos Monkey: {}", service);
+          ChaosMonkey chaosMonkey = new ChaosMonkey(processes, stopProbability, killProbability,
+                                                    restartProbability, interval,
+                                                    minNodesPerIteration, maxNodesPerIteration);
+          chaosMonkeySet.add(chaosMonkey);
+        }
       }
 
-      router = new Router(processTable);
+      this.chaosMonkeyService = new ChaosMonkeyService(processTable);
+      router = new Router(this.chaosMonkeyService);
     } catch (ClassNotFoundException e) {
       LOG.error("Unable to instantiate cluster info collector class: " +
                   conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS));
@@ -165,8 +174,8 @@ public class ChaosMonkeyMain extends DaemonMain {
   @Override
   public void start() throws Exception {
     router.startAsync();
-    for (ChaosMonkeyService chaosMonkeyService : chaosMonkeyServiceSet) {
-      chaosMonkeyService.startAsync();
+    for (ChaosMonkey chaosMonkey : chaosMonkeySet) {
+      chaosMonkey.startAsync();
     }
   }
 
@@ -174,8 +183,8 @@ public class ChaosMonkeyMain extends DaemonMain {
   public void stop() {
     try {
       router.shutDown();
-      for (ChaosMonkeyService chaosMonkeyService : chaosMonkeyServiceSet) {
-        chaosMonkeyService.stopAsync();
+      for (ChaosMonkey chaosMonkey : chaosMonkeySet) {
+        chaosMonkey.stopAsync();
       }
     } catch (Exception e) {
       LOG.warn("Exception when trying to shut down Chaos Monkey.", e);
@@ -185,5 +194,9 @@ public class ChaosMonkeyMain extends DaemonMain {
   @Override
   public void destroy() {
     // NO-OP
+  }
+
+  public ChaosMonkeyService getChaosMonkeyService() {
+    return this.chaosMonkeyService;
   }
 }

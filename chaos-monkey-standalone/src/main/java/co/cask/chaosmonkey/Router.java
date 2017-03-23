@@ -31,10 +31,10 @@ public class Router extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(Router.class);
 
   private NettyHttpService httpService;
-  private Table<String, String, RemoteProcess> processTable;
+  private ChaosMonkeyService chaosMonkeyService;
 
-  public Router(Table<String, String, RemoteProcess> processTable) {
-    this.processTable = processTable;
+  public Router(ChaosMonkeyService chaosMonkeyService) {
+    this.chaosMonkeyService = chaosMonkeyService;
   }
 
   @Override
@@ -43,7 +43,7 @@ public class Router extends AbstractIdleService {
 
     this.httpService = NettyHttpService.builder()
       .setPort(Constants.Server.PORT)
-      .addHttpHandlers(ImmutableList.of(new HttpHandler(processTable)))
+      .addHttpHandlers(ImmutableList.of(new HttpHandler(chaosMonkeyService)))
       .build();
 
     this.httpService.startAsync();

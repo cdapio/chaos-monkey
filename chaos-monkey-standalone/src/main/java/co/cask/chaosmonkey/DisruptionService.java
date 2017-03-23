@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nullable;
 
 /**
  * Service to keep track of running disruptions
@@ -65,17 +66,18 @@ public class DisruptionService extends AbstractIdleService {
    * @param action The disruption action
    * @param service The name of the service to be disrupted
    * @param processes Collection of {@link RemoteProcess} to be disrupted
-   * @param actionArguments Configurations for the disruption
+   * @param restartTime Optional, number of seconds a service is down before restarting
+   * @param delay Optional, number of seconds between restarting service on different nodes
    * @return {@link Future<Void>} to signal when the disruption is complete
-   * @throws {@link IllegalStateException} if the same disruption is already running
+   * @throws IllegalStateException if the same disruption is already running
    */
   public Future<Void> disrupt(Action action, String service, Collection<RemoteProcess> processes,
-                              ActionArguments actionArguments) {
+                              @Nullable Integer restartTime, @Nullable Integer delay) {
     SettableFuture<Void> future = SettableFuture.create();
     if (!checkAndStart(service, action.getCommand())) {
       throw new IllegalStateException(String.format("%s %s is already running", service, action));
     }
-    executor.submit(new DisruptionCallable(action, service, processes, actionArguments, status, future));
+    executor.submit(new DisruptionCallable(action, service, processes, status, restartTime, delay, future));
     return future;
   }
 
@@ -98,20 +100,22 @@ public class DisruptionService extends AbstractIdleService {
     private final Action action;
     private final String service;
     private final Collection<RemoteProcess> processes;
-    private final ActionArguments actionArguments;
     private final RollingRestart rollingRestart;
     private final Table<String, String, AtomicBoolean> status;
+    private final Integer restartTime;
+    private final Integer delay;
     private final SettableFuture<Void> future;
 
     DisruptionCallable(Action action, String service,  Collection<RemoteProcess> processes,
-                       ActionArguments actionArguments, Table<String, String, AtomicBoolean> status,
-                       SettableFuture<Void> future) {
+                       Table<String, String, AtomicBoolean> status, @Nullable Integer restartTime,
+                       @Nullable Integer delay, SettableFuture<Void> future) {
       this.action = action;
       this.service = service;
       this.processes = processes;
-      this.actionArguments = actionArguments;
       this.rollingRestart = new RollingRestart();
       this.status = status;
+      this.restartTime = restartTime;
+      this.delay = delay;
       this.future = future;
     }
 
@@ -135,7 +139,7 @@ public class DisruptionService extends AbstractIdleService {
             restart.disrupt(processes);
             break;
           case ROLLING_RESTART:
-            rollingRestart.disrupt(processes, actionArguments);
+            rollingRestart.disrupt(processes, restartTime, delay);
         }
       } finally {
         release(service, action.getCommand());
