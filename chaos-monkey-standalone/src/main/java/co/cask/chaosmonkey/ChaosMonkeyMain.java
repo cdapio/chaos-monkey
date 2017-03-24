@@ -19,18 +19,13 @@ package co.cask.chaosmonkey;
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
-import co.cask.chaosmonkey.proto.ClusterNode;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,8 +37,6 @@ public class ChaosMonkeyMain extends DaemonMain {
 
   private Router router;
   private Set<ChaosMonkey> chaosMonkeySet;
-  private ChaosMonkeyService chaosMonkeyService;
-  private ClusterInfoCollector clusterInfoCollector;
 
   public static void main(String[] args) throws Exception {
     new ChaosMonkeyMain().doMain(args);
@@ -54,7 +47,8 @@ public class ChaosMonkeyMain extends DaemonMain {
     chaosMonkeySet = new HashSet<>();
     Configuration conf = Configuration.create();
     try {
-      clusterInfoCollector = Class.forName(conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS))
+      ClusterInfoCollector clusterInfoCollector = Class.forName(
+        conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS))
         .asSubclass(ClusterInfoCollector.class).newInstance();
       Map<String, String> clusterInfoCollectorConf = new HashMap<>();
       for (Map.Entry<String, String> entry :
@@ -64,27 +58,11 @@ public class ChaosMonkeyMain extends DaemonMain {
       }
       clusterInfoCollector.initialize(clusterInfoCollectorConf);
 
-      String username = conf.get("username", System.getProperty("user.name"));
-      String privateKey = conf.get("privateKey");
-      String keyPassphrase = conf.get("keyPassphrase");
+      ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(conf, clusterInfoCollector);
+      Table<String, String, RemoteProcess> processTable = chaosMonkeyService.getProcessTable();
 
-      Multimap<String, String> processToIp = HashMultimap.create();
-      Table<String, String, RemoteProcess> processTable = HashBasedTable.create();
-
-      for (ClusterNode node : clusterInfoCollector.getNodeProperties()) {
-        for (String service : node.getServices()) {
-          processToIp.put(service, node.getHost());
-        }
-      }
-
-      for (String service : processToIp.keySet()) {
+      for (String service : processTable.columnKeySet()) {
         boolean scheduled = true;
-        String pidPath = conf.get(service + ".pidPath");
-        if (pidPath == null) {
-          LOG.warn("The following process does not have a pidPath and will be skipped: {}", service);
-          continue;
-        }
-
         int interval;
         try {
           interval = conf.getInt(service + ".interval");
@@ -114,53 +92,16 @@ public class ChaosMonkeyMain extends DaemonMain {
           scheduled = false;
         }
 
-        LinkedList<RemoteProcess> processes = new LinkedList<>();
-        for (String ipAddress : processToIp.get(service)) {
-          SshShell sshShell;
-          if (privateKey != null) {
-            if (keyPassphrase != null) {
-              sshShell = new SshShell(username, ipAddress, privateKey, keyPassphrase);
-            } else {
-              sshShell = new SshShell(username, ipAddress, privateKey);
-            }
-          } else {
-            sshShell = new SshShell(username, ipAddress);
-          }
-          RemoteProcess process;
-          switch (conf.get(service + ".init.style", "sysv")) {
-            case "sysv":
-              process = new SysVRemoteProcess(service, pidPath, sshShell);
-              break;
-            case "custom":
-              ImmutableMap.Builder<String, String> map = ImmutableMap.builder();
-
-              for (String configOption : Constants.RemoteProcess.CONFIG_OPTIONS) {
-                String optionKey = String.format("%s.init.%s", service, configOption);
-                if (conf.get(optionKey) != null) {
-                  map.put(configOption, conf.get(optionKey));
-                }
-              }
-
-              process = new CustomRemoteProcess(service, pidPath, sshShell, map.build());
-              break;
-            default:
-              throw new IllegalArgumentException("The following process does not have a valid init.style: " + service);
-          }
-          processes.add(process);
-          processTable.put(ipAddress, service, process);
-        }
-
         if (scheduled) {
           LOG.info("Adding the following process to Chaos Monkey: {}", service);
-          ChaosMonkey chaosMonkey = new ChaosMonkey(processes, stopProbability, killProbability,
-                                                    restartProbability, interval,
+          ChaosMonkey chaosMonkey = new ChaosMonkey(new ArrayList<>(processTable.column(service).values()),
+                                                    stopProbability, killProbability, restartProbability, interval,
                                                     minNodesPerIteration, maxNodesPerIteration);
           chaosMonkeySet.add(chaosMonkey);
         }
       }
 
-      this.chaosMonkeyService = new ChaosMonkeyService(processTable);
-      router = new Router(this.chaosMonkeyService);
+      router = new Router(chaosMonkeyService);
     } catch (ClassNotFoundException e) {
       LOG.error("Unable to instantiate cluster info collector class: " +
                   conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS));
@@ -194,9 +135,5 @@ public class ChaosMonkeyMain extends DaemonMain {
   @Override
   public void destroy() {
     // NO-OP
-  }
-
-  public ChaosMonkeyService getChaosMonkeyService() {
-    return this.chaosMonkeyService;
   }
 }

@@ -16,11 +16,21 @@
 
 package co.cask.chaosmonkey;
 
+import co.cask.chaosmonkey.common.Constants;
+import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.ActionStatus;
+import co.cask.chaosmonkey.proto.ClusterInfoCollector;
+import co.cask.chaosmonkey.proto.ClusterNode;
 import co.cask.chaosmonkey.proto.NodeStatus;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.google.gson.Gson;
 import com.jcraft.jsch.JSchException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,16 +50,80 @@ import javax.ws.rs.NotFoundException;
  * {@link ChaosMonkeyService} Allows for user to performed disruptions directly
  */
 public class ChaosMonkeyService {
-  private static final Gson GSON = new Gson();
+  private static final Logger LOG = LoggerFactory.getLogger(ChaosMonkeyService.class);
 
   private final DisruptionService disruptionService;
   private final Table<String, String, RemoteProcess> processTable;
   private final ExecutorService executor;
 
-  public ChaosMonkeyService(Table<String, String, RemoteProcess> processTable) {
+  public ChaosMonkeyService(Configuration conf, ClusterInfoCollector clusterInfoCollector) throws Exception {
+    processTable = HashBasedTable.create();
+    init(conf, clusterInfoCollector);
     this.disruptionService = new DisruptionService(processTable.columnKeySet());
-    this.processTable = processTable;
     this.executor = Executors.newFixedThreadPool(processTable.rowKeySet().size());
+  }
+
+  private void init(Configuration conf, ClusterInfoCollector clusterInfoCollector) throws Exception {
+    Multimap<String, String> processToIp = HashMultimap.create();
+
+    for (ClusterNode node : clusterInfoCollector.getNodeProperties()) {
+      for (String service : node.getServices()) {
+        processToIp.put(service, node.getHost());
+      }
+    }
+
+    for (String service : processToIp.keySet()) {
+      String pidPath = conf.get(service + ".pidPath");
+      if (pidPath == null) {
+        LOG.warn("The following process does not have a pidPath and will be skipped: {}", service);
+        continue;
+      }
+
+      for (String ipAddress : processToIp.get(service)) {
+        SshShell sshShell = resolveSshShell(conf, ipAddress);
+
+        RemoteProcess process;
+        switch (conf.get(service + ".init.style", "sysv")) {
+          case "sysv":
+            process = new SysVRemoteProcess(service, pidPath, sshShell);
+            break;
+          case "custom":
+            ImmutableMap.Builder<String, String> map = ImmutableMap.builder();
+
+            for (String configOption : Constants.RemoteProcess.CONFIG_OPTIONS) {
+              String optionKey = String.format("%s.init.%s", service, configOption);
+              if (conf.get(optionKey) != null) {
+                map.put(configOption, conf.get(optionKey));
+              }
+            }
+
+            process = new CustomRemoteProcess(service, pidPath, sshShell, map.build());
+            break;
+          default:
+            throw new IllegalArgumentException("The following process does not have a valid init.style: " + service);
+        }
+        processTable.put(ipAddress, service, process);
+      }
+    }
+  }
+
+  private SshShell resolveSshShell(Configuration conf, String ipAddress) throws JSchException {
+    String username = conf.get("username", System.getProperty("user.name"));
+    String privateKey = conf.get("privateKey");
+    String keyPassphrase = conf.get("keyPassphrase");
+
+    SshShell sshShell;
+    if (privateKey != null) {
+      if (keyPassphrase != null) {
+        sshShell = new SshShell(username, ipAddress, privateKey, keyPassphrase);
+      } else {
+        sshShell = new SshShell(username, ipAddress, privateKey);
+      }
+    } else {
+      sshShell = new SshShell(username, ipAddress);
+    }
+
+    return sshShell;
   }
 
   /**
@@ -170,6 +244,10 @@ public class ChaosMonkeyService {
     }
 
     return statuses;
+  }
+
+  public Table<String, String, RemoteProcess> getProcessTable() {
+    return this.processTable;
   }
 
   /**
