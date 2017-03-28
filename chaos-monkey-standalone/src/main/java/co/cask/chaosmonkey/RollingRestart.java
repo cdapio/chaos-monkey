@@ -16,11 +16,11 @@
 
 package co.cask.chaosmonkey;
 
+import co.cask.chaosmonkey.proto.ActionArguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -61,7 +61,7 @@ public class RollingRestart implements Disruption {
   public void disrupt(Collection<RemoteProcess> processes, @Nullable Integer restartTime,
                       @Nullable Integer delay) throws Exception {
     if (processes.size() < 1) {
-      throw new IllegalStateException("Process list has an invalid size of: " + processes.size());
+      throw new IllegalArgumentException("Process list has an invalid size of: " + processes.size());
     }
 
     restartTime = (restartTime == null || restartTime < 0) ? 30 : restartTime;

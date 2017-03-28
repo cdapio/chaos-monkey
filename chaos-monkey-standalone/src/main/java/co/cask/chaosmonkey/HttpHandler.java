@@ -17,6 +17,8 @@
 package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
+import co.cask.chaosmonkey.proto.Action;
+import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
@@ -60,29 +62,16 @@ public class HttpHandler extends AbstractHttpHandler {
     ActionArguments actionArguments;
     try (Reader reader = new InputStreamReader(new ChannelBufferInputStream(request.getContent()), Charsets.UTF_8)) {
       actionArguments = GSON.fromJson(reader, ActionArguments.class);
-    } catch (JsonSyntaxException e) {
-      responder.sendString(HttpResponseStatus.BAD_REQUEST, "Invalid request body: " + e.getMessage());
-      return;
     }
 
+    Action actionEnum;
     try {
-      if (actionArguments == null) {
-        chaosMonkeyService.executeAction(service, action, null, null, null, null, null);
-      } else {
-        chaosMonkeyService.executeAction(service, action, actionArguments.getNodes(), actionArguments.getCount(),
-                                         actionArguments.getPercentage(), actionArguments.getRestartTime(),
-                                         actionArguments.getDelay());
-      }
-    } catch (BadRequestException e) {
-      responder.sendString(HttpResponseStatus.BAD_REQUEST, e.getMessage());
-      return;
-    } catch (NotFoundException e) {
-      responder.sendString(HttpResponseStatus.NOT_FOUND, e.getMessage());
-      return;
-    } catch (IllegalStateException e) {
-      responder.sendString(HttpResponseStatus.CONFLICT, e.getMessage());
-      return;
+      actionEnum = Action.valueOf(action.toUpperCase().replace('-', '_'));
+    } catch (IllegalArgumentException e) {
+      throw new NotFoundException("Unknown action: " + action);
     }
+
+    chaosMonkeyService.executeAction(service, actionEnum, actionArguments);
     responder.sendString(HttpResponseStatus.OK, "success");
   }
 
@@ -100,16 +89,7 @@ public class HttpHandler extends AbstractHttpHandler {
   @GET
   @Path("/nodes/{ip}/status")
   public void getNodeStatus(HttpRequest request, HttpResponder responder, @PathParam("ip") String ip) throws Exception {
-    NodeStatus status;
-    try {
-      status = chaosMonkeyService.getNodeStatus(ip);
-    } catch (NotFoundException e) {
-      responder.sendString(HttpResponseStatus.NOT_FOUND, e.getMessage());
-      return;
-    } catch (Exception e) {
-      responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-      return;
-    }
+    NodeStatus status = chaosMonkeyService.getNodeStatus(ip);
     responder.sendJson(HttpResponseStatus.OK, status);
   }
 
@@ -119,13 +99,7 @@ public class HttpHandler extends AbstractHttpHandler {
   @GET
   @Path("/status")
   public void getNodeStatuses(HttpRequest request, HttpResponder responder) throws Exception {
-    Collection<NodeStatus> statuses;
-    try {
-      statuses = chaosMonkeyService.getNodeStatuses();
-    } catch (Exception e) {
-      responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-      return;
-    }
+    Collection<NodeStatus> statuses = chaosMonkeyService.getNodeStatuses();
     responder.sendJson(HttpResponseStatus.OK, statuses);
   }
 }

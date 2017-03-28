@@ -24,19 +24,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * The main runner for ChaosMonkey.
+ * The main runner for ScheduledDisruption.
  */
 public class ChaosMonkeyMain extends DaemonMain {
   private static final Logger LOG = LoggerFactory.getLogger(ChaosMonkeyMain.class);
 
-  private Router router;
-  private Set<ChaosMonkey> chaosMonkeySet;
+  private ChaosMonkeyService chaosMonkeyService;
+  private ChaosMonkeyHttpService chaosMonkeyHttpService;
+  private Set<ScheduledDisruption> scheduledDisruptionSet;
+  private Configuration conf;
 
   public static void main(String[] args) throws Exception {
     new ChaosMonkeyMain().doMain(args);
@@ -44,64 +44,12 @@ public class ChaosMonkeyMain extends DaemonMain {
 
   @Override
   public void init(String[] args) {
-    chaosMonkeySet = new HashSet<>();
-    Configuration conf = Configuration.create();
+    conf = Configuration.create();
     try {
-      ClusterInfoCollector clusterInfoCollector = Class.forName(
-        conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS))
-        .asSubclass(ClusterInfoCollector.class).newInstance();
-      Map<String, String> clusterInfoCollectorConf = new HashMap<>();
-      for (Map.Entry<String, String> entry :
-        conf.getValByRegex(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CONF_PREFIX + "*").entrySet()) {
-        clusterInfoCollectorConf.put(entry.getKey().replace(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CONF_PREFIX, ""),
-                                     entry.getValue());
-      }
-      clusterInfoCollector.initialize(clusterInfoCollectorConf);
+      ClusterInfoCollector clusterInfoCollector = Clusters.createInitializedInfoCollector(conf);
+      chaosMonkeyService = new ChaosMonkeyService(conf, clusterInfoCollector);
+      chaosMonkeyHttpService = new ChaosMonkeyHttpService(chaosMonkeyService);
 
-      ChaosMonkeyService chaosMonkeyService = new ChaosMonkeyService(conf, clusterInfoCollector);
-      Table<String, String, RemoteProcess> processTable = chaosMonkeyService.getProcessTable();
-
-      for (String service : processTable.columnKeySet()) {
-        boolean scheduled = true;
-        int interval;
-        try {
-          interval = conf.getInt(service + ".interval");
-          if (interval <= 0) {
-            throw new IllegalArgumentException();
-          }
-        } catch (IllegalArgumentException | NullPointerException e) {
-          LOG.warn("The following process does not have a valid interval and will be skipped: {}", service);
-          interval = 0; // To avoid variable not initialized error, will not be used
-          scheduled = false;
-        }
-
-        double killProbability = conf.getDouble(service + ".killProbability", 0.0);
-        double stopProbability = conf.getDouble(service + ".stopProbability", 0.0);
-        double restartProbability = conf.getDouble(service + ".restartProbability", 0.0);
-        int minNodesPerIteration = conf.getInt(service + ".minNodesPerIteration", 0);
-        int maxNodesPerIteration = conf.getInt(service + ".maxNodesPerIteration", 0);
-
-        if (scheduled && killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
-          LOG.warn("The following process may have all of killProbability, stopProbability and restartProbability " +
-                     "equal to 0.0 or undefined: {}", service);
-          scheduled = false;
-        }
-        if (scheduled && stopProbability + killProbability + restartProbability > 1) {
-          LOG.warn("The following process has a combined killProbability, stopProbability and restartProbability " +
-                     "of over 1.0: {}", service);
-          scheduled = false;
-        }
-
-        if (scheduled) {
-          LOG.info("Adding the following process to Chaos Monkey: {}", service);
-          ChaosMonkey chaosMonkey = new ChaosMonkey(new ArrayList<>(processTable.column(service).values()),
-                                                    stopProbability, killProbability, restartProbability, interval,
-                                                    minNodesPerIteration, maxNodesPerIteration);
-          chaosMonkeySet.add(chaosMonkey);
-        }
-      }
-
-      router = new Router(chaosMonkeyService);
     } catch (ClassNotFoundException e) {
       LOG.error("Unable to instantiate cluster info collector class: " +
                   conf.get(Constants.Plugins.CLUSTER_INFO_COLLECTOR_CLASS));
@@ -112,20 +60,70 @@ public class ChaosMonkeyMain extends DaemonMain {
     }
   }
 
+  // TODO: make DisruptionScheduler to initialize Scheduled Disurptions
+  private void startScheduledServices() {
+    scheduledDisruptionSet = new HashSet<>();
+    Table<String, String, RemoteProcess> processTable = chaosMonkeyService.getProcessTable();
+
+    for (String service : processTable.columnKeySet()) {
+      boolean scheduled = true;
+      int interval;
+      try {
+        interval = conf.getInt(service + ".interval");
+        if (interval <= 0) {
+          throw new IllegalArgumentException();
+        }
+      } catch (IllegalArgumentException | NullPointerException e) {
+        LOG.warn("The following process does not have a valid interval and will be skipped: {}", service);
+        interval = 0; // To avoid variable not initialized error, will not be used
+        scheduled = false;
+      }
+
+      double killProbability = conf.getDouble(service + ".killProbability", 0.0);
+      double stopProbability = conf.getDouble(service + ".stopProbability", 0.0);
+      double restartProbability = conf.getDouble(service + ".restartProbability", 0.0);
+      int minNodesPerIteration = conf.getInt(service + ".minNodesPerIteration", 0);
+      int maxNodesPerIteration = conf.getInt(service + ".maxNodesPerIteration", 0);
+
+      if (scheduled && killProbability == 0.0 && stopProbability == 0.0 && restartProbability == 0.0) {
+        LOG.warn("The following process may have all of killProbability, stopProbability and restartProbability " +
+                   "equal to 0.0 or undefined: {}", service);
+        scheduled = false;
+      }
+      if (scheduled && stopProbability + killProbability + restartProbability > 1) {
+        LOG.warn("The following process has a combined killProbability, stopProbability and restartProbability " +
+                   "of over 1.0: {}", service);
+        scheduled = false;
+      }
+
+      if (scheduled) {
+        LOG.info("Adding the following process to Chaos Monkey: {}", service);
+        ScheduledDisruption scheduledDisruption = new ScheduledDisruption(new ArrayList<>(processTable.column(service).values()),
+                                                                          stopProbability, killProbability, restartProbability, interval,
+                                                                          minNodesPerIteration, maxNodesPerIteration);
+        scheduledDisruptionSet.add(scheduledDisruption);
+      }
+    }
+  }
+
   @Override
   public void start() throws Exception {
-    router.startAsync();
-    for (ChaosMonkey chaosMonkey : chaosMonkeySet) {
-      chaosMonkey.startAsync();
+    chaosMonkeyService.startAsync();
+    chaosMonkeyHttpService.startAsync();
+    chaosMonkeyService.awaitRunning();
+    startScheduledServices();
+    for (ScheduledDisruption scheduledDisruption : scheduledDisruptionSet) {
+      scheduledDisruption.startAsync();
     }
   }
 
   @Override
   public void stop() {
     try {
-      router.shutDown();
-      for (ChaosMonkey chaosMonkey : chaosMonkeySet) {
-        chaosMonkey.stopAsync();
+      chaosMonkeyHttpService.shutDown();
+      chaosMonkeyService.shutDown();
+      for (ScheduledDisruption scheduledDisruption : scheduledDisruptionSet) {
+        scheduledDisruption.stopAsync();
       }
     } catch (Exception e) {
       LOG.warn("Exception when trying to shut down Chaos Monkey.", e);

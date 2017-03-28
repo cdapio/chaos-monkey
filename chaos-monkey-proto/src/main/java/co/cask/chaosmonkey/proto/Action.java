@@ -14,7 +14,7 @@
  * the License.
  */
 
-package co.cask.chaosmonkey;
+package co.cask.chaosmonkey.proto;
 
 /**
  * Actions that can be performed by chaos monkey through the http handler

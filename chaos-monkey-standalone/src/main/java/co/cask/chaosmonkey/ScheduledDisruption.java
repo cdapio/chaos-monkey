@@ -26,10 +26,10 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The main service that will be running ChaosMonkey.
+ * Scheduled service that will periodically disrupt configured services
  */
-public class ChaosMonkey extends AbstractScheduledService {
-  private static final Logger LOG = LoggerFactory.getLogger(ChaosMonkey.class);
+public class ScheduledDisruption extends AbstractScheduledService {
+  private static final Logger LOG = LoggerFactory.getLogger(ScheduledDisruption.class);
 
   private List<RemoteProcess> processes;
   private double stopProbability;
@@ -52,13 +52,13 @@ public class ChaosMonkey extends AbstractScheduledService {
    * @param minNodesPerIteration The minimum number of nodes that will be affected by chaos monkey each iteration
    * @param maxNodesPerIteration The maximum number of nodes that will be affected by chaos monkey each iteration
    */
-  public ChaosMonkey(List<RemoteProcess> processes,
-                     double stopProbability,
-                     double killProbability,
-                     double restartProbability,
-                     int executionPeriod,
-                     int minNodesPerIteration,
-                     int maxNodesPerIteration) {
+  public ScheduledDisruption(List<RemoteProcess> processes,
+                             double stopProbability,
+                             double killProbability,
+                             double restartProbability,
+                             int executionPeriod,
+                             int minNodesPerIteration,
+                             int maxNodesPerIteration) {
     this.processes = processes;
     this.stopProbability = stopProbability;
     this.killProbability = killProbability;

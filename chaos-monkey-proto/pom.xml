@@ -26,6 +26,17 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>chaos-monkey-proto</artifactId>
-
+  <dependencies>
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations-java5</artifactId>
+      <version>RELEASE</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.0</version>
+    </dependency>
+  </dependencies>
 
 </project>

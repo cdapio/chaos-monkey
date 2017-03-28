@@ -16,6 +16,7 @@
 
 package co.cask.chaosmonkey;
 
+import co.cask.chaosmonkey.proto.Action;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AbstractIdleService;

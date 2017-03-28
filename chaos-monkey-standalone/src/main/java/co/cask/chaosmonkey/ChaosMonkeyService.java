@@ -18,7 +18,10 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
+import co.cask.chaosmonkey.proto.Action;
+import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.ActionStatus;
+import co.cask.chaosmonkey.proto.ClusterDisrupter;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.ClusterNode;
 import co.cask.chaosmonkey.proto.NodeStatus;
@@ -27,7 +30,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
-import com.google.gson.Gson;
+import com.google.common.util.concurrent.AbstractIdleService;
 import com.jcraft.jsch.JSchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,25 +45,27 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 
 /**
- * {@link ChaosMonkeyService} Allows for user to performed disruptions directly
+ * {@link ChaosMonkeyService} Allows for user to perform disruptions directly
  */
-public class ChaosMonkeyService {
+public class ChaosMonkeyService extends AbstractIdleService implements ClusterDisrupter {
   private static final Logger LOG = LoggerFactory.getLogger(ChaosMonkeyService.class);
 
-  private final DisruptionService disruptionService;
+  private DisruptionService disruptionService;
   private final Table<String, String, RemoteProcess> processTable;
-  private final ExecutorService executor;
+  private ExecutorService executor;
+  private final Configuration conf;
+  private final ClusterInfoCollector clusterInfoCollector;
 
   public ChaosMonkeyService(Configuration conf, ClusterInfoCollector clusterInfoCollector) throws Exception {
-    processTable = HashBasedTable.create();
-    init(conf, clusterInfoCollector);
-    this.disruptionService = new DisruptionService(processTable.columnKeySet());
-    this.executor = Executors.newFixedThreadPool(processTable.rowKeySet().size());
+    this.processTable = HashBasedTable.create();
+    this.conf = conf;
+    this.clusterInfoCollector = clusterInfoCollector;
   }
 
   private void init(Configuration conf, ClusterInfoCollector clusterInfoCollector) throws Exception {
@@ -130,24 +135,23 @@ public class ChaosMonkeyService {
    * Executes an action on configured processes
    *
    * @param service Name of the processes to be disrupted
-   * @param action Name of the action to be performed, {@link Action} contains possible actions
-   * @param nodes Collection of nodes to run action on, must be subset of configured nodes
-   * @param count Number of configured nodes to perform action on
-   * @param percentage Percentage of configured nodes to perform action on
-   * @param restartTime Rolling restart configuration, number of seconds a service is down before restarting
-   * @param delay Rolling restart configuration, number of seconds between restarting service on different nodes
+   * @param action {@link Action} to be executed
+   * @param actionArguments Configuration for the action to be run
    * @throws BadRequestException if nodes, count, or percentage contain invalid values
    * @throws NotFoundException if service or action are not found
    * @throws IllegalStateException if the same disruption is already running
    */
-  public void executeAction(String service, String action, @Nullable Collection<String> nodes, @Nullable Integer count,
-                            @Nullable Double percentage, @Nullable Integer restartTime, @Nullable Integer delay) {
+  public void executeAction(String service, Action action, @Nullable ActionArguments actionArguments) {
     Collection<RemoteProcess> processes = processTable.column(service).values();
+    if (actionArguments == null) {
+      actionArguments = new ActionArguments();
+    }
+    actionArguments.validate();
 
-    if (nodes != null) {
+    if (actionArguments.getNodes() != null) {
       processes = new HashSet<>();
       List<String> invalidNodes = new ArrayList<>();
-      for (String nodeIp : nodes) {
+      for (String nodeIp : actionArguments.getNodes()) {
         RemoteProcess process = processTable.get(nodeIp, service);
         if (process == null) {
           invalidNodes.add(nodeIp);
@@ -159,35 +163,24 @@ public class ChaosMonkeyService {
         throw new BadRequestException("The following nodes do not exist, or they do not " +
                                     "support " + service + ": " + invalidNodes);
       }
-    } else if (count != null) {
-      if (count <= 0) {
-        throw new BadRequestException("count cannot be less than or equal to zero: " + count);
-      }
+    } else if (actionArguments.getCount() != null) {
       List<RemoteProcess> processList = new ArrayList<>(processTable.column(service).values());
       Collections.shuffle(processList);
-      processes = new HashSet<>(processList.subList(0, Math.min(processList.size(), count)));
-    } else if (percentage != null) {
-      if (percentage <= 0 || percentage > 100) {
-        throw new BadRequestException("percentage needs to be between 0 and 100: " + percentage);
-      }
+      processes = new HashSet<>(processList.subList(0, Math.min(processList.size(), actionArguments.getCount())));
+    } else if (actionArguments.getPercentage() != null) {
       List<RemoteProcess> processList = new ArrayList<>(processTable.column(service).values());
       Collections.shuffle(processList);
-      processes = new HashSet<>(processList.subList(0, (int) Math.round(processList.size() * (percentage / 100))));
+      processes = new HashSet<>(processList.subList(0, (int) Math.round(processList.size() *
+                                                                          (actionArguments.getPercentage() / 100))));
     }
 
     if (processes.size() == 0) {
       throw new NotFoundException("Unknown service: " + service);
     }
-
-    Action actionEnum;
+    
     try {
-      actionEnum = Action.valueOf(action.toUpperCase().replace('-', '_'));
-    } catch (IllegalArgumentException e) {
-      throw new NotFoundException("Unknown action: " + action);
-    }
-
-    try {
-      disruptionService.disrupt(actionEnum, service, processes, restartTime, delay);
+      disruptionService.disrupt(action, service, processes, actionArguments.getRestartTime(),
+                                actionArguments.getDelay());
     } catch (IllegalStateException e) {
       throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, action));
     }
@@ -248,6 +241,195 @@ public class ChaosMonkeyService {
 
   public Table<String, String, RemoteProcess> getProcessTable() {
     return this.processTable;
+  }
+
+  @Override
+  protected void startUp() throws Exception {
+    init(conf, clusterInfoCollector);
+    this.disruptionService = new DisruptionService(processTable.columnKeySet());
+    this.executor = Executors.newFixedThreadPool(processTable.rowKeySet().size());
+  }
+
+  @Override
+  protected void shutDown() throws Exception {
+    this.executor.shutdown();
+  }
+
+  @Override
+  public void start(String service) throws Exception {
+    executeAction(service, Action.START, null);
+  }
+
+  @Override
+  public void start(String service, int count) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    executeAction(service, Action.START, actionArguments);
+  }
+
+  @Override
+  public void start(String service, double percentage) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    executeAction(service, Action.START, actionArguments);
+  }
+
+  @Override
+  public void start(String service, Collection<String> nodes) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    executeAction(service, Action.START, actionArguments);
+  }
+
+  @Override
+  public void restart(String service) throws Exception {
+    executeAction(service, Action.RESTART, null);
+  }
+
+  @Override
+  public void restart(String service, int count) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    executeAction(service, Action.RESTART, actionArguments);
+  }
+
+  @Override
+  public void restart(String service, double percentage) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    executeAction(service, Action.RESTART, actionArguments);
+  }
+
+  @Override
+  public void restart(String service, Collection<String> nodes) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    executeAction(service, Action.RESTART, actionArguments);
+  }
+
+  @Override
+  public void stop(String service) throws Exception {
+    executeAction(service, Action.STOP, null);
+  }
+
+  @Override
+  public void stop(String service, int count) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    executeAction(service, Action.STOP, actionArguments);
+  }
+
+  @Override
+  public void stop(String service, double percentage) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    executeAction(service, Action.STOP, actionArguments);
+  }
+
+  @Override
+  public void stop(String service, Collection<String> nodes) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    executeAction(service, Action.STOP, actionArguments);
+  }
+
+  @Override
+  public void terminate(String service) throws Exception {
+    executeAction(service, Action.TERMINATE, null);
+  }
+
+  @Override
+  public void terminate(String service, int count) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    executeAction(service, Action.TERMINATE, actionArguments);
+  }
+
+  @Override
+  public void terminate(String service, double percentage) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    executeAction(service, Action.TERMINATE, actionArguments);
+  }
+
+  @Override
+  public void terminate(String service, Collection<String> nodes) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    executeAction(service, Action.TERMINATE, actionArguments);
+  }
+
+  @Override
+  public void kill(String service) throws Exception {
+    executeAction(service, Action.KILL, null);
+  }
+
+  @Override
+  public void kill(String service, int count) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    executeAction(service, Action.KILL, actionArguments);
+  }
+
+  @Override
+  public void kill(String service, double percentage) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    executeAction(service, Action.KILL, actionArguments);
+  }
+
+  @Override
+  public void kill(String service, Collection<String> nodes) throws Exception {
+    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    executeAction(service, Action.KILL, actionArguments);
+  }
+
+  @Override
+  public void rollingRestart(String service) throws Exception {
+    rollingRestart(service, null);
+  }
+
+  @Override
+  public void rollingRestart(String service, @Nullable ActionArguments actionArguments) throws Exception {
+    executeAction(service, Action.ROLLING_RESTART, actionArguments);
+  }
+
+  @Override
+  public boolean isStartRunning(String service) throws Exception {
+    return getActionStatus(service, Action.START.getCommand()).isRunning();
+  }
+
+  @Override
+  public boolean isRestartRunning(String service) throws Exception {
+    return getActionStatus(service, Action.RESTART.getCommand()).isRunning();
+  }
+
+  @Override
+  public boolean isStopRunning(String service) throws Exception {
+    return getActionStatus(service, Action.STOP.getCommand()).isRunning();
+  }
+
+  @Override
+  public boolean isTerminateRunning(String service) throws Exception {
+    return getActionStatus(service, Action.TERMINATE.getCommand()).isRunning();
+  }
+
+  @Override
+  public boolean isKillRunning(String service) throws Exception {
+    return getActionStatus(service, Action.KILL.getCommand()).isRunning();
+  }
+
+  @Override
+  public boolean isRollingRestartRunning(String service) throws Exception {
+    return getActionStatus(service, Action.ROLLING_RESTART.getCommand()).isRunning();
+  }
+
+  @Override
+  public boolean isActionRunning(String service, String action) throws Exception {
+    return getActionStatus(service, action).isRunning();
+  }
+
+  @Override
+  public void waitForRollingRestart(String service) throws Exception {
+    while (isRollingRestartRunning(service)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
+  }
+
+  @Override
+  public Collection<NodeStatus> getAllStatuses() throws Exception {
+    return getNodeStatuses();
+  }
+
+  @Override
+  public NodeStatus getStatus(String ipAddress) throws Exception {
+    return getNodeStatus(ipAddress);
   }
 
   /**

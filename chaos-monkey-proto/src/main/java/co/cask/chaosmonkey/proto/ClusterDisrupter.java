@@ -14,7 +14,7 @@
  * the License.
  */
 
-package co.cask.chaosmonkey.client;
+package co.cask.chaosmonkey.proto;
 
 import co.cask.chaosmonkey.proto.NodeStatus;
 
@@ -23,7 +23,7 @@ import java.util.Collection;
 /**
  *
  */
-public interface ChaosMonkeyClient {
+public interface ClusterDisrupter {
 
   /**
    * Starts the specified service
@@ -181,51 +181,60 @@ public interface ChaosMonkeyClient {
   void kill(String service, Collection<String> nodes) throws Exception;
 
   /**
-   * Starts a rolling restart of the specified service
+   * Starts a rolling restart of the specified service using default
    *
    * @param service The name of the service to perform rolling restart on
    */
   void rollingRestart(String service) throws Exception;
 
   /**
-   * Starts a rolling restart of the specified service using given restart time and delay
+   * Starts a rolling restart of the specified service using given configurations
    *
    * @param service The name of the service to perform rolling restart on
-   * @param restartTimeSeconds Number of seconds a service is kept offline before restarting
-   * @param delaySeconds Number of seconds between restarting each service
+   * @param actionArguments Configuration for the rolling restart
+   * @throws Exception
    */
-  void rollingRestart(String service, int restartTimeSeconds, int delaySeconds) throws Exception;
+  void rollingRestart(String service, ActionArguments actionArguments) throws Exception;
 
   /**
-   * Starts a rolling restart of the specified service using given restart time and delay
+   * Returns whether the specified service is undergoing start
    *
-   * @param service The name of the service to perform rolling restart on
-   * @param count The number of nodes affected
-   * @param restartTimeSeconds Number of seconds a service is kept offline before restarting
-   * @param delaySeconds Number of seconds between restarting each service
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
    */
-  void rollingRestart(String service, int count, int restartTimeSeconds, int delaySeconds) throws Exception;
+  boolean isStartRunning(String service) throws Exception;
 
   /**
-   * Starts a rolling restart of the specified service using given restart time and delay
+   * Returns whether the specified service is undergoing restart
    *
-   * @param service The name of the service to perform rolling restart on
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   * @param restartTimeSeconds Number of seconds a service is kept offline before restarting
-   * @param delaySeconds Number of seconds between restarting each service
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
    */
-  void rollingRestart(String service, double percentage, int restartTimeSeconds, int delaySeconds) throws Exception;
+  boolean isRestartRunning(String service) throws Exception;
 
   /**
-   * Starts a rolling restart of the specified service using given restart time and delay
+   * Returns whether the specified service is undergoing stop
    *
-   * @param service The name of the service to perform rolling restart on
-   * @param nodes Collection of ip addresses of affected nodes
-   * @param restartTimeSeconds Number of seconds a service is kept offline before restarting
-   * @param delaySeconds Number of seconds between restarting each service
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
    */
-  void rollingRestart(String service, Collection<String> nodes, int restartTimeSeconds, int delaySeconds)
-    throws Exception;
+  boolean isStopRunning(String service) throws Exception;
+
+  /**
+   * Returns whether the specified service is undergoing terminate
+   *
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
+   */
+  boolean isTerminateRunning(String service) throws Exception;
+
+  /**
+   * Returns whether the specified service is undergoing kill
+   *
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
+   */
+  boolean isKillRunning(String service) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing rolling restart
