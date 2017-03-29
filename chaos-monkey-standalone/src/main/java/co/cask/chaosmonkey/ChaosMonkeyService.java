@@ -206,7 +206,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
     for (String service : processToIp.keySet()) {
       String pidPath = conf.get(service + ".pidPath");
-      if (pidPath == null) {
+      if (pidPath == null && !service.equals("cdap")) {
         LOG.warn("The following process does not have a pidPath and will be skipped: {}", service);
         continue;
       }
@@ -217,7 +217,11 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
         RemoteProcess process;
         switch (conf.get(service + ".init.style", "sysv")) {
           case "sysv":
-            process = new SysVRemoteProcess(service, pidPath, sshShell);
+            if (service.equals("cdap")) {
+              process = new CdapMasterRemoteProcess(service, sshShell);
+            } else {
+              process = new SysVRemoteProcess(service, pidPath, sshShell);
+            }
             break;
           case "custom":
             ImmutableMap.Builder<String, String> map = ImmutableMap.builder();
