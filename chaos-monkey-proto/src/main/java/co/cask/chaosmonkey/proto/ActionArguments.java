@@ -89,6 +89,15 @@ public class ActionArguments {
   }
 
   /**
+   * Get a builder for creating a new ActionArgument
+   *
+   * @return {@link Builder}
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /**
    * Builder for {@link ActionArguments}
    */
   public static final class Builder {

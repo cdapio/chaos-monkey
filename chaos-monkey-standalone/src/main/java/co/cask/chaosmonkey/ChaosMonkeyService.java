@@ -253,19 +253,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void start(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
+    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
     executeAction(service, Action.START, actionArguments);
   }
 
   @Override
   public void start(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
+    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
     executeAction(service, Action.START, actionArguments);
   }
 
   @Override
   public void start(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
+    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
     executeAction(service, Action.START, actionArguments);
   }
 
@@ -276,19 +276,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void restart(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
+    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
     executeAction(service, Action.RESTART, actionArguments);
   }
 
   @Override
   public void restart(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
+    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
     executeAction(service, Action.RESTART, actionArguments);
   }
 
   @Override
   public void restart(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
+    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
     executeAction(service, Action.RESTART, actionArguments);
   }
 
@@ -299,19 +299,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void stop(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
+    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
     executeAction(service, Action.STOP, actionArguments);
   }
 
   @Override
   public void stop(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
+    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
     executeAction(service, Action.STOP, actionArguments);
   }
 
   @Override
   public void stop(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
+    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
     executeAction(service, Action.STOP, actionArguments);
   }
 
@@ -322,19 +322,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void terminate(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
+    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
     executeAction(service, Action.TERMINATE, actionArguments);
   }
 
   @Override
   public void terminate(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
+    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
     executeAction(service, Action.TERMINATE, actionArguments);
   }
 
   @Override
   public void terminate(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
+    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
     executeAction(service, Action.TERMINATE, actionArguments);
   }
 
@@ -345,19 +345,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void kill(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
+    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
     executeAction(service, Action.KILL, actionArguments);
   }
 
   @Override
   public void kill(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
+    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
     executeAction(service, Action.KILL, actionArguments);
   }
 
   @Override
   public void kill(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
+    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
     executeAction(service, Action.KILL, actionArguments);
   }
 

@@ -98,8 +98,9 @@ public class ChaosMonkeyMain extends DaemonMain {
 
       if (scheduled) {
         LOG.info("Adding the following process to Chaos Monkey: {}", service);
-        ScheduledDisruption scheduledDisruption = new ScheduledDisruption(new ArrayList<>(processTable.column(service).values()),
-                                                                          stopProbability, killProbability, restartProbability, interval,
+        ScheduledDisruption scheduledDisruption = new ScheduledDisruption(new ArrayList<>(processTable.column(service)
+                                                                                            .values()), stopProbability,
+                                                                          killProbability, restartProbability, interval,
                                                                           minNodesPerIteration, maxNodesPerIteration);
         scheduledDisruptionSet.add(scheduledDisruption);
       }
