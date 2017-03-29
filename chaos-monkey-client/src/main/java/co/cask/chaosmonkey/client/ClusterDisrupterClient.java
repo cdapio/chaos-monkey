@@ -470,7 +470,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
    */
   @Override
   public boolean isStartRunning(String service) throws IOException {
-    return isActionRunning(service, Action.START.getCommand());
+    return isActionRunning(service, Action.START);
   }
 
   /**
@@ -482,7 +482,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
    */
   @Override
   public boolean isRestartRunning(String service) throws IOException {
-    return isActionRunning(service, Action.RESTART.getCommand());
+    return isActionRunning(service, Action.RESTART);
   }
 
   /**
@@ -494,7 +494,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
    */
   @Override
   public boolean isStopRunning(String service) throws IOException {
-    return isActionRunning(service, Action.STOP.getCommand());
+    return isActionRunning(service, Action.STOP);
   }
 
   /**
@@ -506,7 +506,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
    */
   @Override
   public boolean isTerminateRunning(String service) throws IOException {
-    return isActionRunning(service, Action.TERMINATE.getCommand());
+    return isActionRunning(service, Action.TERMINATE);
   }
 
   /**
@@ -518,7 +518,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
    */
   @Override
   public boolean isKillRunning(String service) throws IOException {
-    return isActionRunning(service, Action.KILL.getCommand());
+    return isActionRunning(service, Action.KILL);
   }
 
   /**
@@ -530,7 +530,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
    */
   @Override
   public boolean isRollingRestartRunning(String service) throws IOException {
-    return isActionRunning(service, Action.ROLLING_RESTART.getCommand());
+    return isActionRunning(service, Action.ROLLING_RESTART);
   }
 
   /**
@@ -542,8 +542,9 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
    * @throws IOException if a network error occurred
    */
   @Override
-  public boolean isActionRunning(String service, String action) throws IOException {
-    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action + "/status");
+  public boolean isActionRunning(String service, Action action) throws IOException {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action.getCommand() +
+      "/status");
     HttpRequest request = HttpRequest.get(url).build();
     HttpResponse response = HttpRequests.execute(request);
 

@@ -16,13 +16,12 @@
 
 package co.cask.chaosmonkey.proto;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Collection;
-import javax.ws.rs.BadRequestException;
+import javax.annotation.Nullable;
 
 /**
  * ActionArguments represents the request body of the action endpoint
+ * restartTime and delay Integers are only applicable to Rolling Restart
  */
 public class ActionArguments {
   private Collection<String> nodes;
@@ -45,14 +44,22 @@ public class ActionArguments {
   }
 
   public void validate() {
+    int setArguments = 0;
+    setArguments = nodes == null ? setArguments : setArguments + 1;
+    setArguments = count == null ? setArguments : setArguments + 1;
+    setArguments = percentage == null ? setArguments : setArguments + 1;
+    if (setArguments > 1) {
+      throw new IllegalArgumentException("At most one of nodes, count, and percentages can be set");
+    }
+
     if (nodes != null && nodes.isEmpty()) {
-      throw new BadRequestException("Nodes parameter cannot be empty");
+      throw new IllegalArgumentException("Nodes parameter cannot be empty");
     }
     if (count != null && count <= 0) {
-      throw new BadRequestException("count cannot be less than or equal to zero: " + count);
+      throw new IllegalArgumentException("count cannot be less than or equal to zero: " + count);
     }
     if (percentage != null && (percentage <= 0 || percentage > 100)) {
-      throw new BadRequestException("percentage needs to be between 0 and 100: " + percentage);
+      throw new IllegalArgumentException("percentage needs to be between 0 and 100: " + percentage);
     }
   }
 
@@ -91,33 +98,35 @@ public class ActionArguments {
     private Integer count;
     private Double percentage;
 
-    public Builder addNodes(Collection<String> nodes) {
+    public Builder setNodes(Collection<String> nodes) {
       this.nodes = nodes;
       return this;
     }
 
-    public Builder addRestartTime(Integer restartTime) {
+    public Builder setRestartTime(Integer restartTime) {
       this.restartTime = restartTime;
       return this;
     }
 
-    public Builder addDelay(Integer delay) {
+    public Builder setDelay(Integer delay) {
       this.delay = delay;
       return this;
     }
 
-    public Builder addCount(Integer count) {
+    public Builder setCount(Integer count) {
       this.count = count;
       return this;
     }
 
-    public Builder addPercentage(Double percentage) {
+    public Builder setPercentage(Double percentage) {
       this.percentage = percentage;
       return this;
     }
 
     public ActionArguments build() {
-      return new ActionArguments(nodes, restartTime, delay, count, percentage);
+      ActionArguments actionArguments = new ActionArguments(nodes, restartTime, delay, count, percentage);
+      actionArguments.validate();
+      return actionArguments;
     }
   }
 }

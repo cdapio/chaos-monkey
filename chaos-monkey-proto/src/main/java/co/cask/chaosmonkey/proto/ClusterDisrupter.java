@@ -16,12 +16,10 @@
 
 package co.cask.chaosmonkey.proto;
 
-import co.cask.chaosmonkey.proto.NodeStatus;
-
 import java.util.Collection;
 
 /**
- *
+ * Interface with methods for disrupting services on a cluster
  */
 public interface ClusterDisrupter {
 
@@ -248,10 +246,10 @@ public interface ClusterDisrupter {
    * Returns whether an action is running on the given service
    *
    * @param service The name of the service to be queried
-   * @param action The name of the action to be queried
+   * @param action The {@link Action} to be queried
    * @return true if running, false otherwise
    */
-  boolean isActionRunning(String service, String action) throws Exception;
+  boolean isActionRunning(String service, Action action) throws Exception;
 
   /**
    * Blocks execution until rolling restart is done on specified service.

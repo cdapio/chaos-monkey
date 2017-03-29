@@ -76,7 +76,7 @@ public class DisruptionService extends AbstractIdleService {
                               @Nullable Integer restartTime, @Nullable Integer delay) {
     SettableFuture<Void> future = SettableFuture.create();
     if (!checkAndStart(service, action.getCommand())) {
-      throw new IllegalStateException(String.format("%s %s is already running", service, action));
+      throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, action));
     }
     executor.submit(new DisruptionCallable(action, service, processes, status, restartTime, delay, future));
     return future;

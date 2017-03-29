@@ -68,50 +68,6 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
     this.clusterInfoCollector = clusterInfoCollector;
   }
 
-  private void init(Configuration conf, ClusterInfoCollector clusterInfoCollector) throws Exception {
-    Multimap<String, String> processToIp = HashMultimap.create();
-
-    for (ClusterNode node : clusterInfoCollector.getNodeProperties()) {
-      for (String service : node.getServices()) {
-        processToIp.put(service, node.getHost());
-      }
-    }
-
-    for (String service : processToIp.keySet()) {
-      String pidPath = conf.get(service + ".pidPath");
-      if (pidPath == null) {
-        LOG.warn("The following process does not have a pidPath and will be skipped: {}", service);
-        continue;
-      }
-
-      for (String ipAddress : processToIp.get(service)) {
-        SshShell sshShell = resolveSshShell(conf, ipAddress);
-
-        RemoteProcess process;
-        switch (conf.get(service + ".init.style", "sysv")) {
-          case "sysv":
-            process = new SysVRemoteProcess(service, pidPath, sshShell);
-            break;
-          case "custom":
-            ImmutableMap.Builder<String, String> map = ImmutableMap.builder();
-
-            for (String configOption : Constants.RemoteProcess.CONFIG_OPTIONS) {
-              String optionKey = String.format("%s.init.%s", service, configOption);
-              if (conf.get(optionKey) != null) {
-                map.put(configOption, conf.get(optionKey));
-              }
-            }
-
-            process = new CustomRemoteProcess(service, pidPath, sshShell, map.build());
-            break;
-          default:
-            throw new IllegalArgumentException("The following process does not have a valid init.style: " + service);
-        }
-        processTable.put(ipAddress, service, process);
-      }
-    }
-  }
-
   private SshShell resolveSshShell(Configuration conf, String ipAddress) throws JSchException {
     String username = conf.get("username", System.getProperty("user.name"));
     String privateKey = conf.get("privateKey");
@@ -178,12 +134,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       throw new NotFoundException("Unknown service: " + service);
     }
     
-    try {
-      disruptionService.disrupt(action, service, processes, actionArguments.getRestartTime(),
-                                actionArguments.getDelay());
-    } catch (IllegalStateException e) {
-      throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, action));
-    }
+    disruptionService.disrupt(action, service, processes, actionArguments.getRestartTime(), actionArguments.getDelay());
   }
 
   /**
@@ -205,7 +156,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
    * @throws JSchException if there was an SSH error
    * @throws NotFoundException if the hostname does not exist or is not configured
    */
-  public NodeStatus getNodeStatus(String hostname) throws Exception {
+  public NodeStatus getNodeStatus(String hostname) throws JSchException {
     Collection<RemoteProcess> remoteProcesses = processTable.row(hostname).values();
     if (remoteProcesses.isEmpty()) {
       throw new NotFoundException("Unknown host: " + hostname);
@@ -224,7 +175,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
    * @throws ExecutionException
    * @throws InterruptedException
    */
-  public Collection<NodeStatus> getNodeStatuses() throws Exception {
+  public Collection<NodeStatus> getNodeStatuses() throws ExecutionException, InterruptedException {
     List<Status> threads = new ArrayList<>();
     for (String ip : processTable.rowKeySet()) {
       threads.add(new Status(ip, processTable.row(ip).values()));
@@ -245,7 +196,47 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   protected void startUp() throws Exception {
-    init(conf, clusterInfoCollector);
+    Multimap<String, String> processToIp = HashMultimap.create();
+
+    for (ClusterNode node : clusterInfoCollector.getNodeProperties()) {
+      for (String service : node.getServices()) {
+        processToIp.put(service, node.getHost());
+      }
+    }
+
+    for (String service : processToIp.keySet()) {
+      String pidPath = conf.get(service + ".pidPath");
+      if (pidPath == null) {
+        LOG.warn("The following process does not have a pidPath and will be skipped: {}", service);
+        continue;
+      }
+
+      for (String ipAddress : processToIp.get(service)) {
+        SshShell sshShell = resolveSshShell(conf, ipAddress);
+
+        RemoteProcess process;
+        switch (conf.get(service + ".init.style", "sysv")) {
+          case "sysv":
+            process = new SysVRemoteProcess(service, pidPath, sshShell);
+            break;
+          case "custom":
+            ImmutableMap.Builder<String, String> map = ImmutableMap.builder();
+
+            for (String configOption : Constants.RemoteProcess.CONFIG_OPTIONS) {
+              String optionKey = String.format("%s.init.%s", service, configOption);
+              if (conf.get(optionKey) != null) {
+                map.put(configOption, conf.get(optionKey));
+              }
+            }
+
+            process = new CustomRemoteProcess(service, pidPath, sshShell, map.build());
+            break;
+          default:
+            throw new IllegalArgumentException("The following process does not have a valid init.style: " + service);
+        }
+        processTable.put(ipAddress, service, process);
+      }
+    }
     this.disruptionService = new DisruptionService(processTable.columnKeySet());
     this.executor = Executors.newFixedThreadPool(processTable.rowKeySet().size());
   }
@@ -262,19 +253,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void start(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
     executeAction(service, Action.START, actionArguments);
   }
 
   @Override
   public void start(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
     executeAction(service, Action.START, actionArguments);
   }
 
   @Override
   public void start(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
     executeAction(service, Action.START, actionArguments);
   }
 
@@ -285,19 +276,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void restart(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
     executeAction(service, Action.RESTART, actionArguments);
   }
 
   @Override
   public void restart(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
     executeAction(service, Action.RESTART, actionArguments);
   }
 
   @Override
   public void restart(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
     executeAction(service, Action.RESTART, actionArguments);
   }
 
@@ -308,19 +299,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void stop(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
     executeAction(service, Action.STOP, actionArguments);
   }
 
   @Override
   public void stop(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
     executeAction(service, Action.STOP, actionArguments);
   }
 
   @Override
   public void stop(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
     executeAction(service, Action.STOP, actionArguments);
   }
 
@@ -331,19 +322,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void terminate(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
     executeAction(service, Action.TERMINATE, actionArguments);
   }
 
   @Override
   public void terminate(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
     executeAction(service, Action.TERMINATE, actionArguments);
   }
 
   @Override
   public void terminate(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
     executeAction(service, Action.TERMINATE, actionArguments);
   }
 
@@ -354,19 +345,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void kill(String service, int count) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addCount(count).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setCount(count).build();
     executeAction(service, Action.KILL, actionArguments);
   }
 
   @Override
   public void kill(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addPercentage(percentage).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setPercentage(percentage).build();
     executeAction(service, Action.KILL, actionArguments);
   }
 
   @Override
   public void kill(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = new ActionArguments.Builder().addNodes(nodes).build();
+    ActionArguments actionArguments = new ActionArguments.Builder().setNodes(nodes).build();
     executeAction(service, Action.KILL, actionArguments);
   }
 
@@ -411,8 +402,8 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public boolean isActionRunning(String service, String action) throws Exception {
-    return getActionStatus(service, action).isRunning();
+  public boolean isActionRunning(String service, Action action) throws Exception {
+    return getActionStatus(service, action.getCommand()).isRunning();
   }
 
   @Override
