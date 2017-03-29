@@ -17,7 +17,10 @@
 package co.cask.chaosmonkey.client;
 
 import co.cask.chaosmonkey.common.Constants;
+import co.cask.chaosmonkey.proto.Action;
+import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.ActionStatus;
+import co.cask.chaosmonkey.proto.ClusterDisrupter;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.common.http.HttpRequest;
 import co.cask.common.http.HttpRequests;
@@ -31,7 +34,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
@@ -40,19 +42,19 @@ import javax.ws.rs.NotFoundException;
 /**
  * Provides ways to interact with Chaos Monkey.
  */
-public class ChaosMonkeyClient {
-  private static final Type STATUSES_TYPE = new TypeToken<List<NodeStatus>>() { }.getType();
+public class ClusterDisrupterClient implements ClusterDisrupter {
+  private static final Type STATUSES_TYPE = new TypeToken<Collection<NodeStatus>>() { }.getType();
   private static final Gson GSON = new Gson();
 
   private final String hostname;
   private final int port;
   private final boolean sslEnabled;
 
-  public ChaosMonkeyClient(String hostname, int port) {
+  public ClusterDisrupterClient(String hostname, int port) {
     this(hostname, port, false);
   }
 
-  public ChaosMonkeyClient(String hostname, int port, boolean sslEnabled) {
+  public ClusterDisrupterClient(String hostname, int port, boolean sslEnabled) {
     this.hostname = hostname;
     this.port = port;
     this.sslEnabled = sslEnabled;
@@ -67,9 +69,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void start(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, "start");
+    executeAction(service, Action.START);
   }
 
   /**
@@ -82,9 +85,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void start(String service, int count)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "start", "count", Integer.toString(count));
+    executeActionWithArgument(service, Action.START, "count", Integer.toString(count));
   }
 
   /**
@@ -97,9 +101,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void start(String service, double percentage)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "start", "percentage", Double.toString(percentage));
+    executeActionWithArgument(service, Action.START, "percentage", Double.toString(percentage));
   }
 
   /**
@@ -112,10 +117,11 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void start(String service, Collection<String> nodes)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, "start", "nodes", collectionJSON);
+    executeActionWithArgument(service, Action.START, "nodes", collectionJSON);
   }
 
   /**
@@ -127,9 +133,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void restart(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, "restart");
+    executeAction(service, Action.RESTART);
   }
 
   /**
@@ -142,9 +149,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void restart(String service, int count)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "restart", "count", Integer.toString(count));
+    executeActionWithArgument(service, Action.RESTART, "count", Integer.toString(count));
   }
 
   /**
@@ -157,9 +165,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void restart(String service, double percentage)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "restart", "percentage", Double.toString(percentage));
+    executeActionWithArgument(service, Action.RESTART, "percentage", Double.toString(percentage));
   }
 
   /**
@@ -172,10 +181,11 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void restart(String service, Collection<String> nodes)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, "restart", "nodes", collectionJSON);
+    executeActionWithArgument(service, Action.RESTART, "nodes", collectionJSON);
   }
 
   /**
@@ -187,9 +197,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void stop(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, "stop");
+    executeAction(service, Action.STOP);
   }
 
   /**
@@ -202,9 +213,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void stop(String service, int count)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "stop", "count", Integer.toString(count));
+    executeActionWithArgument(service, Action.STOP, "count", Integer.toString(count));
   }
 
   /**
@@ -217,9 +229,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void stop(String service, double percentage)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "stop", "percentage", Double.toString(percentage));
+    executeActionWithArgument(service, Action.STOP, "percentage", Double.toString(percentage));
   }
 
   /**
@@ -232,10 +245,11 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void stop(String service, Collection<String> nodes)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, "stop", "nodes", collectionJSON);
+    executeActionWithArgument(service, Action.STOP, "nodes", collectionJSON);
   }
 
   /**
@@ -247,9 +261,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void terminate(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, "terminate");
+    executeAction(service, Action.TERMINATE);
   }
 
   /**
@@ -262,9 +277,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void terminate(String service, int count)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "terminate", "count", Integer.toString(count));
+    executeActionWithArgument(service, Action.TERMINATE, "count", Integer.toString(count));
   }
 
   /**
@@ -277,9 +293,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void terminate(String service, double percentage)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "terminate", "percentage", Double.toString(percentage));
+    executeActionWithArgument(service, Action.TERMINATE, "percentage", Double.toString(percentage));
   }
 
   /**
@@ -292,10 +309,11 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void terminate(String service, Collection<String> nodes)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, "terminate", "nodes", collectionJSON);
+    executeActionWithArgument(service, Action.TERMINATE, "nodes", collectionJSON);
   }
 
   /**
@@ -307,9 +325,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void kill(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, "kill");
+    executeAction(service, Action.KILL);
   }
 
   /**
@@ -322,9 +341,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void kill(String service, int count)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "kill", "count", Integer.toString(count));
+    executeActionWithArgument(service, Action.KILL, "count", Integer.toString(count));
   }
 
   /**
@@ -337,9 +357,10 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void kill(String service, double percentage)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, "kill", "percentage", Double.toString(percentage));
+    executeActionWithArgument(service, Action.KILL, "percentage", Double.toString(percentage));
   }
 
   /**
@@ -352,15 +373,16 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void kill(String service, Collection<String> nodes)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
     String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, "kill", "nodes", collectionJSON);
+    executeActionWithArgument(service, Action.KILL, "nodes", collectionJSON);
   }
 
-  private void executeAction(String service, String action)
+  private void executeAction(String service, Action action)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action);
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action.getCommand());
     HttpRequest request = HttpRequest.post(url).build();
     HttpResponse response = HttpRequests.execute(request);
 
@@ -375,7 +397,7 @@ public class ChaosMonkeyClient {
     }
   }
 
-  private void executeActionWithArgument(String service, String action, String field, String value)
+  private void executeActionWithArgument(String service, Action action, String field, String value)
     throws IOException {
     URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action);
     HttpRequest request = HttpRequest.post(url)
@@ -402,24 +424,32 @@ public class ChaosMonkeyClient {
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
+  @Override
   public void rollingRestart(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, "rolling-restart");
+    executeAction(service, Action.ROLLING_RESTART);
   }
 
   /**
-   * Starts a rolling restart of the specified service using given restart time and delay
+   * Starts a rolling restart with given configurations
    *
    * @param service The name of the service to perform rolling restart on
-   * @param restartTimeSeconds Number of seconds a service is kept offline before restarting
-   * @param delaySeconds Number of seconds between restarting each service
+   * @param actionArguments Configuration for the rolling restart
    * @throws IOException if a network error occurred
+   * @throws NotFoundException if specified service does not exist
+   * @throws BadRequestException if invalid request body is provided
+   * @throws InternalServerErrorException if internal server error occurred
    */
-  public void rollingRestart(String service, int restartTimeSeconds, int delaySeconds)
+  @Override
+  public void rollingRestart(String service, ActionArguments actionArguments)
     throws IOException {
+    rollingRestartWithRequestBody(service, GSON.toJson(actionArguments));
+  }
+
+  private void rollingRestartWithRequestBody(String service, String requestBody) throws IOException {
     URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/rolling-restart");
     HttpRequest request = HttpRequest.post(url)
-      .withBody(String.format("{restartTime:%d,delay:%d}", restartTimeSeconds, delaySeconds)).build();
+      .withBody(requestBody).build();
     HttpResponse response = HttpRequests.execute(request);
 
     int responseCode = response.getResponseCode();
@@ -432,14 +462,75 @@ public class ChaosMonkeyClient {
   }
 
   /**
+   * Returns whether the specified service is undergoing start
+   *
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
+   * @throws IOException if a network error occurred
+   */
+  @Override
+  public boolean isStartRunning(String service) throws IOException {
+    return isActionRunning(service, Action.START);
+  }
+
+  /**
+   * Returns whether the specified service is undergoing restart
+   *
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
+   * @throws IOException if a network error occurred
+   */
+  @Override
+  public boolean isRestartRunning(String service) throws IOException {
+    return isActionRunning(service, Action.RESTART);
+  }
+
+  /**
+   * Returns whether the specified service is undergoing stop
+   *
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
+   * @throws IOException if a network error occurred
+   */
+  @Override
+  public boolean isStopRunning(String service) throws IOException {
+    return isActionRunning(service, Action.STOP);
+  }
+
+  /**
+   * Returns whether the specified service is undergoing terminate
+   *
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
+   * @throws IOException if a network error occurred
+   */
+  @Override
+  public boolean isTerminateRunning(String service) throws IOException {
+    return isActionRunning(service, Action.TERMINATE);
+  }
+
+  /**
+   * Returns whether the specified service is undergoing kill
+   *
+   * @param service The name of the service to be queried
+   * @return true if running, false otherwise
+   * @throws IOException if a network error occurred
+   */
+  @Override
+  public boolean isKillRunning(String service) throws IOException {
+    return isActionRunning(service, Action.KILL);
+  }
+
+  /**
    * Returns whether the specified service is undergoing rolling restart
    *
    * @param service The name of the service to be queried
    * @return true if running, false otherwise
    * @throws IOException if a network error occurred
    */
+  @Override
   public boolean isRollingRestartRunning(String service) throws IOException {
-    return isActionRunning(service, "rolling-restart");
+    return isActionRunning(service, Action.ROLLING_RESTART);
   }
 
   /**
@@ -450,8 +541,10 @@ public class ChaosMonkeyClient {
    * @return true if running, false otherwise
    * @throws IOException if a network error occurred
    */
-  public boolean isActionRunning(String service, String action) throws IOException {
-    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action + "/status");
+  @Override
+  public boolean isActionRunning(String service, Action action) throws IOException {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action.getCommand() +
+      "/status");
     HttpRequest request = HttpRequest.get(url).build();
     HttpResponse response = HttpRequests.execute(request);
 
@@ -466,6 +559,7 @@ public class ChaosMonkeyClient {
    * @throws IOException if a network error occurred
    * @throws InterruptedException
    */
+  @Override
   public void waitForRollingRestart(String service) throws IOException, InterruptedException {
     while (isRollingRestartRunning(service)) {
       TimeUnit.SECONDS.sleep(1);
@@ -478,7 +572,8 @@ public class ChaosMonkeyClient {
    * @return list of {@link NodeStatus}
    * @throws IOException if a network error occurred
    */
-  public List<NodeStatus> getAllStatuses() throws IOException {
+  @Override
+  public Collection<NodeStatus> getAllStatuses() throws IOException {
     URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "status");
     HttpRequest request = HttpRequest.get(url).build();
     HttpResponse response = HttpRequests.execute(request);
@@ -493,6 +588,7 @@ public class ChaosMonkeyClient {
    * @return status of services in specified node, given in the form of {@link NodeStatus}
    * @throws IOException if a network error occurred
    */
+  @Override
   public NodeStatus getStatus(String ipAddress) throws IOException {
     URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "nodes/" + ipAddress + "/status");
     HttpRequest request = HttpRequest.get(url).build();

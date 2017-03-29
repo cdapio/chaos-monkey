@@ -19,22 +19,21 @@ package co.cask.chaosmonkey;
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.http.NettyHttpService;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@code Router} for ChaosMonkey.
+ * The {@code ChaosMonkeyHttpService} for ScheduledDisruption.
  */
-public class Router extends AbstractIdleService {
-  private static final Logger LOG = LoggerFactory.getLogger(Router.class);
+public class ChaosMonkeyHttpService extends AbstractIdleService {
+  private static final Logger LOG = LoggerFactory.getLogger(ChaosMonkeyHttpService.class);
 
   private NettyHttpService httpService;
-  private Table<String, String, RemoteProcess> processTable;
+  private ChaosMonkeyService chaosMonkeyService;
 
-  public Router(Table<String, String, RemoteProcess> processTable) {
-    this.processTable = processTable;
+  public ChaosMonkeyHttpService(ChaosMonkeyService chaosMonkeyService) {
+    this.chaosMonkeyService = chaosMonkeyService;
   }
 
   @Override
@@ -43,7 +42,8 @@ public class Router extends AbstractIdleService {
 
     this.httpService = NettyHttpService.builder()
       .setPort(Constants.Server.PORT)
-      .addHttpHandlers(ImmutableList.of(new HttpHandler(processTable)))
+      .addHttpHandlers(ImmutableList.of(new HttpHandler(chaosMonkeyService)))
+      .setExceptionHandler(new HttpExceptionHandler())
       .build();
 
     this.httpService.startAsync();

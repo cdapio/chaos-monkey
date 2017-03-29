@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A remote process that ChaosMonkey can interact with.
+ * A remote process that ScheduledDisruption can interact with.
  */
 public class SysVRemoteProcess implements RemoteProcess {
   private static final Logger LOG = LoggerFactory.getLogger(SysVRemoteProcess.class);

@@ -26,50 +26,14 @@
     <name>coopr.clusterId</name>
     <value>00000001</value>
   </property>
-  <property>
-    <name>router.bind.port</name>
-    <value>11020</value>
-  </property>
-  <property>
-    <name>router.ssl.bind.port</name>
-    <value>11020</value>
-  </property>
-  <property>
-    <name>router.bind.address</name>
-    <value>localhost</value>
-  </property>
 
   <property>
     <name>hbase-regionserver.pidPath</name>
     <value>/var/run/hbase/hbase-hbase-regionserver.pid</value>
   </property>
   <property>
-    <name>hbase-regionserver.interval</name>
-    <value>0</value>
-  </property>
-  <property>
-    <name>hbase-regionserver.killProbability</name>
-    <value>0</value>
-  </property>
-  <property>
-    <name>hbase-regionserver.stopProbability</name>
-    <value>0</value>
-  </property>
-  <property>
-    <name>hbase-regionserver.restartProbability</name>
-    <value>0</value>
-  </property>
-  <property>
     <name>hbase-regionserver.init.style</name>
     <value>sysv</value>
-  </property>
-  <property>
-    <name>hbase-regionserver.minNodesPerIteration</name>
-    <value>0</value>
-  </property>
-  <property>
-    <name>hbase-regionserver.maxNodesPerIteration</name>
-    <value>0</value>
   </property>
 
   <property>
@@ -77,32 +41,8 @@
     <value>/var/run/hbase/hbase-hbase-master.pid</value>
   </property>
   <property>
-    <name>hbase-master.interval</name>
-    <value>0</value>
-  </property>
-  <property>
-    <name>hbase-master.killProbability</name>
-    <value>0</value>
-  </property>
-  <property>
-    <name>hbase-master.stopProbability</name>
-    <value>0</value>
-  </property>
-  <property>
-    <name>hbase-master.restartProbability</name>
-    <value>0</value>
-  </property>
-  <property>
     <name>hbase-master.init.style</name>
     <value>sysv</value>
-  </property>
-  <property>
-    <name>hbase-master.minNodesPerIteration</name>
-    <value>0</value>
-  </property>
-  <property>
-    <name>hbase-master.maxNodesPerIteration</name>
-    <value>0</value>
   </property>
 
   <property>

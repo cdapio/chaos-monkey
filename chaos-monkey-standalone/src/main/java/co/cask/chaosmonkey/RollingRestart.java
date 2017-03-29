@@ -16,11 +16,11 @@
 
 package co.cask.chaosmonkey;
 
+import co.cask.chaosmonkey.proto.ActionArguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -38,19 +38,34 @@ public class RollingRestart implements Disruption {
   /**
    * Starts a rolling restart on given list of processes.
    *
-   * @param processes         List of processes to rolling restart, must be of same type
-   * @param actionArguments   Optional, configuration for delay and duration of rolling restart
+   * @param processes List of processes to rolling restart, must be of same type
+   * @param actionArguments Optional, configuration for delay and duration of rolling restart
    * @throws Exception
    */
   public void disrupt(Collection<RemoteProcess> processes, @Nullable ActionArguments actionArguments) throws Exception {
+    if (actionArguments == null) {
+      disrupt(processes, null, null);
+    } else {
+      disrupt(processes, actionArguments.getRestartTime(), actionArguments.getDelay());
+    }
+  }
+
+  /**
+   * Starts a rolling restart on given list of processes.
+   *
+   * @param processes List of processes to rolling restart, must be of same type
+   * @param restartTime Optional, number of seconds a service is down before restarting
+   * @param delay Optional, number of seconds between restarting service on different nodes
+   * @throws Exception
+   */
+  public void disrupt(Collection<RemoteProcess> processes, @Nullable Integer restartTime,
+                      @Nullable Integer delay) throws Exception {
     if (processes.size() < 1) {
-      throw new IllegalStateException("Process list has an invalid size of: " + processes.size());
+      throw new IllegalArgumentException("Process list has an invalid size of: " + processes.size());
     }
 
-    int restartTime = (actionArguments == null || actionArguments.getRestartTime() == null ||
-      actionArguments.getRestartTime() < 0) ? 30 : actionArguments.getRestartTime();
-    int delay = (actionArguments == null || actionArguments.getDelay() == null ||
-      actionArguments.getDelay() < 0) ? 120 : actionArguments.getDelay();
+    restartTime = (restartTime == null || restartTime < 0) ? 30 : restartTime;
+    delay = (delay == null || delay < 0) ? 120 : delay;
 
     for (RemoteProcess process : processes) {
       process.stop();
