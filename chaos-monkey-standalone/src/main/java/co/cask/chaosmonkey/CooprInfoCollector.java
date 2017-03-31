@@ -28,6 +28,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -56,6 +57,21 @@ public class CooprInfoCollector implements ClusterInfoCollector {
   public Collection<ClusterNode> getNodeProperties() throws Exception {
     HttpResponse response = HttpRequests.execute(request);
     Map<String, ClusterNode> nodes =  GSON.fromJson(response.getResponseBodyAsString(), NODES_TYPE);
+    for (ClusterNode node : nodes.values()) {
+      Iterator<String> iterator = node.getServices().iterator();
+      while (iterator.hasNext()) {
+        String service = iterator.next();
+        if (service.equals("cdap")) {
+          iterator.remove();
+          node.getServices().add("cdap-master");
+          node.getServices().add("cdap-router");
+          node.getServices().add("cdap-kafka-server");
+          node.getServices().add("cdap-auth-server");
+          node.getServices().add("cdap-ui");
+          break;
+        }
+      }
+    }
     return nodes.values();
   }
 }

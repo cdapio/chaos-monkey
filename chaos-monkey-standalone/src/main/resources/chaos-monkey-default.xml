@@ -46,6 +46,15 @@
   </property>
 
   <property>
+    <name>cdap-master.pidPath</name>
+    <value>/var/cdap/run/master-cdap.pid</value>
+  </property>
+  <property>
+    <name>cdap-master.init.style</name>
+    <value>sysv</value>
+  </property>
+
+  <property>
     <name>cluster.info.collector.coopr.userId</name>
     <value>admin</value>
   </property>
