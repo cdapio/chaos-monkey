@@ -55,6 +55,42 @@
   </property>
 
   <property>
+    <name>cdap-ui.pidPath</name>
+    <value>/var/cdap/run/ui-cdap.pid</value>
+  </property>
+  <property>
+    <name>cdap-ui.init.style</name>
+    <value>sysv</value>
+  </property>
+
+  <property>
+    <name>cdap-router.pidPath</name>
+    <value>/var/cdap/run/router-cdap.pid</value>
+  </property>
+  <property>
+    <name>cdap-router.init.style</name>
+    <value>sysv</value>
+  </property>
+
+  <property>
+    <name>cdap-kafka-server.pidPath</name>
+    <value>/var/cdap/run/kafka-server-cdap.pid</value>
+  </property>
+  <property>
+    <name>cdap-kafka-server.init.style</name>
+    <value>sysv</value>
+  </property>
+
+  <property>
+    <name>cdap-auth-server.pidPath</name>
+    <value>/var/cdap/run/auth-server-cdap.pid</value>
+  </property>
+  <property>
+    <name>cdap-auth-server.init.style</name>
+    <value>sysv</value>
+  </property>
+
+  <property>
     <name>cluster.info.collector.coopr.userId</name>
     <value>admin</value>
   </property>
