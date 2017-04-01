@@ -27,9 +27,9 @@ import org.slf4j.LoggerFactory;
 public class SysVRemoteProcess implements RemoteProcess {
   private static final Logger LOG = LoggerFactory.getLogger(SysVRemoteProcess.class);
 
-  private final String name;
-  private final String pidFilePath;
-  private final SshShell sshShell;
+  protected final String name;
+  protected final String pidFilePath;
+  protected final SshShell sshShell;
 
   /**
    * Create a new {@code RemoteProcess}.
