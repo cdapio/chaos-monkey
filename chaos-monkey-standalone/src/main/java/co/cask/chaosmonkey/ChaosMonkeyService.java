@@ -377,8 +377,24 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
+  public void startAndWait(String service) throws Exception {
+    start(service);
+    while (isStartRunning(service)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
+  }
+
+  @Override
   public boolean isRestartRunning(String service) throws Exception {
     return getActionStatus(service, Action.RESTART.getCommand()).isRunning();
+  }
+
+  @Override
+  public void restartAndWait(String service) throws Exception {
+    restart(service);
+    while (isRestartRunning(service)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
   }
 
   @Override
@@ -387,8 +403,24 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
+  public void stopAndWait(String service) throws Exception {
+    stop(service);
+    while (isStopRunning(service)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
+  }
+
+  @Override
   public boolean isTerminateRunning(String service) throws Exception {
     return getActionStatus(service, Action.TERMINATE.getCommand()).isRunning();
+  }
+
+  @Override
+  public void terminateAndWait(String service) throws Exception {
+    terminate(service);
+    while (isTerminateRunning(service)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
   }
 
   @Override
@@ -397,20 +429,29 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
+  public void killAndWait(String service) throws Exception {
+    kill(service);
+    while (isKillRunning(service)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
+  }
+
+  @Override
   public boolean isRollingRestartRunning(String service) throws Exception {
     return getActionStatus(service, Action.ROLLING_RESTART.getCommand()).isRunning();
   }
 
   @Override
-  public boolean isActionRunning(String service, Action action) throws Exception {
-    return getActionStatus(service, action.getCommand()).isRunning();
-  }
-
-  @Override
-  public void waitForRollingRestart(String service) throws Exception {
+  public void rollingRestartAndWait(String service, @Nullable ActionArguments actionArguments) throws Exception {
+    rollingRestart(service, actionArguments);
     while (isRollingRestartRunning(service)) {
       TimeUnit.SECONDS.sleep(1);
     }
+  }
+
+  @Override
+  public boolean isActionRunning(String service, Action action) throws Exception {
+    return getActionStatus(service, action.getCommand()).isRunning();
   }
 
   @Override
