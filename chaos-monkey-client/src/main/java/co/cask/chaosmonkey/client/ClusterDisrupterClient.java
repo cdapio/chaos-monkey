@@ -488,8 +488,9 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       if (!isStartRunning(service)) {
         return;
       }
+      TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException("Timeout occurred");
+    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -514,8 +515,9 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       if (!isRestartRunning(service)) {
         return;
       }
+      TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException("Timeout occurred");
+    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -540,8 +542,9 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       if (!isStopRunning(service)) {
         return;
       }
+      TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException("Timeout occurred");
+    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -566,8 +569,9 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       if (!isTerminateRunning(service)) {
         return;
       }
+      TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException("Timeout occurred");
+    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -592,8 +596,9 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       if (!isKillRunning(service)) {
         return;
       }
+      TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException("Timeout occurred");
+    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
   }
 
   /**
