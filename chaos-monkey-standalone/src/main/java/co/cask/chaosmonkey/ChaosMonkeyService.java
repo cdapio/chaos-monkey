@@ -388,7 +388,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   @Override
@@ -407,7 +407,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   @Override
@@ -426,7 +426,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   @Override
@@ -445,7 +445,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   @Override
@@ -464,7 +464,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   @Override

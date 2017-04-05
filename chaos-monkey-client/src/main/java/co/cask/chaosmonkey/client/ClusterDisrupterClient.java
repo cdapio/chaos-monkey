@@ -490,7 +490,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -517,7 +517,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -544,7 +544,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -571,7 +571,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -598,7 +598,7 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
       }
       TimeUnit.SECONDS.sleep(1);
     }
-    throw new TimeoutException(String.format("Timeout occurred after %f %s", timeout, timeoutUnit.name()));
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   /**
