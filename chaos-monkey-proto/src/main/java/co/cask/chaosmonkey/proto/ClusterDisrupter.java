@@ -17,6 +17,7 @@
 package co.cask.chaosmonkey.proto;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Interface with methods for disrupting services on a cluster
@@ -203,12 +204,32 @@ public interface ClusterDisrupter {
   boolean isStartRunning(String service) throws Exception;
 
   /**
+   * Starts a service and waits for action to complete
+   *
+   * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
+   * @throws Exception
+   */
+  void startAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
+
+  /**
    * Returns whether the specified service is undergoing restart
    *
    * @param service The name of the service to be queried
    * @return true if running, false otherwise
    */
   boolean isRestartRunning(String service) throws Exception;
+
+  /**
+   * Restarts a service and waits for action to complete
+   *
+   * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
+   * @throws Exception
+   */
+  void restartAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing stop
@@ -219,12 +240,32 @@ public interface ClusterDisrupter {
   boolean isStopRunning(String service) throws Exception;
 
   /**
+   * Stops a service and waits for action to complete
+   *
+   * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
+   * @throws Exception
+   */
+  void stopAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
+
+  /**
    * Returns whether the specified service is undergoing terminate
    *
    * @param service The name of the service to be queried
    * @return true if running, false otherwise
    */
   boolean isTerminateRunning(String service) throws Exception;
+
+  /**
+   * Terminates a service and waits for action to complete
+   *
+   * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
+   * @throws Exception
+   */
+  void terminateAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing kill
@@ -235,12 +276,31 @@ public interface ClusterDisrupter {
   boolean isKillRunning(String service) throws Exception;
 
   /**
+   * Kills a service and waits for action to complete
+   *
+   * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
+   * @throws Exception
+   */
+  void killAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
+
+  /**
    * Returns whether the specified service is undergoing rolling restart
    *
    * @param service The name of the service to be queried
    * @return true if running, false otherwise
    */
   boolean isRollingRestartRunning(String service) throws Exception;
+
+  /**
+   * Starts rolling restart on a service and wait for completion
+   *
+   * @param service The name of the service to be queried
+   * @param actionArguments Optional arguments
+   * @throws InterruptedException
+   */
+  void rollingRestartAndWait(String service, ActionArguments actionArguments) throws Exception;
 
   /**
    * Returns whether an action is running on the given service
@@ -250,15 +310,6 @@ public interface ClusterDisrupter {
    * @return true if running, false otherwise
    */
   boolean isActionRunning(String service, Action action) throws Exception;
-
-  /**
-   * Blocks execution until rolling restart is done on specified service.
-   * Rolling restart status is checked every 1 second
-   *
-   * @param service The name of the service to be queried
-   * @throws InterruptedException
-   */
-  void waitForRollingRestart(String service) throws Exception;
 
   /**
    * Gets the status of all configured services on each node of a cluster

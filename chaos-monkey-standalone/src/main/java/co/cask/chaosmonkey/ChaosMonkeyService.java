@@ -46,6 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
@@ -377,8 +378,36 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
+  public void startAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
+    start(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isStartRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
+  }
+
+  @Override
   public boolean isRestartRunning(String service) throws Exception {
     return getActionStatus(service, Action.RESTART.getCommand()).isRunning();
+  }
+
+  @Override
+  public void restartAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
+    restart(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isRestartRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   @Override
@@ -387,8 +416,36 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
+  public void stopAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
+    stop(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isStopRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
+  }
+
+  @Override
   public boolean isTerminateRunning(String service) throws Exception {
     return getActionStatus(service, Action.TERMINATE.getCommand()).isRunning();
+  }
+
+  @Override
+  public void terminateAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
+    terminate(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isTerminateRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   @Override
@@ -397,20 +454,35 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
+  public void killAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
+    kill(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isKillRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
+  }
+
+  @Override
   public boolean isRollingRestartRunning(String service) throws Exception {
     return getActionStatus(service, Action.ROLLING_RESTART.getCommand()).isRunning();
   }
 
   @Override
-  public boolean isActionRunning(String service, Action action) throws Exception {
-    return getActionStatus(service, action.getCommand()).isRunning();
-  }
-
-  @Override
-  public void waitForRollingRestart(String service) throws Exception {
+  public void rollingRestartAndWait(String service, @Nullable ActionArguments actionArguments) throws Exception {
+    rollingRestart(service, actionArguments);
     while (isRollingRestartRunning(service)) {
       TimeUnit.SECONDS.sleep(1);
     }
+  }
+
+  @Override
+  public boolean isActionRunning(String service, Action action) throws Exception {
+    return getActionStatus(service, action.getCommand()).isRunning();
   }
 
   @Override

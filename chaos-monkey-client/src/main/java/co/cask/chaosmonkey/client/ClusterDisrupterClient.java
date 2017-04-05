@@ -35,6 +35,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import javax.annotation.Nullable;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -434,15 +436,18 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
    * Starts a rolling restart with given configurations
    *
    * @param service The name of the service to perform rolling restart on
-   * @param actionArguments Configuration for the rolling restart
+   * @param actionArguments Optional configuration for the rolling restart
    * @throws IOException if a network error occurred
    * @throws NotFoundException if specified service does not exist
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
   @Override
-  public void rollingRestart(String service, ActionArguments actionArguments)
+  public void rollingRestart(String service, @Nullable ActionArguments actionArguments)
     throws IOException {
+    if (actionArguments == null) {
+      rollingRestart(service);
+    }
     rollingRestartWithRequestBody(service, GSON.toJson(actionArguments));
   }
 
@@ -473,6 +478,21 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
     return isActionRunning(service, Action.START);
   }
 
+  @Override
+  public void startAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
+    start(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isStartRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
+  }
+
   /**
    * Returns whether the specified service is undergoing restart
    *
@@ -483,6 +503,21 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
   @Override
   public boolean isRestartRunning(String service) throws IOException {
     return isActionRunning(service, Action.RESTART);
+  }
+
+  @Override
+  public void restartAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
+    restart(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isRestartRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -497,6 +532,21 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
     return isActionRunning(service, Action.STOP);
   }
 
+  @Override
+  public void stopAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
+    stop(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isStopRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
+  }
+
   /**
    * Returns whether the specified service is undergoing terminate
    *
@@ -507,6 +557,21 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
   @Override
   public boolean isTerminateRunning(String service) throws IOException {
     return isActionRunning(service, Action.TERMINATE);
+  }
+
+  @Override
+  public void terminateAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
+    terminate(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isTerminateRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
   }
 
   /**
@@ -521,6 +586,21 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
     return isActionRunning(service, Action.KILL);
   }
 
+  @Override
+  public void killAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
+    kill(service);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isKillRunning(service)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
+  }
+
   /**
    * Returns whether the specified service is undergoing rolling restart
    *
@@ -531,6 +611,24 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
   @Override
   public boolean isRollingRestartRunning(String service) throws IOException {
     return isActionRunning(service, Action.ROLLING_RESTART);
+  }
+
+  /**
+   * Blocks execution until rolling restart is done on specified service.
+   * Rolling restart status is checked every 1 second
+   *
+   * @param service The name of the service to be queried
+   * @param actionArguments Optional configuration for the rolling restart
+   * @throws IOException if a network error occurred
+   * @throws InterruptedException
+   */
+  @Override
+  public void rollingRestartAndWait(String service, @Nullable ActionArguments actionArguments)
+    throws IOException, InterruptedException {
+    rollingRestart(service, actionArguments);
+    while (isRollingRestartRunning(service)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
   }
 
   /**
@@ -549,21 +647,6 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
     HttpResponse response = HttpRequests.execute(request);
 
     return GSON.fromJson(response.getResponseBodyAsString(), ActionStatus.class).isRunning();
-  }
-
-  /**
-   * Blocks execution until rolling restart is done on specified service.
-   * Rolling restart status is checked every 1 second
-   *
-   * @param service The name of the service to be queried
-   * @throws IOException if a network error occurred
-   * @throws InterruptedException
-   */
-  @Override
-  public void waitForRollingRestart(String service) throws IOException, InterruptedException {
-    while (isRollingRestartRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
-    }
   }
 
   /**
