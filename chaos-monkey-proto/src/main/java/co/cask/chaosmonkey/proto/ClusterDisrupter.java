@@ -17,6 +17,7 @@
 package co.cask.chaosmonkey.proto;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Interface with methods for disrupting services on a cluster
@@ -206,9 +207,11 @@ public interface ClusterDisrupter {
    * Starts a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void startAndWait(String service) throws Exception;
+  void startAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing restart
@@ -222,9 +225,11 @@ public interface ClusterDisrupter {
    * Restarts a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void restartAndWait(String service) throws Exception;
+  void restartAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing stop
@@ -238,9 +243,11 @@ public interface ClusterDisrupter {
    * Stops a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void stopAndWait(String service) throws Exception;
+  void stopAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing terminate
@@ -254,9 +261,11 @@ public interface ClusterDisrupter {
    * Terminates a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void terminateAndWait(String service) throws Exception;
+  void terminateAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing kill
@@ -270,9 +279,11 @@ public interface ClusterDisrupter {
    * Kills a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void killAndWait(String service) throws Exception;
+  void killAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing rolling restart

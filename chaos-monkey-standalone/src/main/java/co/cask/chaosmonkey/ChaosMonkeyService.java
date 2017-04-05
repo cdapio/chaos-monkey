@@ -46,6 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
@@ -377,11 +378,16 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void startAndWait(String service) throws Exception {
+  public void startAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
     start(service);
-    while (isStartRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isStartRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   @Override
@@ -390,11 +396,16 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void restartAndWait(String service) throws Exception {
+  public void restartAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
     restart(service);
-    while (isRestartRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isRestartRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   @Override
@@ -403,11 +414,16 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void stopAndWait(String service) throws Exception {
+  public void stopAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
     stop(service);
-    while (isStopRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isStopRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   @Override
@@ -416,11 +432,16 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void terminateAndWait(String service) throws Exception {
+  public void terminateAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
     terminate(service);
-    while (isTerminateRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isTerminateRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   @Override
@@ -429,11 +450,16 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void killAndWait(String service) throws Exception {
+  public void killAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
     kill(service);
-    while (isKillRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isKillRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   @Override

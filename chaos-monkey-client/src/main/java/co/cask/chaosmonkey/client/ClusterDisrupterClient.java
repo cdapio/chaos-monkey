@@ -35,6 +35,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
@@ -478,11 +479,17 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
   }
 
   @Override
-  public void startAndWait(String service) throws IOException, InterruptedException {
+  public void startAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
     start(service);
-    while (isStartRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isStartRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   /**
@@ -498,11 +505,17 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
   }
 
   @Override
-  public void restartAndWait(String service) throws IOException, InterruptedException {
+  public void restartAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
     restart(service);
-    while (isRestartRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isRestartRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   /**
@@ -518,11 +531,17 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
   }
 
   @Override
-  public void stopAndWait(String service) throws IOException, InterruptedException {
+  public void stopAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
     stop(service);
-    while (isStopRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isStopRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   /**
@@ -538,11 +557,17 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
   }
 
   @Override
-  public void terminateAndWait(String service) throws IOException, InterruptedException {
+  public void terminateAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
     terminate(service);
-    while (isTerminateRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isTerminateRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   /**
@@ -558,11 +583,17 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
   }
 
   @Override
-  public void killAndWait(String service) throws IOException, InterruptedException {
+  public void killAndWait(String service, long timeout, TimeUnit timeoutUnit)
+    throws IOException, InterruptedException, TimeoutException {
     kill(service);
-    while (isKillRunning(service)) {
-      TimeUnit.SECONDS.sleep(1);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isKillRunning(service)) {
+        return;
+      }
     }
+    throw new TimeoutException("Timeout occurred");
   }
 
   /**
