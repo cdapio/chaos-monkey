@@ -22,7 +22,7 @@
 
   <groupId>co.cask.chaosmonkey</groupId>
   <artifactId>chaos-monkey</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.0-SNAPSHOT</version>
   <modules>
     <module>chaos-monkey-standalone</module>
     <module>chaos-monkey-client</module>
