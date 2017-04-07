@@ -21,7 +21,7 @@
   <parent>
     <artifactId>chaos-monkey</artifactId>
     <groupId>co.cask.chaosmonkey</groupId>
-    <version>0.1.0</version>
+    <version>0.1.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
