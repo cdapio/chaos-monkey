@@ -1,6 +1,6 @@
 # Chaos Monkey
 
-Chaos Monkey provides a convenient way to disrupt CDAP and hadoop services on a cluster. <br/>
+Chaos Monkey provides a convenient way to disrupt CDAP and hadoop services on a cluster. 
 Disruptions can be scheduled, randomized, or issued on command. <br/>
 
 
@@ -25,13 +25,17 @@ chaos Monkey, the following properties need to be specified: <br/>
 **Cluster information collector** <br/>
 >By default, Chaos Monkey will retrieve cluster information from Coopr <br/>
 >To get cluster information from Coopr, the following configurations need to be set:<br/>
->* coopr.clusterId <br/>
->* coopr.tenantId <br/>
->* coopr.server.uri <br/>
+>* cluster.info.collector.coopr.clusterId <br/>
+>* cluster.info.collector.coopr.tenantId <br/>
+>* cluster.info.collector.coopr.server.uri <br/>
 >
 >To get cluster information from other sources, include a plugin to implement ClusterInfoCollector and set the 
 following configs: <br/>
 >* cluster.info.collector.class - classpath of the implementation of ClusterInfoCollector
+>
+>Additional properties can be passed in to the ClusterInfoCollector implementation. Setting the property
+cluster.info.collector.{propertyName} in configurations will make {propertyName} available in the properties map, passed
+in via the initialize method
 
 **SSH configurations** <br/>
 >username - username of SSH profile (if different from system user)<br/>

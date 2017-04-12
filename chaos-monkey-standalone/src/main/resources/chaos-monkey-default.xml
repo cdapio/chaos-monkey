@@ -23,7 +23,7 @@
     <value>co.cask.chaosmonkey.CooprInfoCollector</value>
   </property>
   <property>
-    <name>coopr.clusterId</name>
+    <name>cluster.info.collector.coopr.clusterId</name>
     <value>00000001</value>
   </property>
 
