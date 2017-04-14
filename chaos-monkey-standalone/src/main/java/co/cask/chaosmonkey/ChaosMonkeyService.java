@@ -35,6 +35,7 @@ import com.jcraft.jsch.JSchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -177,15 +178,21 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
    * @throws InterruptedException
    */
   public Collection<NodeStatus> getNodeStatuses() throws ExecutionException, InterruptedException {
-    List<Status> threads = new ArrayList<>();
-    for (String ip : processTable.rowKeySet()) {
-      threads.add(new Status(ip, processTable.row(ip).values()));
-    }
-    List<Future<NodeStatus>> results = executor.invokeAll(threads);
-
+    List<Statuses> threads = new ArrayList<>();
     List<NodeStatus> statuses = new ArrayList<>();
-    for (Future<NodeStatus> result : results) {
-      statuses.add(result.get());
+    try {
+      for (String ip : processTable.rowKeySet()) {
+        threads.add(new Statuses(ip, processTable.row(ip).values()));
+      }
+      List<Future<NodeStatus>> results = executor.invokeAll(threads);
+
+      for (Future<NodeStatus> result : results) {
+        statuses.add(result.get());
+      }
+    } finally {
+      for (Statuses thread : threads) {
+        thread.shutDown();
+      }
     }
 
     return statuses;
@@ -498,22 +505,47 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   /**
    * Callable that gets the status of configured processes on a node
    */
-  public static class Status implements Callable<NodeStatus> {
+  public static class Statuses implements Callable<NodeStatus> {
     private final Collection<RemoteProcess> processes;
     private final String ip;
+    private ExecutorService executor;
 
-    Status(String ip, Collection<RemoteProcess> processes) {
+    Statuses(String ip, Collection<RemoteProcess> processes) {
       this.ip = ip;
       this.processes = processes;
+      this.executor = Executors.newFixedThreadPool(processes.size());
     }
 
     @Override
     public NodeStatus call() throws Exception {
       NodeStatus status = new NodeStatus(ip);
+      List<Status> threads = new ArrayList<>();
       for (RemoteProcess remoteProcess : processes) {
-        status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
+        threads.add(new Status(remoteProcess));
+      }
+      List<Future<AbstractMap.SimpleEntry<String, String>>> results = executor.invokeAll(threads);
+      for (Future<AbstractMap.SimpleEntry<String, String>> result : results) {
+        AbstractMap.SimpleEntry<String, String> entry = result.get();
+        status.serviceStatus.put(entry.getKey(), entry.getValue());
       }
       return status;
+    }
+
+    public void shutDown() {
+      this.executor.shutdown();
+    }
+  }
+
+  public static class Status implements Callable<AbstractMap.SimpleEntry<String, String>> {
+
+    private final RemoteProcess process;
+
+    Status(RemoteProcess process) {
+      this.process = process;
+    }
+
+    public AbstractMap.SimpleEntry<String, String> call() throws Exception {
+      return new AbstractMap.SimpleEntry<>(process.getName(), process.isRunning() ? "running" : "stopped");
     }
   }
 }
