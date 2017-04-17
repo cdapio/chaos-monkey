@@ -16,6 +16,8 @@
 
 package co.cask.chaosmonkey.proto;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,15 +25,31 @@ import java.util.Map;
  * NodeStatus represents the running status of each service on a node
  */
 public class NodeStatus {
-  public String ipAddress;
-  public Map<String, String> serviceStatus;
+  private final String hostname;
+  private final Map<String, String> serviceStatusMap;
 
-  public NodeStatus(String ipAddress, Map<String, String> serviceStatus) {
-    this.ipAddress = ipAddress;
-    this.serviceStatus = serviceStatus;
+  public NodeStatus(String hostname, Map<String, String> serviceStatusMap) {
+    this.hostname = hostname;
+    this.serviceStatusMap = serviceStatusMap;
   }
 
-  public NodeStatus(String ipAddress) {
-    this(ipAddress, new HashMap<String, String>());
+  public NodeStatus(String hostname, Collection<ServiceStatus> serviceStatuses) {
+    this.hostname = hostname;
+    Map<String, String> serviceStatusMap = new HashMap<>();
+    for (ServiceStatus serviceStatus : serviceStatuses) {
+      if (!serviceStatus.getAddress().equals(hostname)) {
+        throw new RuntimeException("Service status does not match given hostname");
+      }
+      serviceStatusMap.put(serviceStatus.getService(), serviceStatus.getStatus());
+    }
+    this.serviceStatusMap = serviceStatusMap;
+  }
+
+  public String getHostname() {
+    return hostname;
+  }
+
+  public Map<String, String> getServiceStatusMap() {
+    return Collections.unmodifiableMap(this.serviceStatusMap);
   }
 }

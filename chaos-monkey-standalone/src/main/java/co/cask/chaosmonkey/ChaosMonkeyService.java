@@ -25,6 +25,7 @@ import co.cask.chaosmonkey.proto.ClusterDisrupter;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.ClusterNode;
 import co.cask.chaosmonkey.proto.NodeStatus;
+import co.cask.chaosmonkey.proto.ServiceStatus;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -154,23 +155,32 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
    *
    * @param hostname hostname of the node to query
    * @return {@link NodeStatus}
-   * @throws JSchException if there was an SSH error
+   * @throws ExecutionException
+   * @throws InterruptedException
    * @throws NotFoundException if the hostname does not exist or is not configured
    */
-  public NodeStatus getNodeStatus(String hostname) throws JSchException {
+  public NodeStatus getNodeStatus(String hostname) throws ExecutionException, InterruptedException {
     Collection<RemoteProcess> remoteProcesses = processTable.row(hostname).values();
     if (remoteProcesses.isEmpty()) {
       throw new NotFoundException("Unknown host: " + hostname);
     }
-    NodeStatus status = new NodeStatus(hostname);
-    for (RemoteProcess remoteProcess : remoteProcesses) {
-      status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
+    List<Status> threads = new ArrayList<>();
+    for (RemoteProcess remoteProcess : processTable.row(hostname).values()) {
+      threads.add(new Status(remoteProcess));
     }
+    List<Future<ServiceStatus>> results = executor.invokeAll(threads);
+    List<ServiceStatus> statuses = new ArrayList<>();
+
+    for (Future<ServiceStatus> result : results) {
+      statuses.add(result.get());
+    }
+
+    NodeStatus status = new NodeStatus(hostname, statuses);
     return status;
   }
 
   /**
-   * Get the status of serivces on all configured nodes
+   * Get the status of services on all configured nodes
    *
    * @return Collection of {@link NodeStatus}
    * @throws ExecutionException
@@ -178,14 +188,21 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
    */
   public Collection<NodeStatus> getNodeStatuses() throws ExecutionException, InterruptedException {
     List<Status> threads = new ArrayList<>();
-    for (String ip : processTable.rowKeySet()) {
-      threads.add(new Status(ip, processTable.row(ip).values()));
-    }
-    List<Future<NodeStatus>> results = executor.invokeAll(threads);
-
     List<NodeStatus> statuses = new ArrayList<>();
-    for (Future<NodeStatus> result : results) {
-      statuses.add(result.get());
+
+    for (RemoteProcess remoteProcess : processTable.values()) {
+      threads.add(new Status(remoteProcess));
+    }
+    List<Future<ServiceStatus>> results = executor.invokeAll(threads);
+    Multimap<String, ServiceStatus> serviceMap = HashMultimap.create();
+
+    for (Future<ServiceStatus> result : results) {
+      ServiceStatus status = result.get();
+      serviceMap.put(status.getAddress(), status);
+    }
+
+    for (String address : serviceMap.keySet()) {
+      statuses.add(new NodeStatus(address, serviceMap.get(address)));
     }
 
     return statuses;
@@ -239,7 +256,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       }
     }
     this.disruptionService = new DisruptionService(processTable.columnKeySet());
-    this.executor = Executors.newFixedThreadPool(processTable.rowKeySet().size());
+    this.executor = Executors.newFixedThreadPool(processTable.values().size());
   }
 
   @Override
@@ -496,24 +513,18 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   /**
-   * Callable that gets the status of configured processes on a node
+   * Callable to return the status of a single service
    */
-  public static class Status implements Callable<NodeStatus> {
-    private final Collection<RemoteProcess> processes;
-    private final String ip;
+  public static class Status implements Callable<ServiceStatus> {
 
-    Status(String ip, Collection<RemoteProcess> processes) {
-      this.ip = ip;
-      this.processes = processes;
+    private final RemoteProcess process;
+
+    Status(RemoteProcess process) {
+      this.process = process;
     }
 
-    @Override
-    public NodeStatus call() throws Exception {
-      NodeStatus status = new NodeStatus(ip);
-      for (RemoteProcess remoteProcess : processes) {
-        status.serviceStatus.put(remoteProcess.getName(), remoteProcess.isRunning() ? "running" : "stopped");
-      }
-      return status;
+    public ServiceStatus call() throws Exception {
+      return new ServiceStatus(process.getAddress(), process.getName(), process.isRunning() ? "running" : "stopped");
     }
   }
 }
