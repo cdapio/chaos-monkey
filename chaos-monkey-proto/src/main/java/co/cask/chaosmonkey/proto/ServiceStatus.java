@@ -24,7 +24,7 @@ public class ServiceStatus {
   private String service;
   private String status;
 
-  public ServiceStatus (String address, String service, String status) {
+  public ServiceStatus(String address, String service, String status) {
     this.address = address;
     this.service = service;
     this.status = status;
