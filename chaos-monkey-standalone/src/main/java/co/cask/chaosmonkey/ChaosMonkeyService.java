@@ -536,6 +536,9 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
     }
   }
 
+  /**
+   * Callable to return the status of a single service
+   */
   public static class Status implements Callable<AbstractMap.SimpleEntry<String, String>> {
 
     private final RemoteProcess process;
