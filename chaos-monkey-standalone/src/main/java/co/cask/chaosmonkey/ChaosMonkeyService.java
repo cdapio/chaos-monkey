@@ -21,7 +21,7 @@ import co.cask.chaosmonkey.common.conf.Configuration;
 import co.cask.chaosmonkey.proto.Action;
 import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.ActionStatus;
-import co.cask.chaosmonkey.proto.ClusterDisrupter;
+import co.cask.chaosmonkey.proto.ClusterDisruptor;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.ClusterNode;
 import co.cask.chaosmonkey.proto.NodeStatus;
@@ -55,7 +55,7 @@ import javax.ws.rs.NotFoundException;
 /**
  * {@link ChaosMonkeyService} Allows for user to perform disruptions directly
  */
-public class ChaosMonkeyService extends AbstractIdleService implements ClusterDisrupter {
+public class ChaosMonkeyService extends AbstractIdleService implements ClusterDisruptor {
   private static final Logger LOG = LoggerFactory.getLogger(ChaosMonkeyService.class);
 
   private DisruptionService disruptionService;

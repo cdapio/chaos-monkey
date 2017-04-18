@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Interface with methods for disrupting services on a cluster
  */
-public interface ClusterDisrupter {
+public interface ClusterDisruptor {
 
   /**
    * Starts the specified service
