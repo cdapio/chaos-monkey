@@ -20,7 +20,7 @@ import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.proto.Action;
 import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.ActionStatus;
-import co.cask.chaosmonkey.proto.ClusterDisrupter;
+import co.cask.chaosmonkey.proto.ClusterDisruptor;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.common.http.HttpRequest;
 import co.cask.common.http.HttpRequests;
@@ -44,7 +44,7 @@ import javax.ws.rs.NotFoundException;
 /**
  * Provides ways to interact with Chaos Monkey.
  */
-public class ClusterDisrupterClient implements ClusterDisrupter {
+public class ClusterDisruptorClient implements ClusterDisruptor {
   private static final Type STATUSES_TYPE = new TypeToken<Collection<NodeStatus>>() { }.getType();
   private static final Gson GSON = new Gson();
 
@@ -52,11 +52,11 @@ public class ClusterDisrupterClient implements ClusterDisrupter {
   private final int port;
   private final boolean sslEnabled;
 
-  public ClusterDisrupterClient(String hostname, int port) {
+  public ClusterDisruptorClient(String hostname, int port) {
     this(hostname, port, false);
   }
 
-  public ClusterDisrupterClient(String hostname, int port, boolean sslEnabled) {
+  public ClusterDisruptorClient(String hostname, int port, boolean sslEnabled) {
     this.hostname = hostname;
     this.port = port;
     this.sslEnabled = sslEnabled;
