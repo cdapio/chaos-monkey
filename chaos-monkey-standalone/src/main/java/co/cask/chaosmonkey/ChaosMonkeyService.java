@@ -93,13 +93,13 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
    * Executes an action on configured processes
    *
    * @param service Name of the processes to be disrupted
-   * @param action {@link Action} to be executed
+   * @param disruptionName Disruption to be executed
    * @param actionArguments Configuration for the action to be run
    * @throws BadRequestException if nodes, count, or percentage contain invalid values
    * @throws NotFoundException if service or action are not found
    * @throws IllegalStateException if the same disruption is already running
    */
-  public void executeAction(String service, Action action, @Nullable ActionArguments actionArguments) {
+  public void executeAction(String service, String disruptionName, @Nullable ActionArguments actionArguments) {
     Collection<RemoteProcess> processes = processTable.column(service).values();
     if (actionArguments == null) {
       actionArguments = new ActionArguments();
@@ -136,7 +136,8 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       throw new NotFoundException("Unknown service: " + service);
     }
     
-    disruptionService.disrupt(action, service, processes, actionArguments.getRestartTime(), actionArguments.getDelay());
+    disruptionService.disrupt(disruptionName, service, processes, actionArguments.getRestartTime(),
+                              actionArguments.getDelay());
   }
 
   /**
@@ -215,6 +216,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   @Override
   protected void startUp() throws Exception {
     Multimap<String, String> processToIp = HashMultimap.create();
+    Table<String, String, Disruption> disruptionTable = HashBasedTable.create();
 
     for (ClusterNode node : clusterInfoCollector.getNodeProperties()) {
       for (String service : node.getServices()) {
@@ -224,9 +226,20 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
     for (String service : processToIp.keySet()) {
       String pidPath = conf.get(service + ".pidPath");
-      if (pidPath == null) {
+      String disruptionsConf = conf.get(service + ".disruptions");
+
+      if (pidPath == null && disruptionsConf == null) {
         LOG.warn("The following process does not have a pidPath and will be skipped: {}", service);
         continue;
+      }
+
+      if (disruptionsConf == null) {
+        disruptionsConf = Constants.RemoteProcess.DEFAULT_DISRUPTIONS;
+      }
+      String[] disruptions = disruptionsConf.split(",");
+      for (String disruptionString : disruptions) {
+        Disruption disruption = Class.forName(disruptionString).asSubclass(Disruption.class).newInstance();
+        disruptionTable.put(service, disruption.getName(), disruption);
       }
 
       for (String ipAddress : processToIp.get(service)) {
@@ -255,7 +268,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
         processTable.put(ipAddress, service, process);
       }
     }
-    this.disruptionService = new DisruptionService(processTable.columnKeySet());
+    this.disruptionService = new DisruptionService(disruptionTable);
     this.executor = Executors.newFixedThreadPool(processTable.values().size());
   }
 
@@ -266,117 +279,117 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void start(String service) throws Exception {
-    executeAction(service, Action.START, null);
+    executeAction(service, "start", null);
   }
 
   @Override
   public void start(String service, int count) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, Action.START, actionArguments);
+    executeAction(service, "start", actionArguments);
   }
 
   @Override
   public void start(String service, double percentage) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, Action.START, actionArguments);
+    executeAction(service, "start", actionArguments);
   }
 
   @Override
   public void start(String service, Collection<String> nodes) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, Action.START, actionArguments);
+    executeAction(service, "start", actionArguments);
   }
 
   @Override
   public void restart(String service) throws Exception {
-    executeAction(service, Action.RESTART, null);
+    executeAction(service, "restart", null);
   }
 
   @Override
   public void restart(String service, int count) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, Action.RESTART, actionArguments);
+    executeAction(service, "restart", actionArguments);
   }
 
   @Override
   public void restart(String service, double percentage) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, Action.RESTART, actionArguments);
+    executeAction(service, "restart", actionArguments);
   }
 
   @Override
   public void restart(String service, Collection<String> nodes) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, Action.RESTART, actionArguments);
+    executeAction(service, "restart", actionArguments);
   }
 
   @Override
   public void stop(String service) throws Exception {
-    executeAction(service, Action.STOP, null);
+    executeAction(service, "stop", null);
   }
 
   @Override
   public void stop(String service, int count) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, Action.STOP, actionArguments);
+    executeAction(service, "stop", actionArguments);
   }
 
   @Override
   public void stop(String service, double percentage) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, Action.STOP, actionArguments);
+    executeAction(service, "stop", actionArguments);
   }
 
   @Override
   public void stop(String service, Collection<String> nodes) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, Action.STOP, actionArguments);
+    executeAction(service, "stop", actionArguments);
   }
 
   @Override
   public void terminate(String service) throws Exception {
-    executeAction(service, Action.TERMINATE, null);
+    executeAction(service, "terminate", null);
   }
 
   @Override
   public void terminate(String service, int count) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, Action.TERMINATE, actionArguments);
+    executeAction(service, "terminate", actionArguments);
   }
 
   @Override
   public void terminate(String service, double percentage) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, Action.TERMINATE, actionArguments);
+    executeAction(service, "terminate", actionArguments);
   }
 
   @Override
   public void terminate(String service, Collection<String> nodes) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, Action.TERMINATE, actionArguments);
+    executeAction(service, "terminate", actionArguments);
   }
 
   @Override
   public void kill(String service) throws Exception {
-    executeAction(service, Action.KILL, null);
+    executeAction(service, "kill", null);
   }
 
   @Override
   public void kill(String service, int count) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, Action.KILL, actionArguments);
+    executeAction(service, "kill", actionArguments);
   }
 
   @Override
   public void kill(String service, double percentage) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, Action.KILL, actionArguments);
+    executeAction(service, "kill", actionArguments);
   }
 
   @Override
   public void kill(String service, Collection<String> nodes) throws Exception {
     ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, Action.KILL, actionArguments);
+    executeAction(service, "kill", actionArguments);
   }
 
   @Override
@@ -386,12 +399,12 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void rollingRestart(String service, @Nullable ActionArguments actionArguments) throws Exception {
-    executeAction(service, Action.ROLLING_RESTART, actionArguments);
+    executeAction(service, "rolling-restart", actionArguments);
   }
 
   @Override
   public boolean isStartRunning(String service) throws Exception {
-    return getActionStatus(service, Action.START.getCommand()).isRunning();
+    return getActionStatus(service, "start").isRunning();
   }
 
   @Override
@@ -410,7 +423,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public boolean isRestartRunning(String service) throws Exception {
-    return getActionStatus(service, Action.RESTART.getCommand()).isRunning();
+    return getActionStatus(service, "restart").isRunning();
   }
 
   @Override
@@ -429,7 +442,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public boolean isStopRunning(String service) throws Exception {
-    return getActionStatus(service, Action.STOP.getCommand()).isRunning();
+    return getActionStatus(service, "stop").isRunning();
   }
 
   @Override
@@ -448,7 +461,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public boolean isTerminateRunning(String service) throws Exception {
-    return getActionStatus(service, Action.TERMINATE.getCommand()).isRunning();
+    return getActionStatus(service, "terminate").isRunning();
   }
 
   @Override
@@ -467,7 +480,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public boolean isKillRunning(String service) throws Exception {
-    return getActionStatus(service, Action.KILL.getCommand()).isRunning();
+    return getActionStatus(service, "kill").isRunning();
   }
 
   @Override
@@ -486,7 +499,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public boolean isRollingRestartRunning(String service) throws Exception {
-    return getActionStatus(service, Action.ROLLING_RESTART.getCommand()).isRunning();
+    return getActionStatus(service, "rolling-restart").isRunning();
   }
 
   @Override
@@ -498,8 +511,8 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public boolean isActionRunning(String service, Action action) throws Exception {
-    return getActionStatus(service, action.getCommand()).isRunning();
+  public boolean isActionRunning(String service, String action) throws Exception {
+    return getActionStatus(service, action).isRunning();
   }
 
   @Override

@@ -20,6 +20,7 @@ import co.cask.chaosmonkey.proto.ActionArguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -29,6 +30,8 @@ import javax.annotation.Nullable;
  */
 public class RollingRestart implements Disruption {
   private static final Logger LOG = LoggerFactory.getLogger(RollingRestart.class);
+  private static final Start start = new Start();
+  private static final Stop stop = new Stop();
 
   @Override
   public void disrupt(Collection<RemoteProcess> processes) throws Exception {
@@ -68,9 +71,9 @@ public class RollingRestart implements Disruption {
     delay = (delay == null || delay < 0) ? 120 : delay;
 
     for (RemoteProcess process : processes) {
-      process.stop();
+      stop.disrupt(Arrays.asList(process));
       TimeUnit.SECONDS.sleep(restartTime);
-      process.start();
+      start.disrupt(Arrays.asList(process));
       TimeUnit.SECONDS.sleep(delay);
     }
   }

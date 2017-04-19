@@ -54,6 +54,11 @@ public class Constants {
       Constants.RemoteProcess.IS_RUNNING,
       Constants.RemoteProcess.EXISTS
     );
+    public static final String DEFAULT_DISRUPTIONS = "co.cask.chaosmonkey.Start" + "," +
+      "co.cask.chaosmonkey.Stop" + "," +
+      "co.cask.chaosmonkey.Restart" + "," +
+      "co.cask.chaosmonkey.Kill" + "," +
+      "co.cask.chaosmonkey.Terminate";
   }
 
   /**

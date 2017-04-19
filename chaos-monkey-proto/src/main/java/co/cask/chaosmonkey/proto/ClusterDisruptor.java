@@ -306,10 +306,10 @@ public interface ClusterDisruptor {
    * Returns whether an action is running on the given service
    *
    * @param service The name of the service to be queried
-   * @param action The {@link Action} to be queried
+   * @param action The name of disruption to be queried
    * @return true if running, false otherwise
    */
-  boolean isActionRunning(String service, Action action) throws Exception;
+  boolean isActionRunning(String service, String action) throws Exception;
 
   /**
    * Gets the status of all configured services on each node of a cluster

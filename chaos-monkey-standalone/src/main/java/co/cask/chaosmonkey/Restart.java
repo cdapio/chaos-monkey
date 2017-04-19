@@ -31,7 +31,7 @@ public class Restart implements Disruption {
   public void disrupt(Collection<RemoteProcess> processes) throws Exception {
     for (RemoteProcess process : processes) {
       LOGGER.info("Attempting to restart {} on {}", process.getName(), process.getAddress());
-      process.restart();
+      process.execAndGetReturnCode(String.format("sudo service %s %s", process.getName(), this.getName()));
 
       if (process.isRunning()) {
         LOGGER.info("{} on {} is now running", process.getName(), process.getAddress());

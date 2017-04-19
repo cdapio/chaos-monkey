@@ -16,14 +16,13 @@
 
 package co.cask.chaosmonkey;
 
-import co.cask.chaosmonkey.proto.Action;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.SettableFuture;
+import sun.plugin.dom.exception.InvalidStateException;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,15 +40,19 @@ public class DisruptionService extends AbstractIdleService {
   private static final Stop stop = new Stop();
   private static final Kill kill = new Kill();
   private static final Restart restart = new Restart();
-  private static final Terminate termiante = new Terminate();
+  private static final Terminate terminate = new Terminate();
 
   private Table<String, String, AtomicBoolean> status;
+  private Table<String, String, Disruption> disruptionMap;
 
-  public DisruptionService(Set<String> services) {
+  public DisruptionService(Table<String, String, Disruption> compatibleDisruptions) {
+    this.disruptionMap = compatibleDisruptions;
     status = HashBasedTable.create();
-    for (String service : services) {
-      for (Action action : Action.values()) {
-        status.put(service, action.getCommand(), new AtomicBoolean(false));
+    for (String service : compatibleDisruptions.rowKeySet()) {
+      for (String disruptionName : compatibleDisruptions.columnKeySet()) {
+        if (compatibleDisruptions.get(service, disruptionName) != null) {
+          status.put(service, disruptionName, new AtomicBoolean(false));
+        }
       }
     }
   }
@@ -64,7 +67,7 @@ public class DisruptionService extends AbstractIdleService {
   /**
    * Starts a disruption on given set of processes
    *
-   * @param action The disruption action
+   * @param disruptionName The name of the disruption to perform
    * @param service The name of the service to be disrupted
    * @param processes Collection of {@link RemoteProcess} to be disrupted
    * @param restartTime Optional, number of seconds a service is down before restarting
@@ -72,18 +75,22 @@ public class DisruptionService extends AbstractIdleService {
    * @return {@link Future<Void>} to signal when the disruption is complete
    * @throws IllegalStateException if the same disruption is already running
    */
-  public Future<Void> disrupt(Action action, String service, Collection<RemoteProcess> processes,
+  public Future<Void> disrupt(String disruptionName, String service, Collection<RemoteProcess> processes,
                               @Nullable Integer restartTime, @Nullable Integer delay) {
     SettableFuture<Void> future = SettableFuture.create();
-    if (!checkAndStart(service, action.getCommand())) {
-      throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, action));
+    if (!checkAndStart(service, disruptionName)) {
+      throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, disruptionName));
     }
-    executor.submit(new DisruptionCallable(action, service, processes, status, restartTime, delay, future));
+    executor.submit(new DisruptionCallable(disruptionMap.get(service, disruptionName), service, processes, status,
+                                           restartTime, delay, future));
     return future;
   }
 
   private boolean checkAndStart(String service, String action) {
     AtomicBoolean atomicBoolean = status.get(service, action);
+    if (atomicBoolean == null) {
+      throw new InvalidStateException(String.format("%s is not a valid action on %s", action, service));
+    }
     return atomicBoolean.compareAndSet(false, true);
   }
 
@@ -98,7 +105,7 @@ public class DisruptionService extends AbstractIdleService {
   }
 
   private static class DisruptionCallable implements Callable<Void> {
-    private final Action action;
+    private final Disruption disruption;
     private final String service;
     private final Collection<RemoteProcess> processes;
     private final RollingRestart rollingRestart;
@@ -107,10 +114,10 @@ public class DisruptionService extends AbstractIdleService {
     private final Integer delay;
     private final SettableFuture<Void> future;
 
-    DisruptionCallable(Action action, String service,  Collection<RemoteProcess> processes,
+    DisruptionCallable(Disruption disruption, String service,  Collection<RemoteProcess> processes,
                        Table<String, String, AtomicBoolean> status, @Nullable Integer restartTime,
                        @Nullable Integer delay, SettableFuture<Void> future) {
-      this.action = action;
+      this.disruption = disruption;
       this.service = service;
       this.processes = processes;
       this.rollingRestart = new RollingRestart();
@@ -123,27 +130,13 @@ public class DisruptionService extends AbstractIdleService {
     @Override
     public Void call() throws Exception {
       try {
-        switch (action) {
-          case STOP:
-            stop.disrupt(processes);
-            break;
-          case KILL:
-            kill.disrupt(processes);
-            break;
-          case TERMINATE:
-            termiante.disrupt(processes);
-            break;
-          case START:
-            start.disrupt(processes);
-            break;
-          case RESTART:
-            restart.disrupt(processes);
-            break;
-          case ROLLING_RESTART:
-            rollingRestart.disrupt(processes, restartTime, delay);
+        if (disruption.getName().equals(rollingRestart.getName())) {
+          rollingRestart.disrupt(processes, restartTime, delay);
+        } else {
+          disruption.disrupt(processes);
         }
       } finally {
-        release(service, action.getCommand());
+        release(service, disruption.getName());
         future.set(null);
       }
       return null;

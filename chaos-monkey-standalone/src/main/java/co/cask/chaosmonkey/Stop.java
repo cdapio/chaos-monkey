@@ -30,6 +30,6 @@ public class Stop extends AbstractHaltingDisruption {
 
   @Override
   protected void action(RemoteProcess process) throws JSchException {
-    process.stop();
+    process.execAndGetReturnCode(String.format("sudo service %s %s", process.getName(), this.getName()));
   }
 }

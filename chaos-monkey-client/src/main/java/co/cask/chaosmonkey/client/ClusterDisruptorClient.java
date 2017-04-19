@@ -475,7 +475,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isStartRunning(String service) throws IOException {
-    return isActionRunning(service, Action.START);
+    return isActionRunning(service, Action.START.getCommand());
   }
 
   @Override
@@ -502,7 +502,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isRestartRunning(String service) throws IOException {
-    return isActionRunning(service, Action.RESTART);
+    return isActionRunning(service, Action.RESTART.getCommand());
   }
 
   @Override
@@ -529,7 +529,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isStopRunning(String service) throws IOException {
-    return isActionRunning(service, Action.STOP);
+    return isActionRunning(service, Action.STOP.getCommand());
   }
 
   @Override
@@ -556,7 +556,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isTerminateRunning(String service) throws IOException {
-    return isActionRunning(service, Action.TERMINATE);
+    return isActionRunning(service, Action.TERMINATE.getCommand());
   }
 
   @Override
@@ -583,7 +583,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isKillRunning(String service) throws IOException {
-    return isActionRunning(service, Action.KILL);
+    return isActionRunning(service, Action.KILL.getCommand());
   }
 
   @Override
@@ -610,7 +610,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isRollingRestartRunning(String service) throws IOException {
-    return isActionRunning(service, Action.ROLLING_RESTART);
+    return isActionRunning(service, Action.ROLLING_RESTART.getCommand());
   }
 
   /**
@@ -640,9 +640,8 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    * @throws IOException if a network error occurred
    */
   @Override
-  public boolean isActionRunning(String service, Action action) throws IOException {
-    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action.getCommand() +
-      "/status");
+  public boolean isActionRunning(String service, String action) throws IOException {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action + "/status");
     HttpRequest request = HttpRequest.get(url).build();
     HttpResponse response = HttpRequests.execute(request);
 

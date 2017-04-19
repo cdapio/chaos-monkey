@@ -64,14 +64,7 @@ public class HttpHandler extends AbstractHttpHandler {
       actionArguments = GSON.fromJson(reader, ActionArguments.class);
     }
 
-    Action actionEnum;
-    try {
-      actionEnum = Action.valueOf(action.toUpperCase().replace('-', '_'));
-    } catch (IllegalArgumentException e) {
-      throw new NotFoundException("Unknown action: " + action);
-    }
-
-    chaosMonkeyService.executeAction(service, actionEnum, actionArguments);
+    chaosMonkeyService.executeAction(service, action, actionArguments);
     responder.sendString(HttpResponseStatus.OK, "success");
   }
 
