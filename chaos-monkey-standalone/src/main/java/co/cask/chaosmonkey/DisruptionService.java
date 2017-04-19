@@ -36,11 +36,6 @@ import javax.annotation.Nullable;
 public class DisruptionService extends AbstractIdleService {
 
   private static final ExecutorService executor = Executors.newFixedThreadPool(1);
-  private static final Start start = new Start();
-  private static final Stop stop = new Stop();
-  private static final Kill kill = new Kill();
-  private static final Restart restart = new Restart();
-  private static final Terminate terminate = new Terminate();
 
   private Table<String, String, AtomicBoolean> status;
   private Table<String, String, Disruption> disruptionMap;
