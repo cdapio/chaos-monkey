@@ -79,6 +79,7 @@ public class Constants {
                                                                          CHAOS_MONKEY_PACKAGE + "Restart",
                                                                          CHAOS_MONKEY_PACKAGE + "Stop",
                                                                          CHAOS_MONKEY_PACKAGE + "Kill",
-                                                                         CHAOS_MONKEY_PACKAGE + "Terminate");
+                                                                         CHAOS_MONKEY_PACKAGE + "Terminate",
+                                                                         CHAOS_MONKEY_PACKAGE + "RollingRestart");
   }
 }
