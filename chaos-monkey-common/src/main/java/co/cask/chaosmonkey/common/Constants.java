@@ -16,6 +16,7 @@
 
 package co.cask.chaosmonkey.common;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -43,6 +44,7 @@ public class Constants {
     public static final String STOP = "stop";
     public static final String TERMINATE = "terminate";
     public static final String KILL = "kill";
+    public static final String ROLLING_RESTART = "rolling-restart";
     public static final String IS_RUNNING = "isRunning";
     public static final String EXISTS = "exists";
     public static final ImmutableSet<String> CONFIG_OPTIONS = ImmutableSet.of(
@@ -73,5 +75,12 @@ public class Constants {
   public static final class Plugins {
     public static final String CLUSTER_INFO_COLLECTOR_CLASS = "cluster.info.collector.class";
     public static final String CLUSTER_INFO_COLLECTOR_CONF_PREFIX = "cluster.info.collector.";
+    public static final String CHAOS_MONKEY_PACKAGE = "co.cask.chaosmonkey.";
+    public static final String DEFAULT_DISRUPTIONS = Joiner.on(',').join(CHAOS_MONKEY_PACKAGE + "Start",
+                                                                         CHAOS_MONKEY_PACKAGE + "Restart",
+                                                                         CHAOS_MONKEY_PACKAGE + "Stop",
+                                                                         CHAOS_MONKEY_PACKAGE + "Kill",
+                                                                         CHAOS_MONKEY_PACKAGE + "Terminate",
+                                                                         CHAOS_MONKEY_PACKAGE + "RollingRestart");
   }
 }

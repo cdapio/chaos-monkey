@@ -16,6 +16,7 @@
 
 package co.cask.chaosmonkey;
 
+import co.cask.chaosmonkey.common.Constants;
 import com.jcraft.jsch.JSchException;
 
 /**
@@ -30,6 +31,7 @@ public class Kill extends AbstractHaltingDisruption {
 
   @Override
   protected void action(RemoteProcess process) throws JSchException {
-    process.kill();
+    process.execAndGetReturnCode(String.format("sudo kill -%d $(< %s)", Constants.RemoteProcess.SIGKILL,
+                                               process.getPidFile()));
   }
 }

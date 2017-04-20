@@ -87,11 +87,11 @@ public class ScheduledDisruption extends AbstractScheduledService {
     int numNodes = ThreadLocalRandom.current().nextInt(minNodesPerIteration, maxNodesPerIteration + 1);
 
     if (random < stopProbability) {
-      stop.disrupt(getAffectedNodes(numNodes));
+      stop.disrupt(getAffectedNodes(numNodes), null);
     } else if (random < stopProbability + killProbability) {
-      kill.disrupt(getAffectedNodes(numNodes));
+      kill.disrupt(getAffectedNodes(numNodes), null);
     } else if (random < stopProbability + killProbability + restartProbability) {
-      restart.disrupt(getAffectedNodes(numNodes));
+      restart.disrupt(getAffectedNodes(numNodes), null);
     } else {
       return;
     }

@@ -16,7 +16,6 @@
 
 package co.cask.chaosmonkey;
 
-import co.cask.chaosmonkey.common.Constants;
 import com.jcraft.jsch.JSchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,16 +53,6 @@ public class SysVRemoteProcess implements RemoteProcess {
     return execAndGetReturnCode(command) == 0;
   }
 
-  private int signal(int signum) throws JSchException {
-    LOG.debug("Sending signal {} to {} on {}@{}", signum, getName(), sshShell.getUsername(), sshShell.getAddress());
-    return execAndGetReturnCode(String.format("sudo kill -%d $(< %s)", signum, this.pidFilePath));
-  }
-
-  private int serviceCommand(String command) throws JSchException {
-    LOG.debug("Sending service {} to {} on {}@{}", command, getName(), sshShell.getUsername(), sshShell.getAddress());
-    return execAndGetReturnCode(String.format("sudo service %s %s", this.name, command));
-  }
-
   public String getName() {
     return this.name;
   }
@@ -72,59 +61,8 @@ public class SysVRemoteProcess implements RemoteProcess {
     return this.sshShell.getAddress();
   }
 
-  /**
-   * Starts the process using {@code service <name> start}.
-   *
-   * @return The return code from running the process.
-   * @throws JSchException
-   */
-  @Override
-  public int start() throws JSchException {
-    return serviceCommand("start");
-  }
-
-  /**
-   * Restarts the process using {@code service <name> restart}.
-   *
-   * @return The return code from running the process.
-   * @throws JSchException
-   */
-  @Override
-  public int restart() throws JSchException {
-    return serviceCommand("restart");
-  }
-
-  /**
-   * Stops the process using {@code service <name> stop}.
-   *
-   * @return The return code from running the process.
-   * @throws JSchException
-   */
-  @Override
-  public int stop() throws JSchException {
-    return serviceCommand("stop");
-  }
-
-  /**
-   * Terminates the process by sending it SIGTERM.
-   *
-   * @return The return code from running the process.
-   * @throws JSchException
-   */
-  @Override
-  public int terminate() throws JSchException {
-    return signal(Constants.RemoteProcess.SIGTERM);
-  }
-
-  /**
-   * Kills the process by sending it SIGKILL.
-   *
-   * @return The return code from running the process.
-   * @throws JSchException
-   */
-  @Override
-  public int kill() throws JSchException {
-    return signal(Constants.RemoteProcess.SIGKILL);
+  public String getPidFile() {
+    return this.pidFilePath;
   }
 
   /**
@@ -137,16 +75,5 @@ public class SysVRemoteProcess implements RemoteProcess {
   public boolean isRunning() throws JSchException {
     LOG.debug("Checking the status of {} on {}@{}", getName(), sshShell.getUsername(), sshShell.getAddress());
     return execAndReturnSucessful(String.format("sudo service %s status", this.name));
-  }
-
-  /**
-   * Returns whether the process exists on a remote {@code SshShell}.
-   *
-   * @return {@code true} if the process exists, otherwise {@code false}
-   */
-  @Override
-  public boolean exists() throws JSchException {
-    LOG.debug("Checking if {} exists", getName());
-    return execAndReturnSucessful(String.format("test -e /etc/init.d/%s", getName()));
   }
 }

@@ -16,20 +16,20 @@
 
 package co.cask.chaosmonkey;
 
-import co.cask.chaosmonkey.proto.Action;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.SettableFuture;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
+import javax.ws.rs.NotFoundException;
 
 /**
  * Service to keep track of running disruptions
@@ -37,19 +37,18 @@ import javax.annotation.Nullable;
 public class DisruptionService extends AbstractIdleService {
 
   private static final ExecutorService executor = Executors.newFixedThreadPool(1);
-  private static final Start start = new Start();
-  private static final Stop stop = new Stop();
-  private static final Kill kill = new Kill();
-  private static final Restart restart = new Restart();
-  private static final Terminate termiante = new Terminate();
 
   private Table<String, String, AtomicBoolean> status;
+  private Table<String, String, Disruption> disruptionMap;
 
-  public DisruptionService(Set<String> services) {
+  public DisruptionService(Table<String, String, Disruption> compatibleDisruptions) {
+    this.disruptionMap = compatibleDisruptions;
     status = HashBasedTable.create();
-    for (String service : services) {
-      for (Action action : Action.values()) {
-        status.put(service, action.getCommand(), new AtomicBoolean(false));
+    for (String service : compatibleDisruptions.rowKeySet()) {
+      for (String disruptionName : compatibleDisruptions.columnKeySet()) {
+        if (compatibleDisruptions.get(service, disruptionName) != null) {
+          status.put(service, disruptionName, new AtomicBoolean(false));
+        }
       }
     }
   }
@@ -64,26 +63,29 @@ public class DisruptionService extends AbstractIdleService {
   /**
    * Starts a disruption on given set of processes
    *
-   * @param action The disruption action
+   * @param disruptionName The name of the disruption to perform
    * @param service The name of the service to be disrupted
    * @param processes Collection of {@link RemoteProcess} to be disrupted
-   * @param restartTime Optional, number of seconds a service is down before restarting
-   * @param delay Optional, number of seconds between restarting service on different nodes
+   * @param serviceArguments Configuration for the disruption
    * @return {@link Future<Void>} to signal when the disruption is complete
    * @throws IllegalStateException if the same disruption is already running
    */
-  public Future<Void> disrupt(Action action, String service, Collection<RemoteProcess> processes,
-                              @Nullable Integer restartTime, @Nullable Integer delay) {
+  public Future<Void> disrupt(String disruptionName, String service, Collection<RemoteProcess> processes,
+                              Map<String, String> serviceArguments) {
     SettableFuture<Void> future = SettableFuture.create();
-    if (!checkAndStart(service, action.getCommand())) {
-      throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, action));
+    if (!checkAndStart(service, disruptionName)) {
+      throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, disruptionName));
     }
-    executor.submit(new DisruptionCallable(action, service, processes, status, restartTime, delay, future));
+    executor.submit(new DisruptionCallable(disruptionMap.get(service, disruptionName), service, processes, status,
+                                           serviceArguments, future));
     return future;
   }
 
   private boolean checkAndStart(String service, String action) {
     AtomicBoolean atomicBoolean = status.get(service, action);
+    if (atomicBoolean == null) {
+      throw new NotFoundException(String.format("%s is not a valid action on %s", action, service));
+    }
     return atomicBoolean.compareAndSet(false, true);
   }
 
@@ -98,52 +100,30 @@ public class DisruptionService extends AbstractIdleService {
   }
 
   private static class DisruptionCallable implements Callable<Void> {
-    private final Action action;
+    private final Disruption disruption;
     private final String service;
     private final Collection<RemoteProcess> processes;
-    private final RollingRestart rollingRestart;
     private final Table<String, String, AtomicBoolean> status;
-    private final Integer restartTime;
-    private final Integer delay;
+    private final Map<String, String> serviceArguments;
     private final SettableFuture<Void> future;
 
-    DisruptionCallable(Action action, String service,  Collection<RemoteProcess> processes,
-                       Table<String, String, AtomicBoolean> status, @Nullable Integer restartTime,
-                       @Nullable Integer delay, SettableFuture<Void> future) {
-      this.action = action;
+    DisruptionCallable(Disruption disruption, String service,  Collection<RemoteProcess> processes,
+                       Table<String, String, AtomicBoolean> status, @Nullable Map<String, String> serviceArguments,
+                       SettableFuture<Void> future) {
+      this.disruption = disruption;
       this.service = service;
       this.processes = processes;
-      this.rollingRestart = new RollingRestart();
       this.status = status;
-      this.restartTime = restartTime;
-      this.delay = delay;
+      this.serviceArguments = serviceArguments;
       this.future = future;
     }
 
     @Override
     public Void call() throws Exception {
       try {
-        switch (action) {
-          case STOP:
-            stop.disrupt(processes);
-            break;
-          case KILL:
-            kill.disrupt(processes);
-            break;
-          case TERMINATE:
-            termiante.disrupt(processes);
-            break;
-          case START:
-            start.disrupt(processes);
-            break;
-          case RESTART:
-            restart.disrupt(processes);
-            break;
-          case ROLLING_RESTART:
-            rollingRestart.disrupt(processes, restartTime, delay);
-        }
+        disruption.disrupt(processes, serviceArguments);
       } finally {
-        release(service, action.getCommand());
+        release(service, disruption.getName());
         future.set(null);
       }
       return null;

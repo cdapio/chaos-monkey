@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Map;
+import javax.annotation.Nullable;
 
 /**
  * A disruption that starts a process
@@ -28,11 +30,11 @@ public class Start implements Disruption {
   private static final Logger LOGGER = LoggerFactory.getLogger(Start.class);
 
   @Override
-  public void disrupt(Collection<RemoteProcess> processes) throws Exception {
+  public void disrupt(Collection<RemoteProcess> processes, @Nullable Map<String, String> serviceArguments) throws Exception {
     for (RemoteProcess process : processes) {
       if (!process.isRunning()) {
         LOGGER.info("Attempting to {} {} on {}", this.getName(), process.getName(), process.getAddress());
-        process.start();
+        process.execAndGetReturnCode(String.format("sudo service %s %s", process.getName(), this.getName()));
 
         if (process.isRunning()) {
           LOGGER.info("{} on {} is now running", process.getName(), process.getAddress());

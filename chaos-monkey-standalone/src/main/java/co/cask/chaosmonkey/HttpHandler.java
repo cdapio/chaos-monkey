@@ -17,14 +17,12 @@
 package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
-import co.cask.chaosmonkey.proto.Action;
 import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.NodeStatus;
 import co.cask.http.AbstractHttpHandler;
 import co.cask.http.HttpResponder;
 import com.google.common.base.Charsets;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -34,9 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Collection;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -64,14 +60,7 @@ public class HttpHandler extends AbstractHttpHandler {
       actionArguments = GSON.fromJson(reader, ActionArguments.class);
     }
 
-    Action actionEnum;
-    try {
-      actionEnum = Action.valueOf(action.toUpperCase().replace('-', '_'));
-    } catch (IllegalArgumentException e) {
-      throw new NotFoundException("Unknown action: " + action);
-    }
-
-    chaosMonkeyService.executeAction(service, actionEnum, actionArguments);
+    chaosMonkeyService.executeAction(service, action, actionArguments);
     responder.sendString(HttpResponseStatus.OK, "success");
   }
 
