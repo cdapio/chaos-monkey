@@ -16,7 +16,6 @@
 
 package co.cask.chaosmonkey;
 
-import co.cask.chaosmonkey.common.Constants;
 import com.jcraft.jsch.JSchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,16 +75,5 @@ public class SysVRemoteProcess implements RemoteProcess {
   public boolean isRunning() throws JSchException {
     LOG.debug("Checking the status of {} on {}@{}", getName(), sshShell.getUsername(), sshShell.getAddress());
     return execAndReturnSucessful(String.format("sudo service %s status", this.name));
-  }
-
-  /**
-   * Returns whether the process exists on a remote {@code SshShell}.
-   *
-   * @return {@code true} if the process exists, otherwise {@code false}
-   */
-  @Override
-  public boolean exists() throws JSchException {
-    LOG.debug("Checking if {} exists", getName());
-    return execAndReturnSucessful(String.format("test -e /etc/init.d/%s", getName()));
   }
 }

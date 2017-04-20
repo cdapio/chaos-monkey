@@ -52,13 +52,4 @@ public class CustomRemoteProcess extends SysVRemoteProcess {
       return super.isRunning();
     }
   }
-
-  @Override
-  public boolean exists() throws JSchException {
-    if (customCommands.containsKey(Constants.RemoteProcess.EXISTS)) {
-      return execAndReturnSucessful(customCommands.get(Constants.RemoteProcess.EXISTS));
-    } else {
-      return super.exists();
-    }
-  }
 }

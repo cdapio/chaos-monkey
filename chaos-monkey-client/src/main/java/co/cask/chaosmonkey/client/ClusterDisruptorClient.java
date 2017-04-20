@@ -16,8 +16,13 @@
 
 package co.cask.chaosmonkey.client;
 
+import co.cask.chaosmonkey.Kill;
+import co.cask.chaosmonkey.Restart;
+import co.cask.chaosmonkey.RollingRestart;
+import co.cask.chaosmonkey.Start;
+import co.cask.chaosmonkey.Stop;
+import co.cask.chaosmonkey.Terminate;
 import co.cask.chaosmonkey.common.Constants;
-import co.cask.chaosmonkey.proto.Action;
 import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.chaosmonkey.proto.ClusterDisruptor;
@@ -74,56 +79,23 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void start(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, Action.START);
+    start(service, null);
   }
 
   /**
-   * Starts the specified service on 'count' nodes chosen arbitrarily
+   * Starts the specified service based on given configurations
    *
    * @param service The name of the service to be started
-   * @param count The number of nodes affected
+   * @param actionArguments Optional, the configuration for the action
    * @throws IOException if a network error occurred
    * @throws NotFoundException if specified service does not exist
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
   @Override
-  public void start(String service, int count)
+  public void start(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.START, "count", Integer.toString(count));
-  }
-
-  /**
-   * Starts the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be started
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void start(String service, double percentage)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.START, "percentage", Double.toString(percentage));
-  }
-
-  /**
-   * Starts the specified service on given nodes
-   *
-   * @param service The name of the service to be started
-   * @param nodes Collection of ip addresses of affected nodes
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void start(String service, Collection<String> nodes)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, Action.START, "nodes", collectionJSON);
+    executeActionWithArgument(service, new Start().getName(), actionArguments);
   }
 
   /**
@@ -138,56 +110,23 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void restart(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, Action.RESTART);
+    restart(service, null);
   }
 
   /**
-   * Restarts the specified service on 'count' nodes chosen arbitrarily
+   * Restarts the specified service based on given configurations
    *
    * @param service The name of the service to be restarted
-   * @param count The number of nodes affected
+   * @param actionArguments Optional, the configuration for the action
    * @throws IOException if a network error occurred
    * @throws NotFoundException if specified service does not exist
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
   @Override
-  public void restart(String service, int count)
+  public void restart(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.RESTART, "count", Integer.toString(count));
-  }
-
-  /**
-   * Restarts the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be restarted
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void restart(String service, double percentage)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.RESTART, "percentage", Double.toString(percentage));
-  }
-
-  /**
-   * Restarts the specified service on given nodes
-   *
-   * @param service The name of the service to be restarted
-   * @param nodes Collection of ip addresses of affected nodes
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void restart(String service, Collection<String> nodes)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, Action.RESTART, "nodes", collectionJSON);
+    executeActionWithArgument(service, new Restart().getName(), actionArguments);
   }
 
   /**
@@ -202,56 +141,23 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void stop(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, Action.STOP);
+    stop(service, null);
   }
 
   /**
-   * Stops the specified service on 'count' nodes chosen arbitrarily
+   * Stops the specified service based on given configurations
    *
    * @param service The name of the service to be stopped
-   * @param count The number of nodes affected
+   * @param actionArguments Optional, the configuration for the action
    * @throws IOException if a network error occurred
    * @throws NotFoundException if specified service does not exist
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
   @Override
-  public void stop(String service, int count)
+  public void stop(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.STOP, "count", Integer.toString(count));
-  }
-
-  /**
-   * Stops the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be stopped
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void stop(String service, double percentage)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.STOP, "percentage", Double.toString(percentage));
-  }
-
-  /**
-   * Stops the specified service on given nodes
-   *
-   * @param service The name of the service to be stopped
-   * @param nodes Collection of ip addresses of affected nodes
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void stop(String service, Collection<String> nodes)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, Action.STOP, "nodes", collectionJSON);
+    executeActionWithArgument(service, new Stop().getName(), actionArguments);
   }
 
   /**
@@ -266,56 +172,23 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void terminate(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, Action.TERMINATE);
+    terminate(service, null);
   }
 
   /**
-   * Terminates the specified service on 'count' nodes chosen arbitrarily
+   * Terminates the specified service based on given configurations
    *
    * @param service The name of the service to be terminated
-   * @param count The number of nodes affected
+   * @param actionArguments Optional, the configuration for the action
    * @throws IOException if a network error occurred
    * @throws NotFoundException if specified service does not exist
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
   @Override
-  public void terminate(String service, int count)
+  public void terminate(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.TERMINATE, "count", Integer.toString(count));
-  }
-
-  /**
-   * Terminates the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be terminated
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void terminate(String service, double percentage)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.TERMINATE, "percentage", Double.toString(percentage));
-  }
-
-  /**
-   * Terminates the specified service on given nodes
-   *
-   * @param service The name of the service to be terminated
-   * @param nodes Collection of ip addresses of affected nodes
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void terminate(String service, Collection<String> nodes)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, Action.TERMINATE, "nodes", collectionJSON);
+    executeActionWithArgument(service, new Terminate().getName(), actionArguments);
   }
 
   /**
@@ -330,86 +203,40 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void kill(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, Action.KILL);
+    kill(service, null);
   }
 
   /**
-   * Kills the specified service on 'count' nodes chosen arbitrarily
+   * Kills the specified service based on given configurations
    *
    * @param service The name of the service to be killed
-   * @param count The number of nodes affected
+   * @param actionArguments Optional, the configuration for the action
    * @throws IOException if a network error occurred
    * @throws NotFoundException if specified service does not exist
    * @throws BadRequestException if invalid request body is provided
    * @throws InternalServerErrorException if internal server error occurred
    */
   @Override
-  public void kill(String service, int count)
+  public void kill(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.KILL, "count", Integer.toString(count));
+    executeActionWithArgument(service, new Kill().getName(), actionArguments);
   }
 
-  /**
-   * Kills the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be killed
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void kill(String service, double percentage)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, Action.KILL, "percentage", Double.toString(percentage));
-  }
-
-  /**
-   * Kills the specified service on given nodes
-   *
-   * @param service The name of the service to be killed
-   * @param nodes Collection of ip addresses of affected nodes
-   * @throws IOException if a network error occurred
-   * @throws NotFoundException if specified service does not exist
-   * @throws BadRequestException if invalid request body is provided
-   * @throws InternalServerErrorException if internal server error occurred
-   */
-  @Override
-  public void kill(String service, Collection<String> nodes)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    String collectionJSON = GSON.toJson(nodes);
-    executeActionWithArgument(service, Action.KILL, "nodes", collectionJSON);
-  }
-
-  private void executeAction(String service, Action action)
-    throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action.getCommand());
-    HttpRequest request = HttpRequest.post(url).build();
+  private void executeActionWithArgument(String service, String action, @Nullable ActionArguments actionArguments)
+    throws IOException {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action);
+    HttpRequest request;
+    if (actionArguments == null) {
+      request = HttpRequest.post(url).build();
+    } else {
+      request = HttpRequest.post(url).withBody(GSON.toJson(actionArguments)).build();
+    }
     HttpResponse response = HttpRequests.execute(request);
 
     int responseCode = response.getResponseCode();
     String responseMessage = response.getResponseMessage();
     if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
       throw new NotFoundException(String.format("Service not found: %s", service));
-    } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
-      throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
-    } else if (responseCode == HttpURLConnection.HTTP_INTERNAL_ERROR) {
-      throw new InternalServerErrorException(String.format("Internal Error. Reason: %s", responseMessage));
-    }
-  }
-
-  private void executeActionWithArgument(String service, Action action, String field, String value)
-    throws IOException {
-    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/" + action);
-    HttpRequest request = HttpRequest.post(url)
-      .withBody(String.format("{%s:%s}", field, value)).build();
-    HttpResponse response = HttpRequests.execute(request);
-
-    int responseCode = response.getResponseCode();
-    String responseMessage = response.getResponseMessage();
-    if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-      throw new NotFoundException("Service not found: " + service);
     } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
       throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
     } else if (responseCode == HttpURLConnection.HTTP_INTERNAL_ERROR) {
@@ -429,7 +256,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void rollingRestart(String service)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeAction(service, Action.ROLLING_RESTART);
+    rollingRestartWithRequestBody(service, null);
   }
 
   /**
@@ -451,10 +278,14 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
     rollingRestartWithRequestBody(service, GSON.toJson(actionArguments));
   }
 
-  private void rollingRestartWithRequestBody(String service, String requestBody) throws IOException {
+  private void rollingRestartWithRequestBody(String service, @Nullable String requestBody) throws IOException {
     URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "services/" + service + "/rolling-restart");
-    HttpRequest request = HttpRequest.post(url)
-      .withBody(requestBody).build();
+    HttpRequest request;
+    if (requestBody == null) {
+      request = HttpRequest.post(url).build();
+    } else {
+      request = HttpRequest.post(url).withBody(requestBody).build();
+    }
     HttpResponse response = HttpRequests.execute(request);
 
     int responseCode = response.getResponseCode();
@@ -475,7 +306,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isStartRunning(String service) throws IOException {
-    return isActionRunning(service, Action.START.getCommand());
+    return isActionRunning(service, new Start().getName());
   }
 
   @Override
@@ -502,7 +333,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isRestartRunning(String service) throws IOException {
-    return isActionRunning(service, Action.RESTART.getCommand());
+    return isActionRunning(service, new Restart().getName());
   }
 
   @Override
@@ -529,7 +360,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isStopRunning(String service) throws IOException {
-    return isActionRunning(service, Action.STOP.getCommand());
+    return isActionRunning(service, new Stop().getName());
   }
 
   @Override
@@ -556,7 +387,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isTerminateRunning(String service) throws IOException {
-    return isActionRunning(service, Action.TERMINATE.getCommand());
+    return isActionRunning(service, new Terminate().getName());
   }
 
   @Override
@@ -583,7 +414,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isKillRunning(String service) throws IOException {
-    return isActionRunning(service, Action.KILL.getCommand());
+    return isActionRunning(service, new Kill().getName());
   }
 
   @Override
@@ -610,7 +441,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isRollingRestartRunning(String service) throws IOException {
-    return isActionRunning(service, Action.ROLLING_RESTART.getCommand());
+    return isActionRunning(service, new RollingRestart().getName());
   }
 
   /**

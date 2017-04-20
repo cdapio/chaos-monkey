@@ -35,6 +35,11 @@
     </dependency>
     <dependency>
       <groupId>co.cask.chaosmonkey</groupId>
+      <artifactId>chaos-monkey-standalone</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.chaosmonkey</groupId>
       <artifactId>chaos-monkey-common</artifactId>
       <version>${project.version}</version>
     </dependency>

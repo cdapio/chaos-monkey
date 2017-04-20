@@ -35,25 +35,9 @@ public interface ClusterDisruptor {
    * Starts the specified service on 'count' nodes chosen arbitrarily
    *
    * @param service The name of the service to be started
-   * @param count The number of nodes affected
+   * @param actionArguments Configuration for the action
    */
-  void start(String service, int count) throws Exception;
-
-  /**
-   * Starts the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be started
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   */
-  void start(String service, double percentage) throws Exception;
-
-  /**
-   * Starts the specified service on given nodes
-   *
-   * @param service The name of the service to be started
-   * @param nodes Collection of ip addresses of affected nodes
-   */
-  void start(String service, Collection<String> nodes) throws Exception;
+  void start(String service, ActionArguments actionArguments) throws Exception;
 
   /**
    * Restarts the specified service
@@ -66,25 +50,9 @@ public interface ClusterDisruptor {
    * Restarts the specified service on 'count' nodes chosen arbitrarily
    *
    * @param service The name of the service to be restarted
-   * @param count The number of nodes affected
+   * @param actionArguments Configuration for the action
    */
-  void restart(String service, int count) throws Exception;
-
-  /**
-   * Restarts the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be restarted
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   */
-  void restart(String service, double percentage) throws Exception;
-
-  /**
-   * Restarts the specified service on given nodes
-   *
-   * @param service The name of the service to be restarted
-   * @param nodes Collection of ip addresses of affected nodes
-   */
-  void restart(String service, Collection<String> nodes) throws Exception;
+  void restart(String service, ActionArguments actionArguments) throws Exception;
 
   /**
    * Stops the specified service
@@ -97,25 +65,9 @@ public interface ClusterDisruptor {
    * Stops the specified service on 'count' nodes chosen arbitrarily
    *
    * @param service The name of the service to be stopped
-   * @param count The number of nodes affected
+   * @param actionArguments Configuration for the action
    */
-  void stop(String service, int count) throws Exception;
-
-  /**
-   * Stops the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be stopped
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   */
-  void stop(String service, double percentage) throws Exception;
-
-  /**
-   * Stops the specified service on given nodes
-   *
-   * @param service The name of the service to be stopped
-   * @param nodes Collection of ip addresses of affected nodes
-   */
-  void stop(String service, Collection<String> nodes) throws Exception;
+  void stop(String service, ActionArguments actionArguments) throws Exception;
 
   /**
    * Terminates the specified service
@@ -128,25 +80,9 @@ public interface ClusterDisruptor {
    * Terminates the specified service on 'count' nodes chosen arbitrarily
    *
    * @param service The name of the service to be terminated
-   * @param count The number of nodes affected
+   * @param actionArguments Configuration for the action
    */
-  void terminate(String service, int count) throws Exception;
-
-  /**
-   * Terminates the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be terminated
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   */
-  void terminate(String service, double percentage) throws Exception;
-
-  /**
-   * Terminates the specified service on given nodes
-   *
-   * @param service The name of the service to be terminated
-   * @param nodes Collection of ip addresses of affected nodes
-   */
-  void terminate(String service, Collection<String> nodes) throws Exception;
+  void terminate(String service, ActionArguments actionArguments) throws Exception;
 
   /**
    * Kills the specified service
@@ -159,25 +95,9 @@ public interface ClusterDisruptor {
    * Kills the specified service on 'count' nodes chosen arbitrarily
    *
    * @param service The name of the service to be killed
-   * @param count The number of nodes affected
+   * @param actionArguments Configuration for the action
    */
-  void kill(String service, int count) throws Exception;
-
-  /**
-   * Kills the specified service on percentage of nodes chosen arbitrarily
-   *
-   * @param service The name of the service to be killed
-   * @param percentage Number between 0 and 1 to represent the percent of nodes affected
-   */
-  void kill(String service, double percentage) throws Exception;
-
-  /**
-   * Kills the specified service on given nodes
-   *
-   * @param service The name of the service to be killed
-   * @param nodes Collection of ip addresses of affected nodes
-   */
-  void kill(String service, Collection<String> nodes) throws Exception;
+  void kill(String service, ActionArguments actionArguments) throws Exception;
 
   /**
    * Starts a rolling restart of the specified service using default
@@ -190,7 +110,7 @@ public interface ClusterDisruptor {
    * Starts a rolling restart of the specified service using given configurations
    *
    * @param service The name of the service to perform rolling restart on
-   * @param actionArguments Configuration for the rolling restart
+   * @param actionArguments Configuration for the action
    * @throws Exception
    */
   void rollingRestart(String service, ActionArguments actionArguments) throws Exception;

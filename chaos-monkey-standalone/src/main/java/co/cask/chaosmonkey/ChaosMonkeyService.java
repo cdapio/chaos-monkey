@@ -18,7 +18,6 @@ package co.cask.chaosmonkey;
 
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.common.conf.Configuration;
-import co.cask.chaosmonkey.proto.Action;
 import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.chaosmonkey.proto.ClusterDisruptor;
@@ -136,8 +135,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       throw new NotFoundException("Unknown service: " + service);
     }
     
-    disruptionService.disrupt(disruptionName, service, processes, actionArguments.getRestartTime(),
-                              actionArguments.getDelay());
+    disruptionService.disrupt(disruptionName, service, processes, actionArguments.getServiceArguments());
   }
 
   /**
@@ -234,7 +232,7 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
       }
 
       if (disruptionsConf == null) {
-        disruptionsConf = Constants.RemoteProcess.DEFAULT_DISRUPTIONS;
+        disruptionsConf = Constants.Plugins.DEFAULT_DISRUPTIONS;
       }
       String[] disruptions = disruptionsConf.split(",");
       for (String disruptionString : disruptions) {
@@ -279,117 +277,52 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
   @Override
   public void start(String service) throws Exception {
-    executeAction(service, "start", null);
+    start(service, null);
   }
 
   @Override
-  public void start(String service, int count) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, "start", actionArguments);
-  }
-
-  @Override
-  public void start(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, "start", actionArguments);
-  }
-
-  @Override
-  public void start(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, "start", actionArguments);
+  public void start(String service, @Nullable ActionArguments actionArguments) throws Exception {
+    executeAction(service, new Start().getName(), actionArguments);
   }
 
   @Override
   public void restart(String service) throws Exception {
-    executeAction(service, "restart", null);
+    start(service, null);
   }
 
   @Override
-  public void restart(String service, int count) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, "restart", actionArguments);
-  }
-
-  @Override
-  public void restart(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, "restart", actionArguments);
-  }
-
-  @Override
-  public void restart(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, "restart", actionArguments);
+  public void restart(String service, @Nullable ActionArguments actionArguments) throws Exception {
+    executeAction(service, new Restart().getName(), actionArguments);
   }
 
   @Override
   public void stop(String service) throws Exception {
-    executeAction(service, "stop", null);
+    stop(service, null);
   }
 
   @Override
-  public void stop(String service, int count) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, "stop", actionArguments);
-  }
-
-  @Override
-  public void stop(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, "stop", actionArguments);
-  }
-
-  @Override
-  public void stop(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, "stop", actionArguments);
+  public void stop(String service, @Nullable ActionArguments actionArguments) throws Exception {
+    executeAction(service, new Stop().getName(), actionArguments);
   }
 
   @Override
   public void terminate(String service) throws Exception {
-    executeAction(service, "terminate", null);
+    terminate(service, null);
   }
 
   @Override
-  public void terminate(String service, int count) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, "terminate", actionArguments);
-  }
-
-  @Override
-  public void terminate(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, "terminate", actionArguments);
-  }
-
-  @Override
-  public void terminate(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, "terminate", actionArguments);
+  public void terminate(String service, ActionArguments actionArguments) throws Exception {
+    executeAction(service, new Terminate().getName(), actionArguments);
   }
 
   @Override
   public void kill(String service) throws Exception {
-    executeAction(service, "kill", null);
+    kill(service, null);
   }
 
   @Override
-  public void kill(String service, int count) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setCount(count).build();
-    executeAction(service, "kill", actionArguments);
-  }
-
-  @Override
-  public void kill(String service, double percentage) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setPercentage(percentage).build();
-    executeAction(service, "kill", actionArguments);
-  }
-
-  @Override
-  public void kill(String service, Collection<String> nodes) throws Exception {
-    ActionArguments actionArguments = ActionArguments.builder().setNodes(nodes).build();
-    executeAction(service, "kill", actionArguments);
+  public void kill(String service, ActionArguments actionArguments) throws Exception {
+    executeAction(service, new Kill().getName(), actionArguments);
   }
 
   @Override

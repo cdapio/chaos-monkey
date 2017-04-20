@@ -65,11 +65,4 @@ public interface RemoteProcess {
    * @throws JSchException
    */
   boolean isRunning() throws JSchException;
-
-  /**
-   * Returns whether the process exists on a remote {@code SshShell}.
-   *
-   * @return {@code true} if the process exists, otherwise {@code false}
-   */
-  boolean exists() throws JSchException;
 }

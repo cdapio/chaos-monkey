@@ -17,6 +17,7 @@
 package co.cask.chaosmonkey;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * A disruption that alters the status of running processes
@@ -27,7 +28,7 @@ public interface Disruption {
    * Perform the disruption on the given list of processes
    * @param processes Collection of processes to disrupt
    */
-  void disrupt(Collection<RemoteProcess> processes) throws Exception;
+  void disrupt(Collection<RemoteProcess> processes, Map<String, String> serviceArguments) throws Exception;
 
   /**
    * Get the name of this disruption

@@ -17,6 +17,7 @@
 package co.cask.chaosmonkey.proto;
 
 import java.util.Collection;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
@@ -25,22 +26,20 @@ import javax.annotation.Nullable;
  */
 public class ActionArguments {
   private Collection<String> nodes;
-  private Integer restartTime;
-  private Integer delay;
   private Integer count;
   private Double percentage;
+  private Map<String, String> serviceArguments;
 
   public ActionArguments() {
     // NO-OP
   }
 
-  private ActionArguments(@Nullable Collection<String> nodes, @Nullable Integer restartTime, @Nullable Integer delay,
-                          @Nullable Integer count, @Nullable Double percentage) {
+  private ActionArguments(@Nullable Collection<String> nodes, @Nullable Integer count, @Nullable Double percentage,
+                          @Nullable Map<String, String> serviceArguments) {
     this.nodes = nodes;
-    this.restartTime = restartTime;
-    this.delay = delay;
     this.count = count;
     this.percentage = percentage;
+    this.serviceArguments = serviceArguments;
   }
 
   public void validate() {
@@ -64,16 +63,6 @@ public class ActionArguments {
   }
 
   @Nullable
-  public Integer getRestartTime() {
-    return restartTime;
-  }
-
-  @Nullable
-  public Integer getDelay() {
-    return delay;
-  }
-
-  @Nullable
   public Collection<String> getNodes() {
     return nodes;
   }
@@ -86,6 +75,11 @@ public class ActionArguments {
   @Nullable
   public Double getPercentage() {
     return percentage;
+  }
+
+  @Nullable
+  public Map<String, String> getServiceArguments() {
+    return serviceArguments;
   }
 
   /**
@@ -102,23 +96,17 @@ public class ActionArguments {
    */
   public static final class Builder {
     private Collection<String> nodes;
-    private Integer restartTime;
-    private Integer delay;
     private Integer count;
     private Double percentage;
+    private Map<String, String> serviceArguments;
 
     public Builder setNodes(Collection<String> nodes) {
       this.nodes = nodes;
       return this;
     }
 
-    public Builder setRestartTime(Integer restartTime) {
-      this.restartTime = restartTime;
-      return this;
-    }
-
-    public Builder setDelay(Integer delay) {
-      this.delay = delay;
+    public Builder setServiceArguments(Map<String, String> serviceArguments) {
+      this.serviceArguments = serviceArguments;
       return this;
     }
 
@@ -133,7 +121,7 @@ public class ActionArguments {
     }
 
     public ActionArguments build() {
-      ActionArguments actionArguments = new ActionArguments(nodes, restartTime, delay, count, percentage);
+      ActionArguments actionArguments = new ActionArguments(nodes, count, percentage, serviceArguments);
       actionArguments.validate();
       return actionArguments;
     }

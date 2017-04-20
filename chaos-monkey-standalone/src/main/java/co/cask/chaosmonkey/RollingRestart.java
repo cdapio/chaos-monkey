@@ -16,12 +16,12 @@
 
 package co.cask.chaosmonkey;
 
-import co.cask.chaosmonkey.proto.ActionArguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -33,23 +33,20 @@ public class RollingRestart implements Disruption {
   private static final Start start = new Start();
   private static final Stop stop = new Stop();
 
-  @Override
-  public void disrupt(Collection<RemoteProcess> processes) throws Exception {
-    disrupt(processes, null);
-  }
-
   /**
    * Starts a rolling restart on given list of processes.
    *
    * @param processes List of processes to rolling restart, must be of same type
-   * @param actionArguments Optional, configuration for delay and duration of rolling restart
+   * @param serviceArguments Optional, configuration for delay and duration of rolling restart
    * @throws Exception
    */
-  public void disrupt(Collection<RemoteProcess> processes, @Nullable ActionArguments actionArguments) throws Exception {
-    if (actionArguments == null) {
+  @Override
+  public void disrupt(Collection<RemoteProcess> processes, @Nullable Map<String, String> serviceArguments)
+    throws Exception {
+    if (serviceArguments == null) {
       disrupt(processes, null, null);
     } else {
-      disrupt(processes, actionArguments.getRestartTime(), actionArguments.getDelay());
+      disrupt(processes, new Integer(serviceArguments.get("restartTime")), new Integer(serviceArguments.get("delay")));
     }
   }
 
@@ -71,9 +68,9 @@ public class RollingRestart implements Disruption {
     delay = (delay == null || delay < 0) ? 120 : delay;
 
     for (RemoteProcess process : processes) {
-      stop.disrupt(Arrays.asList(process));
+      stop.disrupt(Arrays.asList(process), null);
       TimeUnit.SECONDS.sleep(restartTime);
-      start.disrupt(Arrays.asList(process));
+      start.disrupt(Arrays.asList(process), null);
       TimeUnit.SECONDS.sleep(delay);
     }
   }
