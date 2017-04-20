@@ -276,6 +276,17 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
+  public void customDisruption(String service, String disruptionName) throws Exception {
+    customDisruption(service, disruptionName, null);
+  }
+
+  @Override
+  public void customDisruption(String service, String disruptionName, @Nullable ActionArguments actionArguments)
+    throws Exception {
+    executeAction(service, disruptionName, actionArguments);
+  }
+
+  @Override
   public void start(String service) throws Exception {
     start(service, null);
   }

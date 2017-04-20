@@ -25,6 +25,23 @@ import java.util.concurrent.TimeUnit;
 public interface ClusterDisruptor {
 
   /**
+   * Runs a custom disruption on the given service
+   *
+   * @param service The name of the service to run the disruption against
+   * @param disruptionName The name of the disruption to be run
+   */
+  void customDisruption(String service, String disruptionName) throws Exception;
+
+  /**
+   * Runs a custom disruption on the given service based on given configurations
+   *
+   * @param service The name of the service to run the disruption against
+   * @param disruptionName The name of the disurption to be run
+   * @param actionArguments Configuration for the action
+   */
+  void customDisruption(String service, String disruptionName, ActionArguments actionArguments) throws Exception;
+
+  /**
    * Starts the specified service
    *
    * @param service The name of the service to be started
@@ -32,7 +49,7 @@ public interface ClusterDisruptor {
   void start(String service) throws Exception;
 
   /**
-   * Starts the specified service on 'count' nodes chosen arbitrarily
+   * Starts the specified service based on given configurations
    *
    * @param service The name of the service to be started
    * @param actionArguments Configuration for the action
@@ -47,7 +64,7 @@ public interface ClusterDisruptor {
   void restart(String service) throws Exception;
 
   /**
-   * Restarts the specified service on 'count' nodes chosen arbitrarily
+   * Restarts the specified service based on given configurations
    *
    * @param service The name of the service to be restarted
    * @param actionArguments Configuration for the action
@@ -62,7 +79,7 @@ public interface ClusterDisruptor {
   void stop(String service) throws Exception;
 
   /**
-   * Stops the specified service on 'count' nodes chosen arbitrarily
+   * Stops the specified service on based on given configurations
    *
    * @param service The name of the service to be stopped
    * @param actionArguments Configuration for the action
@@ -77,7 +94,7 @@ public interface ClusterDisruptor {
   void terminate(String service) throws Exception;
 
   /**
-   * Terminates the specified service on 'count' nodes chosen arbitrarily
+   * Terminates the specified service based on given configurations
    *
    * @param service The name of the service to be terminated
    * @param actionArguments Configuration for the action
@@ -92,7 +109,7 @@ public interface ClusterDisruptor {
   void kill(String service) throws Exception;
 
   /**
-   * Kills the specified service on 'count' nodes chosen arbitrarily
+   * Kills the specified service based on given configurations
    *
    * @param service The name of the service to be killed
    * @param actionArguments Configuration for the action

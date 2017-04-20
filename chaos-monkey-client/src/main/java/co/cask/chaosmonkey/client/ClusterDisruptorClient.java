@@ -67,6 +67,17 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
     this.sslEnabled = sslEnabled;
   }
 
+  @Override
+  public void customDisruption(String service, String disruptionName) throws Exception {
+    customDisruption(service, disruptionName, null);
+  }
+
+  @Override
+  public void customDisruption(String service, String disruptionName, @Nullable ActionArguments actionArguments)
+    throws Exception {
+    executeActionWithArgument(service, disruptionName, actionArguments);
+  }
+
   /**
    * Starts the specified service
    *
