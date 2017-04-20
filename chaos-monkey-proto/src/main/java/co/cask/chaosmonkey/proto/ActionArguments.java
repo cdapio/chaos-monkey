@@ -17,6 +17,7 @@
 package co.cask.chaosmonkey.proto;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -77,9 +78,8 @@ public class ActionArguments {
     return percentage;
   }
 
-  @Nullable
   public Map<String, String> getServiceArguments() {
-    return serviceArguments;
+    return serviceArguments == null ? new HashMap<String, String>() : serviceArguments;
   }
 
   /**

@@ -46,7 +46,10 @@ public class RollingRestart implements Disruption {
     if (serviceArguments == null) {
       disrupt(processes, null, null);
     } else {
-      disrupt(processes, new Integer(serviceArguments.get("restartTime")), new Integer(serviceArguments.get("delay")));
+      Integer restartTime = serviceArguments.get("restartTime") == null ? null :
+        new Integer(serviceArguments.get("restartTime"));
+      Integer delay = serviceArguments.get("delay") == null ? null : new Integer(serviceArguments.get("delay"));
+      disrupt(processes, restartTime, delay);
     }
   }
 

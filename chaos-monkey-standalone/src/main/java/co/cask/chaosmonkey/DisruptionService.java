@@ -66,12 +66,12 @@ public class DisruptionService extends AbstractIdleService {
    * @param disruptionName The name of the disruption to perform
    * @param service The name of the service to be disrupted
    * @param processes Collection of {@link RemoteProcess} to be disrupted
-   * @param serviceArguments Optional, configuration for the disruption
+   * @param serviceArguments Configuration for the disruption
    * @return {@link Future<Void>} to signal when the disruption is complete
    * @throws IllegalStateException if the same disruption is already running
    */
   public Future<Void> disrupt(String disruptionName, String service, Collection<RemoteProcess> processes,
-                              @Nullable Map<String, String> serviceArguments) {
+                              Map<String, String> serviceArguments) {
     SettableFuture<Void> future = SettableFuture.create();
     if (!checkAndStart(service, disruptionName)) {
       throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, disruptionName));

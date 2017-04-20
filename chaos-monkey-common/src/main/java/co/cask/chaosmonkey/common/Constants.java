@@ -44,6 +44,7 @@ public class Constants {
     public static final String STOP = "stop";
     public static final String TERMINATE = "terminate";
     public static final String KILL = "kill";
+    public static final String ROLLING_RESTART = "rolling-restart";
     public static final String IS_RUNNING = "isRunning";
     public static final String EXISTS = "exists";
     public static final ImmutableSet<String> CONFIG_OPTIONS = ImmutableSet.of(

@@ -16,12 +16,6 @@
 
 package co.cask.chaosmonkey.client;
 
-import co.cask.chaosmonkey.Kill;
-import co.cask.chaosmonkey.Restart;
-import co.cask.chaosmonkey.RollingRestart;
-import co.cask.chaosmonkey.Start;
-import co.cask.chaosmonkey.Stop;
-import co.cask.chaosmonkey.Terminate;
 import co.cask.chaosmonkey.common.Constants;
 import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.ActionStatus;
@@ -68,12 +62,12 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   }
 
   @Override
-  public void customDisruption(String service, String disruptionName) throws Exception {
-    customDisruption(service, disruptionName, null);
+  public void disrupt(String service, String disruptionName) throws Exception {
+    disrupt(service, disruptionName, null);
   }
 
   @Override
-  public void customDisruption(String service, String disruptionName, @Nullable ActionArguments actionArguments)
+  public void disrupt(String service, String disruptionName, @Nullable ActionArguments actionArguments)
     throws Exception {
     executeActionWithArgument(service, disruptionName, actionArguments);
   }
@@ -106,7 +100,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void start(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, new Start().getName(), actionArguments);
+    executeActionWithArgument(service, Constants.RemoteProcess.START, actionArguments);
   }
 
   /**
@@ -137,7 +131,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void restart(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, new Restart().getName(), actionArguments);
+    executeActionWithArgument(service, Constants.RemoteProcess.RESTART, actionArguments);
   }
 
   /**
@@ -168,7 +162,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void stop(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, new Stop().getName(), actionArguments);
+    executeActionWithArgument(service, Constants.RemoteProcess.STOP, actionArguments);
   }
 
   /**
@@ -199,7 +193,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void terminate(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, new Terminate().getName(), actionArguments);
+    executeActionWithArgument(service, Constants.RemoteProcess.TERMINATE, actionArguments);
   }
 
   /**
@@ -230,7 +224,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   @Override
   public void kill(String service, @Nullable ActionArguments actionArguments)
     throws IOException, NotFoundException, BadRequestException, InternalServerErrorException {
-    executeActionWithArgument(service, new Kill().getName(), actionArguments);
+    executeActionWithArgument(service, Constants.RemoteProcess.KILL, actionArguments);
   }
 
   private void executeActionWithArgument(String service, String action, @Nullable ActionArguments actionArguments)
@@ -317,7 +311,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isStartRunning(String service) throws IOException {
-    return isActionRunning(service, new Start().getName());
+    return isActionRunning(service, Constants.RemoteProcess.START);
   }
 
   @Override
@@ -344,7 +338,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isRestartRunning(String service) throws IOException {
-    return isActionRunning(service, new Restart().getName());
+    return isActionRunning(service, Constants.RemoteProcess.RESTART);
   }
 
   @Override
@@ -371,7 +365,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isStopRunning(String service) throws IOException {
-    return isActionRunning(service, new Stop().getName());
+    return isActionRunning(service, Constants.RemoteProcess.STOP);
   }
 
   @Override
@@ -398,7 +392,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isTerminateRunning(String service) throws IOException {
-    return isActionRunning(service, new Terminate().getName());
+    return isActionRunning(service, Constants.RemoteProcess.TERMINATE);
   }
 
   @Override
@@ -425,7 +419,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isKillRunning(String service) throws IOException {
-    return isActionRunning(service, new Kill().getName());
+    return isActionRunning(service, Constants.RemoteProcess.KILL);
   }
 
   @Override
@@ -452,7 +446,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
    */
   @Override
   public boolean isRollingRestartRunning(String service) throws IOException {
-    return isActionRunning(service, new RollingRestart().getName());
+    return isActionRunning(service, Constants.RemoteProcess.ROLLING_RESTART);
   }
 
   /**

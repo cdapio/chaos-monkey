@@ -27,6 +27,7 @@ public interface Disruption {
   /**
    * Perform the disruption on the given list of processes
    * @param processes Collection of processes to disrupt
+   * @param serviceArguments Configuration for the disruption
    */
   void disrupt(Collection<RemoteProcess> processes, Map<String, String> serviceArguments) throws Exception;
 

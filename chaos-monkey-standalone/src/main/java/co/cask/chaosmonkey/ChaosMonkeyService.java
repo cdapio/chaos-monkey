@@ -224,20 +224,18 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
 
     for (String service : processToIp.keySet()) {
       String pidPath = conf.get(service + ".pidPath");
-      String disruptionsConf = conf.get(service + ".disruptions");
+      String disruptionsConf = conf.get(service + ".disruptions", Constants.Plugins.DEFAULT_DISRUPTIONS);
 
-      if (pidPath == null && disruptionsConf == null) {
-        LOG.warn("The following process does not have a pidPath and will be skipped: {}", service);
-        continue;
-      }
-
-      if (disruptionsConf == null) {
-        disruptionsConf = Constants.Plugins.DEFAULT_DISRUPTIONS;
-      }
       String[] disruptions = disruptionsConf.split(",");
       for (String disruptionString : disruptions) {
         Disruption disruption = Class.forName(disruptionString).asSubclass(Disruption.class).newInstance();
         disruptionTable.put(service, disruption.getName(), disruption);
+      }
+
+      if ((disruptionTable.get(service, Constants.RemoteProcess.KILL) != null ||
+        disruptionTable.get(service, Constants.RemoteProcess.TERMINATE) != null) && pidPath == null) {
+        LOG.warn("The following process does not have a pidPath and will be skipped: {}", service);
+        continue;
       }
 
       for (String ipAddress : processToIp.get(service)) {
@@ -276,12 +274,12 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void customDisruption(String service, String disruptionName) throws Exception {
-    customDisruption(service, disruptionName, null);
+  public void disrupt(String service, String disruptionName) throws Exception {
+    disrupt(service, disruptionName, null);
   }
 
   @Override
-  public void customDisruption(String service, String disruptionName, @Nullable ActionArguments actionArguments)
+  public void disrupt(String service, String disruptionName, @Nullable ActionArguments actionArguments)
     throws Exception {
     executeAction(service, disruptionName, actionArguments);
   }

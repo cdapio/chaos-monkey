@@ -30,7 +30,7 @@ public interface ClusterDisruptor {
    * @param service The name of the service to run the disruption against
    * @param disruptionName The name of the disruption to be run
    */
-  void customDisruption(String service, String disruptionName) throws Exception;
+  void disrupt(String service, String disruptionName) throws Exception;
 
   /**
    * Runs a custom disruption on the given service based on given configurations
@@ -39,7 +39,7 @@ public interface ClusterDisruptor {
    * @param disruptionName The name of the disurption to be run
    * @param actionArguments Configuration for the action
    */
-  void customDisruption(String service, String disruptionName, ActionArguments actionArguments) throws Exception;
+  void disrupt(String service, String disruptionName, ActionArguments actionArguments) throws Exception;
 
   /**
    * Starts the specified service
