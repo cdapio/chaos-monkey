@@ -265,10 +265,9 @@ public interface ClusterDisruptor {
   NodeStatus getStatus(String ipAddress) throws Exception;
 
   /**
-   * Gets a {@link Map} corresponding available disruptions to each service
+   * Gets a {@link Collection} of {@link Service} representing the available disruptions to each service
    *
-   * @return
-   * @throws Exception
+   * @return available disruptions to each service
    */
-  Map<String, Collection<String>> getDisruptions() throws Exception;
+  Collection<Service> getServices() throws Exception;
 }

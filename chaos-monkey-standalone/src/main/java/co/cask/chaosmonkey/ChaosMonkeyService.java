@@ -24,6 +24,7 @@ import co.cask.chaosmonkey.proto.ClusterDisruptor;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.ClusterNode;
 import co.cask.chaosmonkey.proto.NodeStatus;
+import co.cask.chaosmonkey.proto.Service;
 import co.cask.chaosmonkey.proto.ServiceStatus;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
@@ -471,19 +472,19 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public Map<String, Collection<String>> getDisruptions() throws Exception {
+  public Collection<Service> getServices() throws Exception {
     Table<String, String, Disruption> disruptionTable = this.disruptionService.getDisruptionMap();
-    Map<String, Collection<String>> availableDisruptions = new HashMap<>();
+    Collection<Service> services = new HashSet<>();
     for (String service : disruptionTable.rowKeySet()) {
-      Set<String> disruptions = new HashSet<>();
+      Collection<String> disruptions = new HashSet<>();
       for (String disruption : disruptionTable.columnKeySet()) {
         if (disruptionTable.get(service, disruption) != null) {
           disruptions.add(disruption);
         }
       }
-      availableDisruptions.put(service, disruptions);
+      services.add(new Service(service, disruptions));
     }
-    return availableDisruptions;
+    return services;
   }
 
   /**

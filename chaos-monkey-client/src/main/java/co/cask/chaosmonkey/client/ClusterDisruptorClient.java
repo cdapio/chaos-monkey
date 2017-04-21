@@ -21,6 +21,7 @@ import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.chaosmonkey.proto.ClusterDisruptor;
 import co.cask.chaosmonkey.proto.NodeStatus;
+import co.cask.chaosmonkey.proto.Service;
 import co.cask.common.http.HttpRequest;
 import co.cask.common.http.HttpRequests;
 import co.cask.common.http.HttpResponse;
@@ -46,7 +47,7 @@ import javax.ws.rs.NotFoundException;
  */
 public class ClusterDisruptorClient implements ClusterDisruptor {
   private static final Type STATUSES_TYPE = new TypeToken<Collection<NodeStatus>>() { }.getType();
-  private static final Type DISRUPTIONS_TYPE = new TypeToken<Map<String, Collection<String>>>() { }.getType();
+  private static final Type SERVICE_TYPE = new TypeToken<Collection<Service>>() { }.getType();
   private static final Gson GSON = new Gson();
 
   private final String hostname;
@@ -518,12 +519,12 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   }
 
   @Override
-  public Map<String, Collection<String>> getDisruptions() throws Exception {
-    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "disruptions");
+  public Collection<Service> getServices() throws Exception {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "service");
     HttpRequest request = HttpRequest.get(url).build();
     HttpResponse response = HttpRequests.execute(request);
 
-    return GSON.fromJson(response.getResponseBodyAsString(), DISRUPTIONS_TYPE);
+    return GSON.fromJson(response.getResponseBodyAsString(), SERVICE_TYPE);
   }
 
   private String getURL() throws MalformedURLException {

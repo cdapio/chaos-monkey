@@ -96,8 +96,8 @@ public class HttpHandler extends AbstractHttpHandler {
    * Gets the disruptions available for each service
    */
   @GET
-  @Path("/disruptions")
-  public void getAvailableDisruptions(HttpRequest request, HttpResponder responder) throws Exception {
-    responder.sendJson(HttpResponseStatus.OK, chaosMonkeyService.getDisruptions());
+  @Path("/services")
+  public void getServices(HttpRequest request, HttpResponder responder) throws Exception {
+    responder.sendJson(HttpResponseStatus.OK, chaosMonkeyService.getServices());
   }
 }
