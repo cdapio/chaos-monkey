@@ -33,6 +33,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
@@ -45,6 +46,7 @@ import javax.ws.rs.NotFoundException;
  */
 public class ClusterDisruptorClient implements ClusterDisruptor {
   private static final Type STATUSES_TYPE = new TypeToken<Collection<NodeStatus>>() { }.getType();
+  private static final Type DISRUPTIONS_TYPE = new TypeToken<Map<String, Collection<String>>>() { }.getType();
   private static final Gson GSON = new Gson();
 
   private final String hostname;
@@ -513,6 +515,15 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
     HttpResponse response = HttpRequests.execute(request);
 
     return GSON.fromJson(response.getResponseBodyAsString(), NodeStatus.class);
+  }
+
+  @Override
+  public Map<String, Collection<String>> getDisruptions() throws Exception {
+    URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "disruptions");
+    HttpRequest request = HttpRequest.get(url).build();
+    HttpResponse response = HttpRequests.execute(request);
+
+    return GSON.fromJson(response.getResponseBodyAsString(), DISRUPTIONS_TYPE);
   }
 
   private String getURL() throws MalformedURLException {

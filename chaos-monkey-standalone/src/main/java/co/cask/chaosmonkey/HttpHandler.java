@@ -91,4 +91,13 @@ public class HttpHandler extends AbstractHttpHandler {
     Collection<NodeStatus> statuses = chaosMonkeyService.getNodeStatuses();
     responder.sendJson(HttpResponseStatus.OK, statuses);
   }
+
+  /**
+   * Gets the disruptions available for each service
+   */
+  @GET
+  @Path("/disruptions")
+  public void getAvailableDisruptions(HttpRequest request, HttpResponder responder) throws Exception {
+    responder.sendJson(HttpResponseStatus.OK, chaosMonkeyService.getDisruptions());
+  }
 }

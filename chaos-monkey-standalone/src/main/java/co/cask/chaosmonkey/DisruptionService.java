@@ -39,10 +39,10 @@ public class DisruptionService extends AbstractIdleService {
   private static final ExecutorService executor = Executors.newFixedThreadPool(1);
 
   private Table<String, String, AtomicBoolean> status;
-  private Table<String, String, Disruption> disruptionMap;
+  private Table<String, String, Disruption> disruptionTable;
 
   public DisruptionService(Table<String, String, Disruption> compatibleDisruptions) {
-    this.disruptionMap = compatibleDisruptions;
+    this.disruptionTable = compatibleDisruptions;
     status = HashBasedTable.create();
     for (String service : compatibleDisruptions.rowKeySet()) {
       for (String disruptionName : compatibleDisruptions.columnKeySet()) {
@@ -51,6 +51,10 @@ public class DisruptionService extends AbstractIdleService {
         }
       }
     }
+  }
+
+  public Table<String, String, Disruption> getDisruptionMap() {
+    return this.disruptionTable;
   }
 
   public boolean isRunning(String service, String action) {
@@ -76,7 +80,7 @@ public class DisruptionService extends AbstractIdleService {
     if (!checkAndStart(service, disruptionName)) {
       throw new IllegalStateException(String.format("Conflict: %s %s is already running", service, disruptionName));
     }
-    executor.submit(new DisruptionCallable(disruptionMap.get(service, disruptionName), service, processes, status,
+    executor.submit(new DisruptionCallable(disruptionTable.get(service, disruptionName), service, processes, status,
                                            serviceArguments, future));
     return future;
   }

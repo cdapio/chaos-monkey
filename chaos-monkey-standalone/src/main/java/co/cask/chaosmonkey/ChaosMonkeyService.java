@@ -38,8 +38,11 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -465,6 +468,22 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   @Override
   public NodeStatus getStatus(String ipAddress) throws Exception {
     return getNodeStatus(ipAddress);
+  }
+
+  @Override
+  public Map<String, Collection<String>> getDisruptions() throws Exception {
+    Table<String, String, Disruption> disruptionTable = this.disruptionService.getDisruptionMap();
+    Map<String, Collection<String>> availableDisruptions = new HashMap<>();
+    for (String service : disruptionTable.rowKeySet()) {
+      Set<String> disruptions = new HashSet<>();
+      for (String disruption : disruptionTable.columnKeySet()) {
+        if (disruptionTable.get(service, disruption) != null) {
+          disruptions.add(disruption);
+        }
+      }
+      availableDisruptions.put(service, disruptions);
+    }
+    return availableDisruptions;
   }
 
   /**
