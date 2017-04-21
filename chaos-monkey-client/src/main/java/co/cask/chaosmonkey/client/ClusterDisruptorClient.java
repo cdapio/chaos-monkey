@@ -243,7 +243,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
     int responseCode = response.getResponseCode();
     String responseMessage = response.getResponseMessage();
     if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-      throw new NotFoundException(String.format("ServiceInfo not found: %s", service));
+      throw new NotFoundException(String.format("Service not found: %s", service));
     } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
       throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
     } else if (responseCode == HttpURLConnection.HTTP_INTERNAL_ERROR) {
@@ -298,7 +298,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
     int responseCode = response.getResponseCode();
     String responseMessage = response.getResponseMessage();
     if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-      throw new NotFoundException(String.format("ServiceInfo not found: %s", service));
+      throw new NotFoundException(String.format("Service not found: %s", service));
     } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
       throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
     }

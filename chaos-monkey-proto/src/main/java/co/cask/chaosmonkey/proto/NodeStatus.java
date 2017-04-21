@@ -38,7 +38,7 @@ public class NodeStatus {
     Map<String, String> serviceStatusMap = new HashMap<>();
     for (ServiceStatus serviceStatus : serviceStatuses) {
       if (!serviceStatus.getAddress().equals(hostname)) {
-        throw new RuntimeException("ServiceInfo status does not match given hostname");
+        throw new RuntimeException("Service status does not match given hostname");
       }
       serviceStatusMap.put(serviceStatus.getService(), serviceStatus.getStatus());
     }
