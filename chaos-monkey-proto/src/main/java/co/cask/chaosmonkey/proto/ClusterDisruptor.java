@@ -17,7 +17,6 @@
 package co.cask.chaosmonkey.proto;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -265,9 +264,9 @@ public interface ClusterDisruptor {
   NodeStatus getStatus(String ipAddress) throws Exception;
 
   /**
-   * Gets a {@link Collection} of {@link Service} representing the available disruptions to each service
+   * Gets a {@link Collection} of {@link ServiceInfo} representing the available disruptions to each service
    *
    * @return available disruptions to each service
    */
-  Collection<Service> getServices() throws Exception;
+  Collection<ServiceInfo> getServices() throws Exception;
 }

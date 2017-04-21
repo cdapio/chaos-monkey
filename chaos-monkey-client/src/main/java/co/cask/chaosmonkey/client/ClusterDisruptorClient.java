@@ -21,7 +21,7 @@ import co.cask.chaosmonkey.proto.ActionArguments;
 import co.cask.chaosmonkey.proto.ActionStatus;
 import co.cask.chaosmonkey.proto.ClusterDisruptor;
 import co.cask.chaosmonkey.proto.NodeStatus;
-import co.cask.chaosmonkey.proto.Service;
+import co.cask.chaosmonkey.proto.ServiceInfo;
 import co.cask.common.http.HttpRequest;
 import co.cask.common.http.HttpRequests;
 import co.cask.common.http.HttpResponse;
@@ -34,7 +34,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
@@ -47,7 +46,7 @@ import javax.ws.rs.NotFoundException;
  */
 public class ClusterDisruptorClient implements ClusterDisruptor {
   private static final Type STATUSES_TYPE = new TypeToken<Collection<NodeStatus>>() { }.getType();
-  private static final Type SERVICE_TYPE = new TypeToken<Collection<Service>>() { }.getType();
+  private static final Type SERVICE_TYPE = new TypeToken<Collection<ServiceInfo>>() { }.getType();
   private static final Gson GSON = new Gson();
 
   private final String hostname;
@@ -244,7 +243,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
     int responseCode = response.getResponseCode();
     String responseMessage = response.getResponseMessage();
     if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-      throw new NotFoundException(String.format("Service not found: %s", service));
+      throw new NotFoundException(String.format("ServiceInfo not found: %s", service));
     } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
       throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
     } else if (responseCode == HttpURLConnection.HTTP_INTERNAL_ERROR) {
@@ -299,7 +298,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
     int responseCode = response.getResponseCode();
     String responseMessage = response.getResponseMessage();
     if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-      throw new NotFoundException(String.format("Service not found: %s", service));
+      throw new NotFoundException(String.format("ServiceInfo not found: %s", service));
     } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
       throw new BadRequestException(String.format("Bad Request. Reason: %s", responseMessage));
     }
@@ -519,7 +518,7 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   }
 
   @Override
-  public Collection<Service> getServices() throws Exception {
+  public Collection<ServiceInfo> getServices() throws Exception {
     URL url = resolveURL(Constants.Server.API_VERSION_1_TOKEN, "service");
     HttpRequest request = HttpRequest.get(url).build();
     HttpResponse response = HttpRequests.execute(request);

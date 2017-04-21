@@ -16,25 +16,26 @@
 
 package co.cask.chaosmonkey.proto;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * Represents the disruptions available to a service
  */
-public class Service {
-  private String service;
+public class ServiceInfo {
+  private String name;
   private Collection<String> disruptions;
 
-  public Service(String service, Collection<String> disruptions) {
-    this.service = service;
+  public ServiceInfo(String name, Collection<String> disruptions) {
+    this.name = name;
     this.disruptions = disruptions;
   }
 
-  public String getService() {
-    return service;
+  public String getName() {
+    return name;
   }
 
   public Collection<String> getDisruptions() {
-    return disruptions;
+    return disruptions == null ? new ArrayList<String>() : disruptions;
   }
 }
