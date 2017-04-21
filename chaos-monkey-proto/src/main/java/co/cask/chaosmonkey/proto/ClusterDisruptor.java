@@ -262,4 +262,11 @@ public interface ClusterDisruptor {
    * @return status of services in specified node, given in the form of {@link NodeStatus}
    */
   NodeStatus getStatus(String ipAddress) throws Exception;
+
+  /**
+   * Gets a {@link Collection} of {@link ServiceInfo} representing the available disruptions to each service
+   *
+   * @return available disruptions to each service
+   */
+  Collection<ServiceInfo> getServices() throws Exception;
 }

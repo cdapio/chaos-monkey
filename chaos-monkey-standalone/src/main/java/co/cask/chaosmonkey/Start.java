@@ -30,7 +30,8 @@ public class Start implements Disruption {
   private static final Logger LOGGER = LoggerFactory.getLogger(Start.class);
 
   @Override
-  public void disrupt(Collection<RemoteProcess> processes, @Nullable Map<String, String> serviceArguments) throws Exception {
+  public void disrupt(Collection<RemoteProcess> processes, @Nullable Map<String, String> serviceArguments)
+    throws Exception {
     for (RemoteProcess process : processes) {
       if (!process.isRunning()) {
         LOGGER.info("Attempting to {} {} on {}", this.getName(), process.getName(), process.getAddress());

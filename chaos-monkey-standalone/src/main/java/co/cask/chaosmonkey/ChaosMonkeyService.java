@@ -24,6 +24,7 @@ import co.cask.chaosmonkey.proto.ClusterDisruptor;
 import co.cask.chaosmonkey.proto.ClusterInfoCollector;
 import co.cask.chaosmonkey.proto.ClusterNode;
 import co.cask.chaosmonkey.proto.NodeStatus;
+import co.cask.chaosmonkey.proto.ServiceInfo;
 import co.cask.chaosmonkey.proto.ServiceStatus;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
@@ -465,6 +466,22 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   @Override
   public NodeStatus getStatus(String ipAddress) throws Exception {
     return getNodeStatus(ipAddress);
+  }
+
+  @Override
+  public Collection<ServiceInfo> getServices() throws Exception {
+    Table<String, String, Disruption> disruptionTable = this.disruptionService.getDisruptionMap();
+    Collection<ServiceInfo> serviceInfos = new HashSet<>();
+    for (String service : disruptionTable.rowKeySet()) {
+      Collection<String> disruptions = new HashSet<>();
+      for (String disruption : disruptionTable.columnKeySet()) {
+        if (disruptionTable.get(service, disruption) != null) {
+          disruptions.add(disruption);
+        }
+      }
+      serviceInfos.add(new ServiceInfo(service, disruptions));
+    }
+    return serviceInfos;
   }
 
   /**
