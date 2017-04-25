@@ -286,6 +286,21 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
+  public void disruptAndWait(String service, String disruptionName, @Nullable ActionArguments actionArguments,
+                             long timeout, TimeUnit timeoutUnit) throws Exception {
+    executeAction(service, disruptionName, actionArguments);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isActionRunning(service, disruptionName)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
+  }
+
+  @Override
   public void start(String service) throws Exception {
     start(service, null);
   }
@@ -351,8 +366,9 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void startAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
-    start(service);
+  public void startAndWait(String service, @Nullable ActionArguments actionArguments, long timeout,
+                           TimeUnit timeoutUnit) throws Exception {
+    start(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {
@@ -370,8 +386,9 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void restartAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
-    restart(service);
+  public void restartAndWait(String service, @Nullable ActionArguments actionArguments, long timeout,
+                             TimeUnit timeoutUnit) throws Exception {
+    restart(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {
@@ -389,8 +406,9 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void stopAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
-    stop(service);
+  public void stopAndWait(String service, @Nullable ActionArguments actionArguments, long timeout,
+                          TimeUnit timeoutUnit) throws Exception {
+    stop(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {
@@ -408,8 +426,9 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void terminateAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
-    terminate(service);
+  public void terminateAndWait(String service, ActionArguments actionArguments, long timeout,
+                               TimeUnit timeoutUnit) throws Exception {
+    terminate(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {
@@ -427,8 +446,9 @@ public class ChaosMonkeyService extends AbstractIdleService implements ClusterDi
   }
 
   @Override
-  public void killAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception {
-    kill(service);
+  public void killAndWait(String service, @Nullable ActionArguments actionArguments, long timeout,
+                          TimeUnit timeoutUnit) throws Exception {
+    kill(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {

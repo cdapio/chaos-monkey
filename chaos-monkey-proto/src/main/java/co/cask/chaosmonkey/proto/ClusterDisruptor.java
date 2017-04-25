@@ -42,6 +42,19 @@ public interface ClusterDisruptor {
   void disrupt(String service, String disruptionName, ActionArguments actionArguments) throws Exception;
 
   /**
+   * Runs a disruption and wait for its completion
+   *
+   * @param service The name of the service with be disrupted
+   * @param disruptionName The name of the disruption
+   * @param actionArguments Configuration for the action
+   * @param timeout Time until timeout
+   * @param timeoutUnit Unit of time for timeout
+   * @throws Exception
+   */
+  void disruptAndWait(String service, String disruptionName, ActionArguments actionArguments, long timeout,
+                      TimeUnit timeoutUnit) throws Exception;
+
+  /**
    * Starts the specified service
    *
    * @param service The name of the service to be started
@@ -144,11 +157,13 @@ public interface ClusterDisruptor {
    * Starts a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param actionArguments Configuration for the action
    * @param timeout Time until timeout
    * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void startAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
+  void startAndWait(String service, ActionArguments actionArguments, long timeout,
+                    TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing restart
@@ -162,11 +177,13 @@ public interface ClusterDisruptor {
    * Restarts a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param actionArguments Configuration for the action
    * @param timeout Time until timeout
    * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void restartAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
+  void restartAndWait(String service, ActionArguments actionArguments, long timeout,
+                      TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing stop
@@ -180,11 +197,13 @@ public interface ClusterDisruptor {
    * Stops a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param actionArguments Configuration for the action
    * @param timeout Time until timeout
    * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void stopAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
+  void stopAndWait(String service, ActionArguments actionArguments, long timeout,
+                   TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing terminate
@@ -198,11 +217,13 @@ public interface ClusterDisruptor {
    * Terminates a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param actionArguments Configuration for the action
    * @param timeout Time until timeout
    * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void terminateAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
+  void terminateAndWait(String service, ActionArguments actionArguments, long timeout,
+                        TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing kill
@@ -216,11 +237,13 @@ public interface ClusterDisruptor {
    * Kills a service and waits for action to complete
    *
    * @param service The name of the service to be queried
+   * @param actionArguments Configuration for the action
    * @param timeout Time until timeout
    * @param timeoutUnit Unit of time for timeout
    * @throws Exception
    */
-  void killAndWait(String service, long timeout, TimeUnit timeoutUnit) throws Exception;
+  void killAndWait(String service, ActionArguments actionArguments, long timeout,
+                   TimeUnit timeoutUnit) throws Exception;
 
   /**
    * Returns whether the specified service is undergoing rolling restart
