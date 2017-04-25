@@ -59,6 +59,15 @@ public interface RemoteProcess {
   boolean execAndReturnSucessful(String command) throws JSchException;
 
   /**
+   * Executes a command and return the {@link ShellOutput} of the execution
+   *
+   * @param command The command to be executed
+   * @return The result of running the command
+   * @throws JSchException
+   */
+  ShellOutput execAndGetOutput(String command) throws JSchException;
+
+  /**
    * Returns whether the process is running.
    *
    * @return {@code true} if running, otherwise {@code false}.

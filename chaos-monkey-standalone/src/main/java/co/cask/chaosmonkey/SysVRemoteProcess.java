@@ -53,6 +53,11 @@ public class SysVRemoteProcess implements RemoteProcess {
     return execAndGetReturnCode(command) == 0;
   }
 
+  @Override
+  public ShellOutput execAndGetOutput(String command) throws JSchException {
+    return sshShell.exec(command);
+  }
+
   public String getName() {
     return this.name;
   }
