@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import javax.annotation.Nullable;
 
 /**
  * This class allows SSH access to remote hosts.
@@ -127,7 +128,7 @@ public class SshShell {
    * @return The output of the command
    * @throws JSchException
    */
-  public ShellOutput exec(String command, InputStream input) throws JSchException {
+  public ShellOutput exec(String command, @Nullable InputStream input) throws JSchException {
     Session session = jsch.getSession(this.username, this.getAddress());
     command = String.format("bash -lc '%s'", command);
     try {
