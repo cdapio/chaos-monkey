@@ -74,6 +74,21 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
     executeActionWithArgument(service, disruptionName, actionArguments);
   }
 
+  @Override
+  public void disruptAndWait(String service, String disruptionName, @Nullable ActionArguments actionArguments,
+                             long timeout, TimeUnit timeoutUnit) throws Exception {
+    executeActionWithArgument(service, disruptionName, actionArguments);
+    long startTime = System.currentTimeMillis();
+    long timeoutMs = timeoutUnit.toMillis(timeout);
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      if (!isActionRunning(service, disruptionName)) {
+        return;
+      }
+      TimeUnit.SECONDS.sleep(1);
+    }
+    throw new TimeoutException(String.format("Timeout occurred after %d %s", timeout, timeoutUnit.name()));
+  }
+
   /**
    * Starts the specified service
    *
@@ -317,9 +332,9 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   }
 
   @Override
-  public void startAndWait(String service, long timeout, TimeUnit timeoutUnit)
-    throws IOException, InterruptedException, TimeoutException {
-    start(service);
+  public void startAndWait(String service, @Nullable ActionArguments actionArguments, long timeout,
+                           TimeUnit timeoutUnit) throws IOException, InterruptedException, TimeoutException {
+    start(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {
@@ -344,9 +359,9 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   }
 
   @Override
-  public void restartAndWait(String service, long timeout, TimeUnit timeoutUnit)
-    throws IOException, InterruptedException, TimeoutException {
-    restart(service);
+  public void restartAndWait(String service, @Nullable ActionArguments actionArguments, long timeout,
+                             TimeUnit timeoutUnit) throws IOException, InterruptedException, TimeoutException {
+    restart(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {
@@ -371,9 +386,9 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   }
 
   @Override
-  public void stopAndWait(String service, long timeout, TimeUnit timeoutUnit)
+  public void stopAndWait(String service, @Nullable ActionArguments actionArguments, long timeout, TimeUnit timeoutUnit)
     throws IOException, InterruptedException, TimeoutException {
-    stop(service);
+    stop(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {
@@ -398,9 +413,9 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   }
 
   @Override
-  public void terminateAndWait(String service, long timeout, TimeUnit timeoutUnit)
-    throws IOException, InterruptedException, TimeoutException {
-    terminate(service);
+  public void terminateAndWait(String service, @Nullable ActionArguments actionArguments, long timeout,
+                               TimeUnit timeoutUnit) throws IOException, InterruptedException, TimeoutException {
+    terminate(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {
@@ -425,9 +440,9 @@ public class ClusterDisruptorClient implements ClusterDisruptor {
   }
 
   @Override
-  public void killAndWait(String service, long timeout, TimeUnit timeoutUnit)
+  public void killAndWait(String service, @Nullable ActionArguments actionArguments, long timeout, TimeUnit timeoutUnit)
     throws IOException, InterruptedException, TimeoutException {
-    kill(service);
+    kill(service, actionArguments);
     long startTime = System.currentTimeMillis();
     long timeoutMs = timeoutUnit.toMillis(timeout);
     while (System.currentTimeMillis() - startTime < timeoutMs) {
