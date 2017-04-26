@@ -8,9 +8,22 @@ Disruptions can be scheduled, randomized, or issued on command. <br/>
 To start Chaos Monkey daemon and HTTP server, set configurations in chaos-monkey-site.xml and run ChaosMonkeyMain <br/>
 
 ### Configurations
+**Disruptions setup** <br/>
+>By default, the following disruptions will be available to each service: <br/>
+>* start <br/>
+>* restart <br/>
+>* stop <br/>
+>* terminate <br/>
+>* kill <br/>
+>* rolling-restart <br/>
+>
+>Custom disruptions can be added by extending the Disruption class and then associating them with a service.
+>A sample custom disruption can be found in CDAP ITN, major compact for hbase. To add a custom disruption to a service:
+>* {service}.disruptions - Class paths of custom disruptions, separated by commas
+
 **Initialize a service for Chaos Monkey** <br/>
->Any configured service can be interacted with through DisruptionService or REST endpoints. To configure a service for 
-chaos Monkey, the following properties need to be specified: <br/>
+>Any configured service can be interacted with through ClusterDisruptor or REST endpoints. To configure a service for 
+chaos Monkey, either provide custom disruptions or a pid file for the default disruptions: <br/>
 >* {service}.pidFile - Path to the .pid file of the service <br/>
 
 **Configurations for scheduled disruptions** <br/>
@@ -34,8 +47,8 @@ following configs: <br/>
 >* cluster.info.collector.class - classpath of the implementation of ClusterInfoCollector
 >
 >Additional properties can be passed in to the ClusterInfoCollector implementation. Setting the property
-cluster.info.collector.{propertyName} in configurations will make {propertyName} available in the properties map, passed
-in via the initialize method
+cluster.info.collector.{propertyName} in configurations will make {propertyName} available in the properties map, 
+passed in via the initialize method
 
 **SSH configurations** <br/>
 >username - username of SSH profile (if different from system user)<br/>
@@ -77,3 +90,19 @@ ne of the following request bodies:
 
 >**GET /v1/status** <br/>
 >Get the status of all configured service on every node of the cluster <br/>
+
+## Chaos Monkey in ITN
+Tests that extend DisruptionTestBase can use getClusterDisruptor() to get an instance of ChaosMonkeyService. 
+This instance of chaos monkey can be configured by including a chaos-monkey-site.xml. 
+ContinuousCounterTest in CDAP ITN can be used as a reference for testing with chaos monkey. <br/>
+
+To locally run tests that use DisruptionTestBase, cluster information needs to be provided. By default, 
+cluster information are retrieved from Coopr, the following system properties are required:
+>* coopr.cluster.id - Coopr cluster id <br/>
+>* ssh.username - ssh username, if it different from system user <br/>
+>* ssh.passphrase - private key passphrase, if applicable <br/>
+>* ssh.private.key - path to the private key, will check common key spots like ~/.ssh/id_rsa if not provided <br/>
+
+A test plan has been created on bamboo with the required system properties to use 
+chaos monkey. To run a test on bamboo, add the test to DisruptionTests in DisruptionTestSuite and manually launch 
+a test from Integration Tests - Disruption. <br/>
