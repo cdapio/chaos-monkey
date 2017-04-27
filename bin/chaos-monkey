@@ -18,7 +18,7 @@
 # or get the status of the ChaosMonkeyCLI. Anything that is not handled by this
 # script is passed onto ChaosMonkeyCLI.
 
-readonly RUN_CHAOS_MONKEY="java -jar $(dirname $0)/../target/chaos-monkey-0.1.0-release.jar"
+readonly RUN_CHAOS_MONKEY="java -jar $(dirname $0)/../chaos-monkey-standalone/target/chaos-monkey-standalone-0.1.0-SNAPSHOT-release.jar"
 readonly PID_FILE=$(dirname $(mktemp -u))/chaosmonkey.pid
 readonly SCRIPT_NAME=$(basename $0)
 
