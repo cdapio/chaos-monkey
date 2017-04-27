@@ -18,7 +18,10 @@ To start Chaos Monkey daemon and HTTP server, set configurations in chaos-monkey
 >* rolling-restart <br/>
 >
 >Custom disruptions can be added by extending the Disruption class and then associating them with a service.
->A sample custom disruption can be found in CDAP ITN, major compact for hbase. To add a custom disruption to a service:
+>A custom disruption is started by calling ClusterDisruptor.disrupt(serviceName, disruptionName, actionArguments), 
+>where disruptionName is set by the Disruption.getName() method.
+>Disruptions receive a collection of RemoteProcess based on the actionArguments, and can be used to execute commands 
+>via ssh. To add a custom disruption to a service:
 >* {service}.disruptions - Class paths of custom disruptions, separated by commas
 
 **Initialize a service for Chaos Monkey** <br/>
@@ -90,19 +93,3 @@ ne of the following request bodies:
 
 >**GET /v1/status** <br/>
 >Get the status of all configured service on every node of the cluster <br/>
-
-## Chaos Monkey in ITN
-Tests that extend DisruptionTestBase can use getClusterDisruptor() to get an instance of ChaosMonkeyService. 
-This instance of chaos monkey can be configured by including a chaos-monkey-site.xml. 
-ContinuousCounterTest in CDAP ITN can be used as a reference for testing with chaos monkey. <br/>
-
-To locally run tests that use DisruptionTestBase, cluster information needs to be provided. By default, 
-cluster information are retrieved from Coopr, the following system properties are required:
->* coopr.cluster.id - Coopr cluster id <br/>
->* ssh.username - ssh username, if it different from system user <br/>
->* ssh.passphrase - private key passphrase, if applicable <br/>
->* ssh.private.key - path to the private key, will check common key spots like ~/.ssh/id_rsa if not provided <br/>
-
-A test plan has been created on bamboo with the required system properties to use 
-chaos monkey. To run a test on bamboo, add the test to DisruptionTests in DisruptionTestSuite and manually launch 
-a test from Integration Tests - Disruption. <br/>
