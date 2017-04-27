@@ -8,9 +8,25 @@ Disruptions can be scheduled, randomized, or issued on command. <br/>
 To start Chaos Monkey daemon and HTTP server, set configurations in chaos-monkey-site.xml and run ChaosMonkeyMain <br/>
 
 ### Configurations
+**Disruptions setup** <br/>
+>By default, the following disruptions will be available to each service: <br/>
+>* start <br/>
+>* restart <br/>
+>* stop <br/>
+>* terminate <br/>
+>* kill <br/>
+>* rolling-restart <br/>
+>
+>Custom disruptions can be added by extending the Disruption class and then associating them with a service.
+>A custom disruption is started by calling ClusterDisruptor.disrupt(serviceName, disruptionName, actionArguments), 
+>where disruptionName is set by the Disruption.getName() method.
+>Disruptions receive a collection of RemoteProcess based on the actionArguments, and can be used to execute commands 
+>via ssh. To add a custom disruption to a service:
+>* {service}.disruptions - Class paths of custom disruptions, separated by commas
+
 **Initialize a service for Chaos Monkey** <br/>
->Any configured service can be interacted with through DisruptionService or REST endpoints. To configure a service for 
-chaos Monkey, the following properties need to be specified: <br/>
+>Any configured service can be interacted with through ClusterDisruptor or REST endpoints. To configure a service for 
+chaos Monkey, either provide custom disruptions or a pid file for the default disruptions: <br/>
 >* {service}.pidFile - Path to the .pid file of the service <br/>
 
 **Configurations for scheduled disruptions** <br/>
@@ -34,8 +50,8 @@ following configs: <br/>
 >* cluster.info.collector.class - classpath of the implementation of ClusterInfoCollector
 >
 >Additional properties can be passed in to the ClusterInfoCollector implementation. Setting the property
-cluster.info.collector.{propertyName} in configurations will make {propertyName} available in the properties map, passed
-in via the initialize method
+cluster.info.collector.{propertyName} in configurations will make {propertyName} available in the properties map, 
+passed in via the initialize method
 
 **SSH configurations** <br/>
 >username - username of SSH profile (if different from system user)<br/>
