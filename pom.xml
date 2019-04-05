@@ -20,7 +20,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>co.cask.chaosmonkey</groupId>
+  <groupId>io.cdap.chaosmonkey</groupId>
   <artifactId>chaos-monkey</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <modules>
@@ -30,13 +30,13 @@
     <module>chaos-monkey-common</module>
   </modules>
   <packaging>pom</packaging>
-  <name>Cask Chaos Monkey</name>
+  <name>CDAP Chaos Monkey</name>
   <description>A Chaos Monkey implementation for testing CDAP resiliency. </description>
-  <url>https://github.com/caskdata/chaos-monkey</url>
+  <url>https://github.com/cdapio/chaos-monkey</url>
 
   <organization>
-    <name>Cask Data, Inc.</name>
-    <url>http://cask.co</url>
+    <name>CDAP</name>
+    <url>http://cdap.io</url>
   </organization>
 
   <licenses>
@@ -48,25 +48,27 @@
 
   <developers>
     <developer>
-      <name>Cask Data</name>
-      <email>cask-dev@googlegroups.com</email>
-      <organization>Cask Data, Inc.</organization>
-      <organizationUrl>http://www.cask.co/</organizationUrl>
+      <name>CDAP</name>
+      <email>cdap-dev@googlegroups.com</email>
+      <organization>CDAP</organization>
+      <organizationUrl>http://cdap.io</organizationUrl>
     </developer>
   </developers>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
     <jee.version>7</jee.version>
-    <app.main.class>co.cask.chaosmonkey.ChaosMonkeyMain</app.main.class>
+    <app.main.class>io.cdap.chaosmonkey.ChaosMonkeyMain</app.main.class>
     <gson.version>2.8.0</gson.version>
     <guava.version>15.0</guava.version>
     <jsch.version>0.1.54</jsch.version>
     <jsch.agentproxy.version>0.0.9</jsch.agentproxy.version>
     <junit.version>4.11</junit.version>
     <logback.version>1.0.9</logback.version>
-    <netty.http.version>0.16.0</netty.http.version>
+    <netty.http.version>1.2.0</netty.http.version>
     <slf4j.version>1.7.5</slf4j.version>
-    <cask.common.version>0.7.1</cask.common.version>
+    <cdap.common.version>0.12.0</cdap.common.version>
   </properties>
 
   <distributionManagement>
@@ -78,16 +80,12 @@
       <id>sonatype.snapshots</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
-    <site>
-      <id>cask</id>
-      <url>http://cask.co</url>
-    </site>
   </distributionManagement>
 
   <scm>
-    <connection>scm:git:https://github.com/caskdata/chaos-monkey.git</connection>
-    <developerConnection>scm:git:git@github.com:caskdata/chaos-monkey.git</developerConnection>
-    <url>https://github.com/caskdata/chaos-monkey.git</url>
+    <connection>scm:git:https://github.com/cdapio/chaos-monkey.git</connection>
+    <developerConnection>scm:git:git@github.com:cdapio/chaos-monkey.git</developerConnection>
+    <url>https://github.com/cdapio/chaos-monkey.git</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -149,14 +147,14 @@
         <version>${slf4j.version}</version>
       </dependency>
       <dependency>
-        <groupId>co.cask.http</groupId>
+        <groupId>io.cdap.http</groupId>
         <artifactId>netty-http</artifactId>
         <version>${netty.http.version}</version>
       </dependency>
       <dependency>
-        <groupId>co.cask.common</groupId>
+        <groupId>io.cdap.common</groupId>
         <artifactId>common-http</artifactId>
-        <version>${cask.common.version}</version>
+        <version>${cdap.common.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -334,7 +332,7 @@
                 </links>
                 <doctitle>${project.name} ${project.version}</doctitle>
                 <bottom>
-                  <![CDATA[Copyright &#169; {currentYear} <a href="http://cask.co" target="_blank">Cask Data, Inc.</a> Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License, Version 2.0</a>.]]>
+                  <![CDATA[Copyright &#169; {currentYear} <a href="http://cdap.io" target="_blank">CDAP</a> Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License, Version 2.0</a>.]]>
                 </bottom>
               </configuration>
               <executions>
